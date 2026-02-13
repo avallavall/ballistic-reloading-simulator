@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-900 text-white antialiased;
+  }
+
+  * {
+    @apply border-slate-700;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg border border-slate-700 bg-slate-800 p-6;
+  }
+
+  .input-field {
+    @apply w-full rounded-md border border-slate-600 bg-slate-700 px-3 py-2 text-sm text-white
+           placeholder-slate-400 transition-colors
+           focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2
+           text-sm font-medium text-white transition-colors
+           hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+           focus:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-slate-600
+           bg-slate-700 px-4 py-2 text-sm font-medium text-white transition-colors
+           hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-500
+           focus:ring-offset-2 focus:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2
+           text-sm font-medium text-white transition-colors
+           hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
+           focus:ring-offset-slate-900 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #0f172a;
+}
+
+/* Recharts tooltip override */
+.recharts-default-tooltip {
+  background-color: #1e293b !important;
+  border: 1px solid #334155 !important;
+  border-radius: 0.5rem !important;
+}

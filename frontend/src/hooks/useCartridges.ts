@@ -1,0 +1,49 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCartridges, getCartridge, createCartridge, updateCartridge, deleteCartridge } from '@/lib/api';
+import type { CartridgeCreate } from '@/lib/types';
+
+export function useCartridges() {
+  return useQuery({
+    queryKey: ['cartridges'],
+    queryFn: getCartridges,
+  });
+}
+
+export function useCartridge(id: string) {
+  return useQuery({
+    queryKey: ['cartridges', id],
+    queryFn: () => getCartridge(id),
+    enabled: !!id,
+  });
+}
+
+export function useCreateCartridge() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: CartridgeCreate) => createCartridge(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cartridges'] });
+    },
+  });
+}
+
+export function useUpdateCartridge() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<CartridgeCreate> }) =>
+      updateCartridge(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cartridges'] });
+    },
+  });
+}
+
+export function useDeleteCartridge() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deleteCartridge(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cartridges'] });
+    },
+  });
+}
