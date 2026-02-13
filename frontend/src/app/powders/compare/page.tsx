@@ -313,7 +313,7 @@ export default function PowderComparePage() {
                         </div>
                       </TableCell>
                       {selectedPowders.map((powder) => {
-                        const value = powder[prop.key];
+                        const value = powder[prop.key] as string | number;
                         const best = isBestValue(prop, powder);
 
                         return (

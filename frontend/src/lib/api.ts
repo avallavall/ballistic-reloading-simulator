@@ -1,6 +1,7 @@
 import type {
   Powder,
   PowderCreate,
+  GrtImportResult,
   Bullet,
   BulletCreate,
   Cartridge,
@@ -93,6 +94,30 @@ export async function updatePowder(
 
 export async function deletePowder(id: string): Promise<void> {
   return request<void>(`/powders/${id}`, { method: 'DELETE' });
+}
+
+export async function importGrtPowders(file: File): Promise<GrtImportResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const url = `${API_PREFIX}/powders/import-grt`;
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let detail = `HTTP ${response.status}`;
+    try {
+      const errorBody = await response.json();
+      detail = errorBody.detail || detail;
+    } catch {
+      // ignore parse errors
+    }
+    throw new ApiClientError(response.status, detail);
+  }
+
+  return response.json();
 }
 
 // ============================================================

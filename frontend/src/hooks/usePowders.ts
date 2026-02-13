@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPowders, getPowder, createPowder, updatePowder, deletePowder } from '@/lib/api';
+import { getPowders, getPowder, createPowder, updatePowder, deletePowder, importGrtPowders } from '@/lib/api';
 import type { PowderCreate } from '@/lib/types';
 
 export function usePowders() {
@@ -42,6 +42,16 @@ export function useDeletePowder() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => deletePowder(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['powders'] });
+    },
+  });
+}
+
+export function useImportGrtPowders() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => importGrtPowders(file),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['powders'] });
     },

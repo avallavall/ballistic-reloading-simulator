@@ -14,6 +14,13 @@ export interface Powder {
   density_g_cm3: number;
   burn_rate_coeff: number;
   burn_rate_exp: number;
+  grt_params?: Record<string, unknown> | null;
+}
+
+export interface GrtImportResult {
+  created: Powder[];
+  skipped: string[];
+  errors: string[];
 }
 
 export interface PowderCreate {

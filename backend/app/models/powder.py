@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Float, String
+from sqlalchemy import JSON, Column, Float, String
 
 from app.models.base import Base, UUIDMixin
 
@@ -16,3 +16,4 @@ class Powder(UUIDMixin, Base):
     density_g_cm3 = Column(Float, nullable=False)
     burn_rate_coeff = Column(Float, nullable=False)
     burn_rate_exp = Column(Float, nullable=False)
+    grt_params = Column(JSON, nullable=True)

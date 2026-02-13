@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Flame, Plus, Trash2, X, Pencil, ArrowLeftRight } from 'lucide-react';
+import { Flame, Plus, Trash2, X, Pencil, ArrowLeftRight, Upload, FileUp, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import {
   Table,
@@ -15,7 +15,8 @@ import {
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
-import { usePowders, useCreatePowder, useUpdatePowder, useDeletePowder } from '@/hooks/usePowders';
+import Badge from '@/components/ui/Badge';
+import { usePowders, useCreatePowder, useUpdatePowder, useDeletePowder, useImportGrtPowders } from '@/hooks/usePowders';
 import type { PowderCreate } from '@/lib/types';
 
 const emptyForm: PowderCreate = {
@@ -36,10 +37,16 @@ export default function PowdersPage() {
   const createMutation = useCreatePowder();
   const updateMutation = useUpdatePowder();
   const deleteMutation = useDeletePowder();
+  const importMutation = useImportGrtPowders();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<PowderCreate>(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showImport, setShowImport] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [importResult, setImportResult] = useState<{ created: number; skipped: string[]; errors: string[] } | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (field: keyof PowderCreate, value: string) => {
     setForm((prev) => ({
@@ -101,6 +108,55 @@ export default function PowdersPage() {
     });
   };
 
+  const handleImportFile = useCallback((file: File) => {
+    setImportError(null);
+    setImportResult(null);
+    importMutation.mutate(file, {
+      onSuccess: (data) => {
+        setImportResult({ created: data.created.length, skipped: data.skipped, errors: data.errors });
+      },
+      onError: (error) => {
+        setImportError(error instanceof Error ? error.message : 'Error al importar archivo');
+      },
+    });
+  }, [importMutation]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleImportFile(file);
+    }
+  }, [handleImportFile]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  }, []);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImportFile(file);
+    }
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [handleImportFile]);
+
+  const handleCloseImport = () => {
+    setShowImport(false);
+    setImportResult(null);
+    setImportError(null);
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -111,6 +167,21 @@ export default function PowdersPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant={showImport ? 'secondary' : 'secondary'}
+            onClick={() => {
+              if (showImport) {
+                handleCloseImport();
+              } else {
+                setShowImport(true);
+                setShowForm(false);
+                setEditingId(null);
+              }
+            }}
+          >
+            {showImport ? <X size={16} /> : <Upload size={16} />}
+            {showImport ? 'Cerrar' : 'Importar GRT'}
+          </Button>
           <Link href="/powders/compare">
             <Button variant="secondary">
               <ArrowLeftRight size={16} />
@@ -124,6 +195,7 @@ export default function PowdersPage() {
                 handleCancelForm();
               } else {
                 setShowForm(true);
+                setShowImport(false);
               }
             }}
           >
@@ -259,6 +331,134 @@ export default function PowdersPage() {
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {showImport && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload size={18} className="text-blue-400" />
+              Importar desde GRT
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4 text-sm text-slate-400">
+              Sube un archivo <code className="rounded bg-slate-700 px-1.5 py-0.5 text-xs text-slate-300">.propellant</code> o{' '}
+              <code className="rounded bg-slate-700 px-1.5 py-0.5 text-xs text-slate-300">.zip</code> exportado de
+              Gordon&apos;s Reloading Tool (GRT) para importar polvoras automaticamente.
+            </p>
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".propellant,.zip"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+
+            {/* Drop zone */}
+            {!importMutation.isPending && !importResult && (
+              <div
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onClick={() => fileInputRef.current?.click()}
+                className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-12 transition-colors ${
+                  isDragOver
+                    ? 'border-blue-400 bg-blue-500/10'
+                    : 'border-slate-600 bg-slate-800/50 hover:border-slate-500 hover:bg-slate-800'
+                }`}
+              >
+                <FileUp size={40} className={isDragOver ? 'text-blue-400' : 'text-slate-500'} />
+                <p className="mt-3 text-sm font-medium text-slate-300">
+                  Arrastra tu archivo aqui o haz clic para seleccionar
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Archivos .propellant o .zip de GRT
+                </p>
+              </div>
+            )}
+
+            {/* Loading state */}
+            {importMutation.isPending && (
+              <div className="flex flex-col items-center justify-center rounded-lg border border-slate-700 bg-slate-800/50 px-6 py-12">
+                <Spinner size="lg" />
+                <p className="mt-3 text-sm text-slate-300">Procesando archivo GRT...</p>
+                <p className="mt-1 text-xs text-slate-500">Convirtiendo parametros de polvora</p>
+              </div>
+            )}
+
+            {/* Success state */}
+            {importResult && (
+              <div className="rounded-lg border border-green-500/30 bg-green-500/5 px-6 py-8">
+                <div className="flex flex-col items-center text-center">
+                  <CheckCircle size={40} className="text-green-400" />
+                  <h3 className="mt-3 text-lg font-medium text-green-300">
+                    Importacion completada
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Se importaron{' '}
+                    <Badge variant="success">{importResult.created}</Badge>{' '}
+                    {importResult.created === 1 ? 'polvora' : 'polvoras'} correctamente.
+                  </p>
+                  {importResult.skipped.length > 0 && (
+                    <p className="mt-2 text-xs text-yellow-400">
+                      Omitidas (ya existen): {importResult.skipped.join(', ')}
+                    </p>
+                  )}
+                  {importResult.errors.length > 0 && (
+                    <div className="mt-2 text-left">
+                      {importResult.errors.map((err, i) => (
+                        <p key={i} className="text-xs text-red-400">{err}</p>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-4 flex gap-3">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setImportResult(null);
+                        setImportError(null);
+                      }}
+                    >
+                      <Upload size={14} />
+                      Importar otro archivo
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleCloseImport}
+                    >
+                      Cerrar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error state */}
+            {importError && (
+              <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-3">
+                <div className="flex items-start gap-3">
+                  <AlertCircle size={18} className="mt-0.5 shrink-0 text-red-400" />
+                  <div>
+                    <p className="text-sm font-medium text-red-300">Error al importar</p>
+                    <p className="mt-1 text-xs text-red-400/80">{importError}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Footer buttons */}
+            <div className="mt-4 flex justify-end">
+              <Button variant="secondary" onClick={handleCloseImport}>
+                Cancelar
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}

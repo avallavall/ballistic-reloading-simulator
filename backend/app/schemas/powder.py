@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -14,6 +15,7 @@ class PowderCreate(BaseModel):
     density_g_cm3: float = Field(gt=0, le=3.0, description="Solid grain density (g/cm3), typically 1.55-1.65 for NC-based propellants. NOT bulk/loading density.")
     burn_rate_coeff: float = Field(gt=0, le=1.0, description="Vieille burn rate coefficient a")
     burn_rate_exp: float = Field(gt=0, le=2.0, description="Vieille burn rate exponent n, typically 0.6-1.0")
+    grt_params: dict[str, Any] | None = Field(None, description="Raw GRT parameters for reference")
 
 
 class PowderUpdate(BaseModel):
@@ -41,5 +43,12 @@ class PowderResponse(BaseModel):
     density_g_cm3: float
     burn_rate_coeff: float
     burn_rate_exp: float
+    grt_params: dict[str, Any] | None = None
 
     model_config = {"from_attributes": True}
+
+
+class GrtImportResult(BaseModel):
+    created: list[PowderResponse] = Field(default_factory=list)
+    skipped: list[str] = Field(default_factory=list, description="Names skipped (already exist)")
+    errors: list[str] = Field(default_factory=list, description="Parse/conversion errors")
