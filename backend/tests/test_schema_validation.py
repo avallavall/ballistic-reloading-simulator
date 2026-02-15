@@ -10,7 +10,7 @@ from app.schemas.bullet import BulletCreate, BulletUpdate
 from app.schemas.cartridge import CartridgeCreate, CartridgeUpdate
 from app.schemas.rifle import RifleCreate, RifleUpdate
 from app.schemas.load import LoadCreate, LoadUpdate
-from app.schemas.simulation import DirectSimulationRequest, LadderTestRequest
+from app.schemas.simulation import DirectSimulationRequest, LadderTestRequest, ParametricSearchRequest
 
 
 # ---------------------------------------------------------------------------
@@ -310,4 +310,79 @@ class TestSimulationRequestValidation:
                 charge_start_grains=40.0,
                 charge_end_grains=250,  # > 200 limit
                 charge_step_grains=0.5,
+            )
+
+
+# ---------------------------------------------------------------------------
+# Parametric search request schemas
+# ---------------------------------------------------------------------------
+
+
+class TestParametricSearchRequestValidation:
+    def test_valid_request(self):
+        req = ParametricSearchRequest(
+            rifle_id=VALID_UUID,
+            bullet_id=VALID_UUID,
+            cartridge_id=VALID_UUID,
+            coal_mm=71.0,
+        )
+        assert req.charge_percent_min == 0.70
+        assert req.charge_percent_max == 1.0
+        assert req.charge_steps == 5
+
+    def test_missing_required_fields(self):
+        with pytest.raises(ValidationError):
+            ParametricSearchRequest(
+                rifle_id=VALID_UUID,
+                # missing bullet_id and cartridge_id
+                coal_mm=71.0,
+            )
+
+    def test_charge_percent_min_too_high(self):
+        with pytest.raises(ValidationError):
+            ParametricSearchRequest(
+                rifle_id=VALID_UUID,
+                bullet_id=VALID_UUID,
+                cartridge_id=VALID_UUID,
+                coal_mm=71.0,
+                charge_percent_min=1.5,  # > 1.0
+            )
+
+    def test_charge_percent_min_zero(self):
+        with pytest.raises(ValidationError):
+            ParametricSearchRequest(
+                rifle_id=VALID_UUID,
+                bullet_id=VALID_UUID,
+                cartridge_id=VALID_UUID,
+                coal_mm=71.0,
+                charge_percent_min=0.0,  # must be > 0
+            )
+
+    def test_charge_steps_too_low(self):
+        with pytest.raises(ValidationError):
+            ParametricSearchRequest(
+                rifle_id=VALID_UUID,
+                bullet_id=VALID_UUID,
+                cartridge_id=VALID_UUID,
+                coal_mm=71.0,
+                charge_steps=1,  # must be >= 2
+            )
+
+    def test_charge_steps_too_high(self):
+        with pytest.raises(ValidationError):
+            ParametricSearchRequest(
+                rifle_id=VALID_UUID,
+                bullet_id=VALID_UUID,
+                cartridge_id=VALID_UUID,
+                coal_mm=71.0,
+                charge_steps=25,  # must be <= 20
+            )
+
+    def test_coal_too_high(self):
+        with pytest.raises(ValidationError):
+            ParametricSearchRequest(
+                rifle_id=VALID_UUID,
+                bullet_id=VALID_UUID,
+                cartridge_id=VALID_UUID,
+                coal_mm=250,  # > 200
             )

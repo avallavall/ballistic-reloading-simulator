@@ -74,3 +74,49 @@ class DirectSimulationResponse(BaseModel):
 class LadderTestResponse(BaseModel):
     results: list[DirectSimulationResponse]
     charge_weights: list[float]
+
+
+class ParametricSearchRequest(BaseModel):
+    rifle_id: uuid.UUID
+    bullet_id: uuid.UUID
+    cartridge_id: uuid.UUID
+    coal_mm: float = Field(gt=0, le=200, description="Cartridge overall length (mm)")
+    seating_depth_mm: float = Field(default=0.0, ge=0, le=50, description="Bullet seating depth (mm)")
+    charge_percent_min: float = Field(default=0.70, gt=0, le=1.0, description="Min charge as fraction of estimated max")
+    charge_percent_max: float = Field(default=1.0, gt=0, le=1.0, description="Max charge as fraction of estimated max")
+    charge_steps: int = Field(default=5, ge=2, le=20, description="Number of charge steps per powder")
+
+
+class PowderChargeResult(BaseModel):
+    charge_grains: float
+    peak_pressure_psi: float
+    muzzle_velocity_fps: float
+    is_safe: bool
+
+
+class PowderSearchResult(BaseModel):
+    powder_id: uuid.UUID
+    powder_name: str
+    manufacturer: str
+    optimal_charge_grains: float | None = None
+    peak_pressure_psi: float = 0.0
+    muzzle_velocity_fps: float = 0.0
+    pressure_percent: float = 0.0
+    efficiency: float = 0.0
+    barrel_time_ms: float = 0.0
+    recoil_energy_ft_lbs: float = 0.0
+    recoil_impulse_ns: float = 0.0
+    is_viable: bool = False
+    all_results: list[PowderChargeResult] = []
+    error: str | None = None
+
+
+class ParametricSearchResponse(BaseModel):
+    results: list[PowderSearchResult]
+    rifle_name: str
+    bullet_name: str
+    cartridge_name: str
+    saami_max_psi: float
+    total_powders_tested: int
+    viable_powders: int
+    total_time_ms: float

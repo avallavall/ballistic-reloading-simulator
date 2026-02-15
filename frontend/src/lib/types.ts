@@ -222,3 +222,52 @@ export interface PaginatedResponse<T> {
   page: number;
   size: number;
 }
+
+// ============================================================
+// Parametric Search
+// ============================================================
+
+export interface PowderChargeResult {
+  charge_grains: number;
+  peak_pressure_psi: number;
+  muzzle_velocity_fps: number;
+  is_safe: boolean;
+}
+
+export interface PowderSearchResult {
+  powder_id: string;
+  powder_name: string;
+  manufacturer: string;
+  optimal_charge_grains: number;
+  peak_pressure_psi: number;
+  muzzle_velocity_fps: number;
+  pressure_percent: number;
+  recoil_energy_ft_lbs: number;
+  recoil_impulse_ns: number;
+  efficiency: number;
+  barrel_time_ms: number;
+  is_viable: boolean;
+  all_results: PowderChargeResult[];
+}
+
+export interface ParametricSearchInput {
+  rifle_id: string;
+  bullet_id: string;
+  cartridge_id: string;
+  coal_mm: number;
+  seating_depth_mm?: number;
+  charge_percent_min?: number;
+  charge_percent_max?: number;
+  charge_steps?: number;
+}
+
+export interface ParametricSearchResponse {
+  results: PowderSearchResult[];
+  rifle_name: string;
+  bullet_name: string;
+  cartridge_name: string;
+  saami_max_psi: number;
+  total_powders_tested: number;
+  viable_powders: number;
+  total_time_ms: number;
+}

@@ -1,9 +1,12 @@
 import io
+import logging
+import time
 import uuid
 
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.middleware import limiter
@@ -14,6 +17,7 @@ from app.core.solver import (
     PowderParams,
     RifleParams,
     simulate,
+    J_TO_FT_LBS,
 )
 from app.core.solver import GRAINS_TO_KG, MM_TO_M, MM3_TO_M3, GCM3_TO_KGM3
 from app.db.session import get_db
@@ -28,9 +32,15 @@ from app.schemas.simulation import (
     DirectSimulationResponse,
     LadderTestRequest,
     LadderTestResponse,
+    ParametricSearchRequest,
+    ParametricSearchResponse,
+    PowderChargeResult,
+    PowderSearchResult,
     SimulationRequest,
     SimulationResultResponse,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/simulate", tags=["simulation"])
 
@@ -240,4 +250,142 @@ async def export_simulation_csv(simulation_id: uuid.UUID, db: AsyncSession = Dep
         iter([buf.getvalue()]),
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=simulation_{simulation_id}.csv"},
+    )
+
+
+# Grains of water to cm^3 (1 grain H2O ≈ 0.0648 cm^3)
+_GRAINS_H2O_TO_CM3 = GRAINS_TO_KG / 1e-3  # grains -> kg -> liters (cm^3)
+
+
+@router.post("/parametric", response_model=ParametricSearchResponse)
+@limiter.limit("3/minute")
+async def run_parametric_search(request: Request, req: ParametricSearchRequest, db: AsyncSession = Depends(get_db)):
+    """Search across all powders to find optimal loads for a given rifle/bullet/cartridge combination."""
+    t_start = time.perf_counter()
+
+    # Load rifle, bullet, cartridge from DB
+    rifle_row = await db.get(Rifle, req.rifle_id)
+    if not rifle_row:
+        raise HTTPException(404, "Rifle not found")
+
+    bullet_row = await db.get(Bullet, req.bullet_id)
+    if not bullet_row:
+        raise HTTPException(404, "Bullet not found")
+
+    cartridge_row = await db.get(Cartridge, req.cartridge_id)
+    if not cartridge_row:
+        raise HTTPException(404, "Cartridge not found")
+
+    # Get all powders
+    result = await db.execute(select(Powder).order_by(Powder.name))
+    all_powders = result.scalars().all()
+
+    if not all_powders:
+        raise HTTPException(404, "No powders found in database")
+
+    # Case capacity in cm^3 for charge estimation
+    case_capacity_cm3 = cartridge_row.case_capacity_grains_h2o * _GRAINS_H2O_TO_CM3
+
+    powder_results: list[PowderSearchResult] = []
+
+    for powder_row in all_powders:
+        try:
+            # Estimate max charge: case_capacity * powder_bulk_density * fill_factor
+            # Bulk density is roughly 55-60% of solid density for granular powder
+            bulk_density_g_cm3 = powder_row.density_g_cm3 * 0.58
+            max_charge_g = case_capacity_cm3 * bulk_density_g_cm3 * 0.85
+            max_charge_grains = max_charge_g / (GRAINS_TO_KG * 1000.0)
+
+            # Generate charge range
+            charge_min = req.charge_percent_min * max_charge_grains
+            charge_max = req.charge_percent_max * max_charge_grains
+            charges = np.linspace(charge_min, charge_max, req.charge_steps)
+
+            charge_results: list[PowderChargeResult] = []
+            best_safe_result = None
+            best_safe_charge = None
+
+            for charge_gr in charges:
+                charge_gr = float(charge_gr)
+                powder, bullet, cart, rif, ld = _make_params(
+                    powder_row, bullet_row, cartridge_row, rifle_row, charge_gr
+                )
+                sim_result = simulate(powder, bullet, cart, rif, ld)
+
+                cr = PowderChargeResult(
+                    charge_grains=round(charge_gr, 2),
+                    peak_pressure_psi=round(sim_result.peak_pressure_psi, 1),
+                    muzzle_velocity_fps=round(sim_result.muzzle_velocity_fps, 1),
+                    is_safe=sim_result.is_safe,
+                )
+                charge_results.append(cr)
+
+                # Track the best safe result (highest velocity that is still safe)
+                if sim_result.is_safe:
+                    if best_safe_result is None or sim_result.muzzle_velocity_fps > best_safe_result.muzzle_velocity_fps:
+                        best_safe_result = sim_result
+                        best_safe_charge = charge_gr
+
+            is_viable = best_safe_result is not None
+
+            if is_viable:
+                # Calculate efficiency: muzzle energy (ft-lbs) per grain of powder
+                bullet_mass_kg = bullet_row.weight_grains * GRAINS_TO_KG
+                muzzle_velocity_mps = best_safe_result.muzzle_velocity_fps / 3.28084
+                muzzle_energy_j = 0.5 * bullet_mass_kg * muzzle_velocity_mps ** 2
+                muzzle_energy_ft_lbs = muzzle_energy_j * J_TO_FT_LBS
+                efficiency = muzzle_energy_ft_lbs / best_safe_charge if best_safe_charge > 0 else 0.0
+
+                pressure_percent = (best_safe_result.peak_pressure_psi / cartridge_row.saami_max_pressure_psi) * 100.0
+
+                powder_results.append(PowderSearchResult(
+                    powder_id=powder_row.id,
+                    powder_name=powder_row.name,
+                    manufacturer=powder_row.manufacturer,
+                    optimal_charge_grains=round(best_safe_charge, 2),
+                    peak_pressure_psi=round(best_safe_result.peak_pressure_psi, 1),
+                    muzzle_velocity_fps=round(best_safe_result.muzzle_velocity_fps, 1),
+                    pressure_percent=round(pressure_percent, 1),
+                    efficiency=round(efficiency, 2),
+                    barrel_time_ms=round(best_safe_result.barrel_time_ms, 4),
+                    recoil_energy_ft_lbs=round(best_safe_result.recoil_energy_ft_lbs, 2),
+                    recoil_impulse_ns=round(best_safe_result.recoil_impulse_ns, 4),
+                    is_viable=True,
+                    all_results=charge_results,
+                ))
+            else:
+                powder_results.append(PowderSearchResult(
+                    powder_id=powder_row.id,
+                    powder_name=powder_row.name,
+                    manufacturer=powder_row.manufacturer,
+                    is_viable=False,
+                    all_results=charge_results,
+                ))
+
+        except Exception as e:
+            logger.warning("Parametric search failed for powder %s: %s", powder_row.name, e)
+            powder_results.append(PowderSearchResult(
+                powder_id=powder_row.id,
+                powder_name=powder_row.name,
+                manufacturer=powder_row.manufacturer,
+                is_viable=False,
+                error=str(e),
+            ))
+
+    # Sort: viable powders first (by velocity desc), then non-viable
+    viable = sorted([r for r in powder_results if r.is_viable], key=lambda r: r.muzzle_velocity_fps, reverse=True)
+    non_viable = [r for r in powder_results if not r.is_viable]
+    sorted_results = viable + non_viable
+
+    total_time_ms = (time.perf_counter() - t_start) * 1000.0
+
+    return ParametricSearchResponse(
+        results=sorted_results,
+        rifle_name=rifle_row.name,
+        bullet_name=f"{bullet_row.weight_grains}gr {getattr(bullet_row, 'name', '')}".strip(),
+        cartridge_name=cartridge_row.name,
+        saami_max_psi=cartridge_row.saami_max_pressure_psi,
+        total_powders_tested=len(all_powders),
+        viable_powders=len(viable),
+        total_time_ms=round(total_time_ms, 1),
     )

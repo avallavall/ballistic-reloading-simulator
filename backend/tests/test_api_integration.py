@@ -70,6 +70,9 @@ async def setup_database():
 async def client(setup_database):
     """Create an httpx.AsyncClient wired to the FastAPI app with test DB."""
     app.dependency_overrides[get_db] = _override_get_db
+    # Reset rate limiter storage between tests to avoid 429 errors
+    from app.middleware import limiter
+    limiter.reset()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
@@ -446,3 +449,173 @@ async def test_chrono_import_too_few_shots(client):
 async def test_get_nonexistent_powder_returns_404(client):
     resp = await client.get("/api/v1/powders/00000000-0000-0000-0000-000000000001")
     assert resp.status_code == 404
+
+
+# ---------------------------------------------------------------------------
+# Tests: Parametric Search (8 tests)
+# ---------------------------------------------------------------------------
+
+SECOND_POWDER_DATA = {
+    "name": "Test H4895",
+    "manufacturer": "Hodgdon",
+    "burn_rate_relative": 78,
+    "force_constant_j_kg": 920000,
+    "covolume_m3_kg": 0.00095,
+    "flame_temp_k": 3900,
+    "gamma": 1.23,
+    "density_g_cm3": 0.95,
+    "burn_rate_coeff": 1.4e-8,
+    "burn_rate_exp": 0.84,
+}
+
+
+async def _parametric_request(client, cartridge_id, bullet_id, rifle_id, **overrides):
+    """Build and send a parametric search request."""
+    req = {
+        "rifle_id": rifle_id,
+        "bullet_id": bullet_id,
+        "cartridge_id": cartridge_id,
+        "coal_mm": 71.0,
+        "charge_steps": 3,
+    }
+    req.update(overrides)
+    return await client.post("/api/v1/simulate/parametric", json=req)
+
+
+@pytest.mark.asyncio
+async def test_parametric_search_success(client):
+    """POST /simulate/parametric returns results with all powders."""
+    powder, bullet, cartridge, rifle = await _create_full_test_data(client)
+
+    resp = await _parametric_request(client, cartridge["id"], bullet["id"], rifle["id"])
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert data["total_powders_tested"] == 1
+    assert data["rifle_name"] == "Test Remington 700"
+    assert data["cartridge_name"] == ".308 Winchester Test"
+    assert data["saami_max_psi"] == 62000
+    assert data["total_time_ms"] > 0
+    assert len(data["results"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_parametric_search_invalid_rifle(client):
+    """Nonexistent rifle_id returns 404."""
+    _, bullet, cartridge, _ = await _create_full_test_data(client)
+    resp = await _parametric_request(
+        client, cartridge["id"], bullet["id"],
+        "00000000-0000-0000-0000-000000000099",
+    )
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_parametric_search_invalid_bullet(client):
+    """Nonexistent bullet_id returns 404."""
+    _, _, cartridge, rifle = await _create_full_test_data(client)
+    resp = await _parametric_request(
+        client, cartridge["id"],
+        "00000000-0000-0000-0000-000000000099",
+        rifle["id"],
+    )
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_parametric_search_invalid_cartridge(client):
+    """Nonexistent cartridge_id returns 404."""
+    _, bullet, _, rifle = await _create_full_test_data(client)
+    resp = await _parametric_request(
+        client, "00000000-0000-0000-0000-000000000099",
+        bullet["id"], rifle["id"],
+    )
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_parametric_search_results_sorted(client):
+    """Viable results are sorted by velocity descending."""
+    powder, bullet, cartridge, rifle = await _create_full_test_data(client)
+    # Create a second powder
+    resp2 = await client.post("/api/v1/powders", json=SECOND_POWDER_DATA)
+    assert resp2.status_code == 201
+
+    resp = await _parametric_request(client, cartridge["id"], bullet["id"], rifle["id"])
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total_powders_tested"] == 2
+
+    viable = [r for r in data["results"] if r["is_viable"]]
+    if len(viable) >= 2:
+        velocities = [r["muzzle_velocity_fps"] for r in viable]
+        assert velocities == sorted(velocities, reverse=True)
+
+
+@pytest.mark.asyncio
+async def test_parametric_search_efficiency_calculated(client):
+    """Viable results have efficiency > 0."""
+    powder, bullet, cartridge, rifle = await _create_full_test_data(client)
+
+    resp = await _parametric_request(client, cartridge["id"], bullet["id"], rifle["id"])
+    assert resp.status_code == 200
+    data = resp.json()
+
+    viable = [r for r in data["results"] if r["is_viable"]]
+    assert len(viable) >= 1
+    for r in viable:
+        assert r["efficiency"] > 0
+        assert r["optimal_charge_grains"] is not None
+        assert r["optimal_charge_grains"] > 0
+        assert r["pressure_percent"] > 0
+
+
+@pytest.mark.asyncio
+async def test_parametric_search_all_results_included(client):
+    """Each PowderSearchResult has all_results with charge_steps elements."""
+    powder, bullet, cartridge, rifle = await _create_full_test_data(client)
+
+    resp = await _parametric_request(
+        client, cartridge["id"], bullet["id"], rifle["id"], charge_steps=4
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+
+    for r in data["results"]:
+        assert len(r["all_results"]) == 4
+        for cr in r["all_results"]:
+            assert "charge_grains" in cr
+            assert "peak_pressure_psi" in cr
+            assert "muzzle_velocity_fps" in cr
+            assert "is_safe" in cr
+
+
+@pytest.mark.asyncio
+async def test_parametric_search_custom_charge_range(client):
+    """Custom charge_percent_min/max constrains the charge range."""
+    powder, bullet, cartridge, rifle = await _create_full_test_data(client)
+
+    # Full range
+    resp_full = await _parametric_request(
+        client, cartridge["id"], bullet["id"], rifle["id"],
+        charge_percent_min=0.70, charge_percent_max=1.0, charge_steps=3,
+    )
+    # Narrow range
+    resp_narrow = await _parametric_request(
+        client, cartridge["id"], bullet["id"], rifle["id"],
+        charge_percent_min=0.80, charge_percent_max=0.90, charge_steps=3,
+    )
+    assert resp_full.status_code == 200
+    assert resp_narrow.status_code == 200
+
+    full_data = resp_full.json()["results"][0]["all_results"]
+    narrow_data = resp_narrow.json()["results"][0]["all_results"]
+
+    # Narrow range charges should all fall within the full range
+    full_min = full_data[0]["charge_grains"]
+    full_max = full_data[-1]["charge_grains"]
+    narrow_min = narrow_data[0]["charge_grains"]
+    narrow_max = narrow_data[-1]["charge_grains"]
+
+    assert narrow_min >= full_min
+    assert narrow_max <= full_max

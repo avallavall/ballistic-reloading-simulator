@@ -31,7 +31,8 @@ export function grainsToGrams(grains: number): number {
 }
 
 /** Format number with fixed decimals */
-export function formatNum(value: number, decimals: number = 1): string {
+export function formatNum(value: number | null | undefined, decimals: number = 1): string {
+  if (value == null || isNaN(value)) return '—';
   return value.toFixed(decimals);
 }
 
