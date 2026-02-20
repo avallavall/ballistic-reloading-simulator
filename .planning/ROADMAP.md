@@ -31,12 +31,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. User can import a GRT .propellant file and the powder's Ba, k, z1, z2, Bp, Br, Brp parameters are stored as first-class fields and used directly by the solver
   3. Existing 2-curve powders continue to simulate identically (backward compatibility preserved)
   4. A validation test suite of 20+ reference loads from published manuals (Hodgdon, Sierra, Hornady) passes with mean velocity error below 5%
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: Implement 3-curve form function and burn model dispatcher
-- [ ] 01-02: Extend powder model schema and GRT parameter storage
-- [ ] 01-03: Build validation test suite against published load data
+- [ ] 01-01-PLAN.md — TDD: 3-curve piecewise form function + dual-mode solver with backward compat (Wave 1)
+- [ ] 01-02-PLAN.md — DB migration, GRT converter, API wiring, frontend 3C/2C badges + collapsible params (Wave 2)
+- [ ] 01-03-PLAN.md — Validation fixture (21+ loads), pytest quality gate, /validation page with charts (Wave 3)
 
 ### Phase 2: Extended Simulation Charts
 **Goal**: Users can visualize all physics computed by the solver, not just pressure and velocity
