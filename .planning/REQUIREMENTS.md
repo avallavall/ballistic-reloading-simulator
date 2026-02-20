@@ -83,39 +83,39 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SIM-01 | Phase ? | Pending |
-| SIM-02 | Phase ? | Pending |
-| SIM-03 | Phase ? | Pending |
-| SIM-04 | Phase ? | Pending |
-| SIM-05 | Phase ? | Pending |
-| SIM-06 | Phase ? | Pending |
-| DATA-01 | Phase ? | Pending |
-| DATA-02 | Phase ? | Pending |
-| DATA-03 | Phase ? | Pending |
-| DATA-04 | Phase ? | Pending |
-| CHART-01 | Phase ? | Pending |
-| CHART-02 | Phase ? | Pending |
-| CHART-03 | Phase ? | Pending |
-| CHART-04 | Phase ? | Pending |
-| CHART-05 | Phase ? | Pending |
-| VIEW-01 | Phase ? | Pending |
-| VIEW-02 | Phase ? | Pending |
-| VIEW-03 | Phase ? | Pending |
-| VIEW-04 | Phase ? | Pending |
-| TOOL-01 | Phase ? | Pending |
-| TOOL-02 | Phase ? | Pending |
-| TOOL-03 | Phase ? | Pending |
-| TOOL-04 | Phase ? | Pending |
-| COMM-01 | Phase ? | Pending |
-| COMM-02 | Phase ? | Pending |
-| COMM-03 | Phase ? | Pending |
-| COMM-04 | Phase ? | Pending |
+| SIM-01 | Phase 1 | Pending |
+| SIM-02 | Phase 1 | Pending |
+| SIM-03 | Phase 4 | Pending |
+| SIM-04 | Phase 1 | Pending |
+| SIM-05 | Phase 4 | Pending |
+| SIM-06 | Phase 4 | Pending |
+| DATA-01 | Phase 3 | Pending |
+| DATA-02 | Phase 3 | Pending |
+| DATA-03 | Phase 3 | Pending |
+| DATA-04 | Phase 3 | Pending |
+| CHART-01 | Phase 2 | Pending |
+| CHART-02 | Phase 2 | Pending |
+| CHART-03 | Phase 2 | Pending |
+| CHART-04 | Phase 2 | Pending |
+| CHART-05 | Phase 2 | Pending |
+| VIEW-01 | Phase 6 | Pending |
+| VIEW-02 | Phase 6 | Pending |
+| VIEW-03 | Phase 6 | Pending |
+| VIEW-04 | Phase 6 | Pending |
+| TOOL-01 | Phase 5 | Pending |
+| TOOL-02 | Phase 5 | Pending |
+| TOOL-03 | Phase 5 | Pending |
+| TOOL-04 | Phase 3 | Pending |
+| COMM-01 | Phase 7 | Pending |
+| COMM-02 | Phase 7 | Pending |
+| COMM-03 | Phase 7 | Pending |
+| COMM-04 | Phase 7 | Pending |
 
 **Coverage:**
 - v1 requirements: 27 total
-- Mapped to phases: 0
-- Unmapped: 27 (pending roadmap creation)
+- Mapped to phases: 27
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-20*
-*Last updated: 2026-02-20 after initial definition*
+*Last updated: 2026-02-20 after roadmap creation (all 27 requirements mapped to phases)*
