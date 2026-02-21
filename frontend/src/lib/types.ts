@@ -15,6 +15,15 @@ export interface Powder {
   burn_rate_coeff: number;
   burn_rate_exp: number;
   grt_params?: Record<string, unknown> | null;
+  // 3-curve GRT parameters
+  ba?: number | null;
+  bp?: number | null;
+  br?: number | null;
+  brp?: number | null;
+  z1?: number | null;
+  z2?: number | null;
+  a0?: number | null;
+  has_3curve: boolean;
 }
 
 export interface GrtImportResult {
@@ -34,6 +43,14 @@ export interface PowderCreate {
   density_g_cm3: number;
   burn_rate_coeff: number;
   burn_rate_exp: number;
+  // 3-curve GRT parameters (optional)
+  ba?: number | null;
+  bp?: number | null;
+  br?: number | null;
+  brp?: number | null;
+  z1?: number | null;
+  z2?: number | null;
+  a0?: number | null;
 }
 
 // ============================================================

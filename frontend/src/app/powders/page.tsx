@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import { Flame, Plus, Trash2, X, Pencil, ArrowLeftRight, Upload, FileUp, CheckCircle, AlertCircle } from 'lucide-react';
+import { Flame, Plus, Trash2, X, Pencil, ArrowLeftRight, Upload, FileUp, CheckCircle, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import {
   Table,
@@ -30,7 +30,26 @@ const emptyForm: PowderCreate = {
   density_g_cm3: 0,
   burn_rate_coeff: 0,
   burn_rate_exp: 0,
+  ba: undefined,
+  bp: undefined,
+  br: undefined,
+  brp: undefined,
+  z1: undefined,
+  z2: undefined,
+  a0: undefined,
 };
+
+const THREECURVE_FIELDS = [
+  { key: 'ba' as const, label: 'Ba (Vivacidad)', step: '0.001', placeholder: 'Ej: 1.5' },
+  { key: 'bp' as const, label: 'Bp (Progresividad)', step: '0.001', placeholder: 'Ej: 0.3' },
+  { key: 'br' as const, label: 'Br (Brisance)', step: '0.001', placeholder: 'Ej: 0.2' },
+  { key: 'brp' as const, label: 'Brp (Combinado)', step: '0.001', placeholder: 'Ej: 0.1' },
+  { key: 'z1' as const, label: 'z1 (Transicion 1/2)', step: '0.01', placeholder: 'Ej: 0.30' },
+  { key: 'z2' as const, label: 'z2 (Transicion 2/3)', step: '0.01', placeholder: 'Ej: 0.70' },
+  { key: 'a0' as const, label: 'a0 (Coef. Ba)', step: '0.01', placeholder: 'Ej: 5.0' },
+] as const;
+
+type ThreeCurveKey = typeof THREECURVE_FIELDS[number]['key'];
 
 export default function PowdersPage() {
   const { data: powders, isLoading, isError } = usePowders();
@@ -46,12 +65,14 @@ export default function PowdersPage() {
   const [isDragOver, setIsDragOver] = useState(false);
   const [importResult, setImportResult] = useState<{ created: number; skipped: string[]; errors: string[] } | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [lastImportFile, setLastImportFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (field: keyof PowderCreate, value: string) => {
     setForm((prev) => ({
       ...prev,
-      [field]: field === 'name' || field === 'manufacturer' ? value : Number(value),
+      [field]: field === 'name' || field === 'manufacturer' ? value : (value === '' ? undefined : Number(value)),
     }));
   };
 
@@ -69,7 +90,18 @@ export default function PowdersPage() {
       density_g_cm3: powder.density_g_cm3,
       burn_rate_coeff: powder.burn_rate_coeff,
       burn_rate_exp: powder.burn_rate_exp,
+      ba: powder.ba ?? undefined,
+      bp: powder.bp ?? undefined,
+      br: powder.br ?? undefined,
+      brp: powder.brp ?? undefined,
+      z1: powder.z1 ?? undefined,
+      z2: powder.z2 ?? undefined,
+      a0: powder.a0 ?? undefined,
     });
+    // Show advanced section if powder has 3-curve data
+    if (powder.has_3curve) {
+      setShowAdvanced(true);
+    }
     setShowForm(true);
   };
 
@@ -77,26 +109,38 @@ export default function PowdersPage() {
     setForm(emptyForm);
     setShowForm(false);
     setEditingId(null);
+    setShowAdvanced(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Clean form: convert undefined 3-curve fields to null for API
+    const cleanedForm = { ...form };
+    for (const field of THREECURVE_FIELDS) {
+      const k = field.key as ThreeCurveKey;
+      if (cleanedForm[k] === undefined || cleanedForm[k] === null || (typeof cleanedForm[k] === 'number' && isNaN(cleanedForm[k] as number))) {
+        cleanedForm[k] = null;
+      }
+    }
+
     if (editingId) {
       updateMutation.mutate(
-        { id: editingId, data: form },
+        { id: editingId, data: cleanedForm },
         {
           onSuccess: () => {
             setForm(emptyForm);
             setShowForm(false);
             setEditingId(null);
+            setShowAdvanced(false);
           },
         }
       );
     } else {
-      createMutation.mutate(form, {
+      createMutation.mutate(cleanedForm, {
         onSuccess: () => {
           setForm(emptyForm);
           setShowForm(false);
+          setShowAdvanced(false);
         },
       });
     }
@@ -111,6 +155,7 @@ export default function PowdersPage() {
   const handleImportFile = useCallback((file: File) => {
     setImportError(null);
     setImportResult(null);
+    setLastImportFile(file);
     importMutation.mutate(file, {
       onSuccess: (data) => {
         setImportResult({ created: data.created.length, skipped: data.skipped, errors: data.errors });
@@ -120,6 +165,23 @@ export default function PowdersPage() {
       },
     });
   }, [importMutation]);
+
+  const handleOverwriteDuplicates = useCallback(() => {
+    if (!lastImportFile) return;
+    setImportError(null);
+    setImportResult(null);
+    // Re-import with overwrite=true by calling the API directly
+    const doOverwrite = async () => {
+      try {
+        const { importGrtPowders } = await import('@/lib/api');
+        const data = await importGrtPowders(lastImportFile, true);
+        setImportResult({ created: data.created.length, skipped: data.skipped, errors: data.errors });
+      } catch (error) {
+        setImportError(error instanceof Error ? error.message : 'Error al sobrescribir');
+      }
+    };
+    doOverwrite();
+  }, [lastImportFile]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -155,6 +217,7 @@ export default function PowdersPage() {
     setShowImport(false);
     setImportResult(null);
     setImportError(null);
+    setLastImportFile(null);
   };
 
   return (
@@ -309,6 +372,41 @@ export default function PowdersPage() {
                   required
                 />
               </div>
+
+              {/* Collapsible 3-Curve Advanced Section */}
+              <div className="border-t border-slate-700 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="flex items-center gap-1.5 text-sm font-medium text-slate-400 hover:text-slate-300 transition-colors"
+                >
+                  {showAdvanced ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  Avanzado: Parametros 3-Curvas
+                </button>
+
+                {showAdvanced && (
+                  <div className="mt-3 space-y-3">
+                    <div className="rounded-md bg-yellow-500/10 border border-yellow-500/30 px-3 py-2 text-xs text-yellow-300">
+                      Modificar parametros del modelo puede reducir la precision. Estos valores provienen normalmente de la importacion GRT.
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {THREECURVE_FIELDS.map((field) => (
+                        <Input
+                          key={field.key}
+                          label={field.label}
+                          id={field.key}
+                          type="number"
+                          step={field.step}
+                          value={form[field.key] ?? ''}
+                          onChange={(e) => handleChange(field.key, e.target.value)}
+                          placeholder={field.placeholder}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-3 pt-2">
                 <Button
                   type="button"
@@ -391,7 +489,7 @@ export default function PowdersPage() {
               </div>
             )}
 
-            {/* Success state */}
+            {/* Success state with collision handling */}
             {importResult && (
               <div className="rounded-lg border border-green-500/30 bg-green-500/5 px-6 py-8">
                 <div className="flex flex-col items-center text-center">
@@ -404,11 +502,42 @@ export default function PowdersPage() {
                     <Badge variant="success">{importResult.created}</Badge>{' '}
                     {importResult.created === 1 ? 'polvora' : 'polvoras'} correctamente.
                   </p>
+
+                  {/* Collision dialog: show skipped names with overwrite option */}
                   {importResult.skipped.length > 0 && (
-                    <p className="mt-2 text-xs text-yellow-400">
-                      Omitidas (ya existen): {importResult.skipped.join(', ')}
-                    </p>
+                    <div className="mt-4 w-full max-w-md rounded-md border border-yellow-500/30 bg-yellow-500/5 px-4 py-3">
+                      <p className="text-sm font-medium text-yellow-300">
+                        {importResult.skipped.length} {importResult.skipped.length === 1 ? 'polvora ya existe' : 'polvoras ya existen'}:
+                      </p>
+                      <ul className="mt-2 max-h-32 overflow-y-auto text-left">
+                        {importResult.skipped.map((name, i) => (
+                          <li key={i} className="text-xs text-yellow-400/80 py-0.5">
+                            {name}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="mt-3 flex justify-center gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            // Just dismiss - keep existing (skip all)
+                            setImportResult(prev => prev ? { ...prev, skipped: [] } : null);
+                          }}
+                        >
+                          Omitir todos
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={handleOverwriteDuplicates}
+                        >
+                          Sobrescribir todos
+                        </Button>
+                      </div>
+                    </div>
                   )}
+
                   {importResult.errors.length > 0 && (
                     <div className="mt-2 text-left">
                       {importResult.errors.map((err, i) => (
@@ -423,6 +552,7 @@ export default function PowdersPage() {
                       onClick={() => {
                         setImportResult(null);
                         setImportError(null);
+                        setLastImportFile(null);
                       }}
                     >
                       <Upload size={14} />
@@ -523,7 +653,12 @@ export default function PowdersPage() {
             {powders.map((powder) => (
               <TableRow key={powder.id}>
                 <TableCell className="font-medium text-white">
-                  {powder.name}
+                  <span className="flex items-center gap-2">
+                    {powder.name}
+                    <Badge variant={powder.has_3curve ? 'success' : 'default'}>
+                      {powder.has_3curve ? '3C' : '2C'}
+                    </Badge>
+                  </span>
                 </TableCell>
                 <TableCell>{powder.manufacturer}</TableCell>
                 <TableCell className="font-mono">

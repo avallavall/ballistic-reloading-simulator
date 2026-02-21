@@ -98,11 +98,11 @@ export async function deletePowder(id: string): Promise<void> {
   return request<void>(`/powders/${id}`, { method: 'DELETE' });
 }
 
-export async function importGrtPowders(file: File): Promise<GrtImportResult> {
+export async function importGrtPowders(file: File, overwrite: boolean = false): Promise<GrtImportResult> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const url = `${API_PREFIX}/powders/import-grt`;
+  const url = `${API_PREFIX}/powders/import-grt${overwrite ? '?overwrite=true' : ''}`;
   const response = await fetch(url, {
     method: 'POST',
     body: formData,
