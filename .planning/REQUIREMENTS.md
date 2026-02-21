@@ -80,33 +80,33 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PWD-01 | — | Pending |
-| PWD-02 | — | Pending |
-| PWD-03 | — | Pending |
-| PWD-04 | — | Pending |
-| PWD-05 | — | Pending |
-| BUL-01 | — | Pending |
-| BUL-02 | — | Pending |
-| BUL-03 | — | Pending |
-| BUL-04 | — | Pending |
-| CRT-01 | — | Pending |
-| CRT-02 | — | Pending |
-| CRT-03 | — | Pending |
-| QLT-01 | — | Pending |
-| QLT-02 | — | Pending |
-| QLT-03 | — | Pending |
-| SRC-01 | — | Pending |
-| SRC-02 | — | Pending |
-| SRC-03 | — | Pending |
-| SRC-04 | — | Pending |
-| SRC-05 | — | Pending |
-| SOL-01 | — | Pending |
+| PWD-01 | Phase 5 | Pending |
+| PWD-02 | Phase 3 | Pending |
+| PWD-03 | Phase 3 | Pending |
+| PWD-04 | Phase 3 | Pending |
+| PWD-05 | Phase 5 | Pending |
+| BUL-01 | Phase 5 | Pending |
+| BUL-02 | Phase 5 | Pending |
+| BUL-03 | Phase 5 | Pending |
+| BUL-04 | Phase 5 | Pending |
+| CRT-01 | Phase 5 | Pending |
+| CRT-02 | Phase 5 | Pending |
+| CRT-03 | Phase 5 | Pending |
+| QLT-01 | Phase 6 | Pending |
+| QLT-02 | Phase 3 | Pending |
+| QLT-03 | Phase 3 | Pending |
+| SRC-01 | Phase 4 | Pending |
+| SRC-02 | Phase 4 | Pending |
+| SRC-03 | Phase 4 | Pending |
+| SRC-04 | Phase 6 | Pending |
+| SRC-05 | Phase 6 | Pending |
+| SOL-01 | Phase 3 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 21 total
-- Mapped to phases: 0
-- Unmapped: 21
+- Mapped to phases: 21
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-21*
-*Last updated: 2026-02-21 after initial definition*
+*Last updated: 2026-02-21 after roadmap creation*

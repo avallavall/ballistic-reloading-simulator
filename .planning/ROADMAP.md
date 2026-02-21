@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.1 3-Curve Engine + Extended Charts** — Phases 1-2 (shipped 2026-02-21)
-- 🚧 **v1.2** — Phases 3-7 (planned)
+- 🚧 **v1.2 Component Databases + Search** — Phases 3-6 (in progress)
 
 ## Phases
 
@@ -15,112 +15,89 @@
 
 </details>
 
-### 🚧 Next (Planned)
+### 🚧 v1.2 Component Databases + Search (In Progress)
 
-- [ ] Phase 3: Data Import Pipeline (4 plans) — Populate 200+ powders, 500+ bullets, 50+ cartridges
-- [ ] Phase 4: Advanced Simulation Models (3 plans) — Temperature sensitivity, bullet jump, gas port
-- [ ] Phase 5: Analysis & UX Tools (3 plans) — Shot groups, validation inspector, load sheets
-- [ ] Phase 6: 2D/3D Viewers (3 plans) — SVG drawings + React Three Fiber models
-- [ ] Phase 7: Community Features (5 plans) — Chrono submissions, reverse-engineering, shared recipes
+**Milestone Goal:** Build comprehensive pre-loaded component databases with quality indicators, multi-source import pipelines, and advanced search/filtering so users can simulate immediately without manual data entry.
+
+- [ ] **Phase 3: Schema and Quality System** - Alembic migration with new columns, quality scorer, data provenance, solver web_thickness fix
+- [ ] **Phase 4: Search and Pagination** - pg_trgm fuzzy search, server-side pagination, multi-field filtering on all component endpoints
+- [ ] **Phase 5: Import Pipelines and Fixture Data** - GRT powder import, powder aliases, bullet/cartridge fixture compilation, batch import endpoints
+- [ ] **Phase 6: Frontend Integration** - Searchable picker modals, pagination UI, quality badges display on all component pages
 
 ## Phase Details
 
-### Phase 3: Data Import Pipeline
-**Goal**: Users can simulate with any common powder, bullet, or cartridge without manual data entry
-**Depends on**: Phase 1
-**Requirements**: DATA-01, DATA-02, DATA-03, DATA-04, TOOL-04
+### Phase 3: Schema and Quality System
+**Goal**: Every component record carries a computed quality score and data source provenance, and the solver reads per-powder web_thickness from the database
+**Depends on**: Phase 2 (v1.1 complete)
+**Requirements**: PWD-02, PWD-03, PWD-04, QLT-02, QLT-03, SOL-01
 **Success Criteria** (what must be TRUE):
-  1. Powder database contains 200+ powders imported from GRT community database with all 3-curve burn model parameters populated
-  2. Bullet database contains 500+ bullets from manufacturer specs with bearing surface, boat tail dimensions, and BCs
-  3. Cartridge database contains 50+ cartridges with full CIP/SAAMI dimensional data
-  4. Each powder displays a quality indicator badge (red/yellow/green) based on model confidence level
-  5. User can upload a GRT .propellant file and all parameters (including 3-curve fields) are parsed and stored correctly
-**Plans**: 4 plans
+  1. User sees red/yellow/green quality badges on powder records based on data completeness and source reliability
+  2. User can hover a powder's quality badge and see a 0-100 score breakdown tooltip showing which fields are filled and the source tier
+  3. Powder records display their data source (grt_community, manufacturer, manual, estimated) and this value persists across edits
+  4. Editing a powder via PUT automatically recomputes its quality score so the badge stays accurate
+  5. Running a simulation with a powder that has web_thickness set uses that value instead of the hardcoded 0.0004m default
+**Plans**: TBD
 
 Plans:
-- [ ] 03-01: Extend GRT parser/converter for 3-curve parameters and bulk import endpoint
-- [ ] 03-02: Compile and seed bullet database from manufacturer specs
-- [ ] 03-03: Compile and seed cartridge database from CIP/SAAMI data
-- [ ] 03-04: Implement powder quality indicator badges in UI
+- [ ] 03-01: TBD
+- [ ] 03-02: TBD
 
-### Phase 4: Advanced Simulation Models
-**Goal**: Simulation accounts for environmental and mechanical factors beyond basic internal ballistics
-**Depends on**: Phase 1
-**Requirements**: SIM-03, SIM-05, SIM-06
-**Success Criteria** (what must be TRUE):
-  1. User can set ambient temperature and see burn rate predictions adjust based on the powder's temperature sensitivity coefficient
-  2. User can observe bullet jump / freebore engraving resistance reflected as additional pressure during bullet start in the simulation
-  3. User can model semi-auto gas port pressure loss showing reduced effective pressure after the bullet passes the gas port location
-**Plans**: 3 plans
-
-Plans:
-- [ ] 04-01: Implement temperature sensitivity modifier on burn rate
-- [ ] 04-02: Model bullet jump and freebore engraving resistance
-- [ ] 04-03: Model semi-auto gas port pressure bleed-off
-
-### Phase 5: Analysis & UX Tools
-**Goal**: Users have practical reloading tools beyond simulation: group analysis at the range, input sanity checking, and printable records
-**Depends on**: Phase 1
-**Requirements**: TOOL-01, TOOL-02, TOOL-03
-**Success Criteria** (what must be TRUE):
-  1. User can place shots on a virtual target and see calculated MOA, extreme spread, standard deviation, mean radius, and CEP
-  2. User receives warnings when simulation inputs are inconsistent (bullet diameter vs bore diameter mismatch, charge weight vs case capacity mismatch, etc.)
-  3. User can generate and print a formatted load data sheet with all parameters, expected results, safety status, and notes
-**Plans**: 3 plans
-
-Plans:
-- [ ] 05-01: Build shot group analysis tool with interactive target canvas
-- [ ] 05-02: Implement input validation inspector with cross-checks
-- [ ] 05-03: Build printable load data sheet generator
-
-### Phase 6: 2D/3D Viewers
-**Goal**: Users can see accurate, interactive visual representations of their cartridges and rifles generated from database dimensions
+### Phase 4: Search and Pagination
+**Goal**: Users can efficiently find components in large databases using fuzzy text search, multi-field filters, and paginated results
 **Depends on**: Phase 3
-**Requirements**: VIEW-01, VIEW-02, VIEW-03, VIEW-04
+**Requirements**: SRC-01, SRC-02, SRC-03
 **Success Criteria** (what must be TRUE):
-  1. Cartridge detail page shows a 2D SVG technical drawing with all CIP/SAAMI dimensions annotated and interactive hover for values
-  2. Rifle detail page shows a 2D cross-section SVG showing chamber, bore, and barrel profile with dimensions
-  3. Cartridge detail page includes a 3D rotatable model generated parametrically from cartridge dimensions using React Three Fiber
-  4. Rifle detail page includes a 3D rotatable model showing barrel, chamber, and action cross-section
-**Plans**: 3 plans
+  1. All component list endpoints (GET /powders, /bullets, /cartridges) return paginated responses with items, total, page, and size fields
+  2. User can search by name with typo tolerance (e.g., "hodgon" finds "Hodgdon") and results appear within 100ms
+  3. User can filter components by manufacturer, caliber family, and quality level, and filters combine correctly (AND logic)
+**Plans**: TBD
 
 Plans:
-- [ ] 06-01: Build 2D SVG cartridge and rifle technical drawings
-- [ ] 06-02: Build 3D interactive cartridge viewer (React Three Fiber + LatheGeometry)
-- [ ] 06-03: Build 3D interactive rifle viewer with cutaway toggle
+- [ ] 04-01: TBD
 
-### Phase 7: Community Features
-**Goal**: Users contribute real-world firing data to improve powder model accuracy, creating a network effect that no desktop tool can match
-**Depends on**: Phase 1, Phase 3, Phase 4
-**Requirements**: COMM-01, COMM-02, COMM-03, COMM-04
+### Phase 5: Import Pipelines and Fixture Data
+**Goal**: Simulator ships with 200+ powders, 100-200 bullets, and 50+ cartridges pre-loaded from authoritative sources, with batch import capability for future expansion
+**Depends on**: Phase 3 (new columns must exist), Phase 4 (search endpoints must handle large datasets)
+**Requirements**: PWD-01, PWD-05, BUL-01, BUL-02, BUL-03, BUL-04, CRT-01, CRT-02, CRT-03
 **Success Criteria** (what must be TRUE):
-  1. User can submit chronograph data (velocities, charge weight, components) and the system calculates prediction error vs current model
-  2. When enough submissions exist for a powder, the system can derive optimized burn parameters using global optimization and the powder quality level upgrades automatically
-  3. User can publish, browse, filter, and rate community load recipes with associated chrono data
-  4. User can import PressureTrace II data and see it overlaid on the simulated pressure curve
-  5. Community-submitted data passes safety validation (charge weight bounds, velocity sanity checks) before acceptance
-**Plans**: 5 plans
+  1. After fresh Docker boot, the powder database contains 200+ records imported from GRT community data with burn model parameters populated
+  2. After fresh Docker boot, the bullet database contains 100-200 records from Sierra, Hornady, Berger, Nosler, and Lapua covering .308, 6.5CM, .223, .300WM calibers
+  3. After fresh Docker boot, the cartridge database contains 50+ records with CIP/SAAMI max pressure, case capacity, bore/groove diameter, and parent cartridge lineage
+  4. User can batch-import GRT powder XML with collision handling (skip duplicates or overwrite), and duplicate powder names across markets are linked via aliases (e.g., ADI AR2208 = Hodgdon Varget)
+  5. Bullet records tolerate missing fields (nullable length_mm, bc_g7) with completeness indicators, and can be batch-imported from JSON fixture files
+**Plans**: TBD
 
 Plans:
-- [ ] 07-01: Build authentication infrastructure (JWT + device-based)
-- [ ] 07-02: Build chrono data submission pipeline with safety validation
-- [ ] 07-03: Implement reverse-engineering algorithm for powder parameter optimization
-- [ ] 07-04: Build shared load recipes (publish, browse, filter, rate)
-- [ ] 07-05: Implement PressureTrace II data import and overlay
+- [ ] 05-01: TBD
+- [ ] 05-02: TBD
+- [ ] 05-03: TBD
+
+### Phase 6: Frontend Integration
+**Goal**: Users interact with the expanded databases through searchable pickers, paginated tables, and quality badges -- replacing flat dropdowns that cannot scale past 50 items
+**Depends on**: Phase 3 (quality API), Phase 4 (search/pagination API)
+**Requirements**: QLT-01, SRC-04, SRC-05
+**Success Criteria** (what must be TRUE):
+  1. All component list pages (/powders, /bullets, /cartridges) display quality badges (green/yellow/red) on every record
+  2. Simulation form uses searchable picker modals (with debounced text input) instead of flat Select dropdowns for powder, bullet, and cartridge selection
+  3. Component list pages support smooth pagination with page controls, and navigating between pages does not flash empty content (keepPreviousData)
+**Plans**: TBD
+
+Plans:
+- [ ] 06-01: TBD
+- [ ] 06-02: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
+Phases execute in numeric order: 3 -> 4 -> 5 -> 6
 
-Note: Phases 3, 4, and 5 have minimal interdependency and could overlap. Phase 6 depends on Phase 3 for populated databases. Phase 7 depends on Phases 1, 3, and 4.
+Note: Phase 5 (fixture data compilation) can begin in parallel with Phase 6 (frontend) once Phase 4 is stable, since they modify different layers.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 1. 3-Curve Burn Model | v1.1 | 3/3 | Complete | 2026-02-21 |
 | 2. Extended Simulation Charts | v1.1 | 4/4 | Complete | 2026-02-21 |
-| 3. Data Import Pipeline | v1.2 | 0/4 | Not started | - |
-| 4. Advanced Simulation Models | v1.2 | 0/3 | Not started | - |
-| 5. Analysis & UX Tools | v1.2 | 0/3 | Not started | - |
-| 6. 2D/3D Viewers | v1.2 | 0/3 | Not started | - |
-| 7. Community Features | v1.2 | 0/5 | Not started | - |
+| 3. Schema and Quality System | v1.2 | 0/? | Not started | - |
+| 4. Search and Pagination | v1.2 | 0/? | Not started | - |
+| 5. Import Pipelines and Fixture Data | v1.2 | 0/? | Not started | - |
+| 6. Frontend Integration | v1.2 | 0/? | Not started | - |

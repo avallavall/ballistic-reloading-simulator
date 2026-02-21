@@ -4,15 +4,17 @@
 
 See: .planning/PROJECT.md (updated 2026-02-21)
 
-**Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases and modern web UX.
-**Current focus:** v1.2 Component Databases + Search
+**Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases so users can simulate immediately without manual data entry.
+**Current focus:** Phase 3 - Schema and Quality System (v1.2)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-21 — Milestone v1.2 started
+Phase: 3 of 6 (Schema and Quality System)
+Plan: 0 of ? in current phase
+Status: Ready to plan
+Last activity: 2026-02-21 — Roadmap created for v1.2
+
+Progress: [=====-----] 54% (7 plans complete across all milestones)
 
 ## Performance Metrics
 
@@ -27,13 +29,22 @@ Last activity: 2026-02-21 — Milestone v1.2 started
 |-------|-------|-------|----------|
 | 1 - 3-Curve Burn Model | 3/3 | 20min | 6.7min |
 | 2 - Extended Simulation Charts | 4/4 | 19min | 4.8min |
+| 3 - Schema and Quality System | 0/? | - | - |
+
+**Recent Trend:**
+- Last 5 plans: 7.5, 6.5, 6, 5, 4, 5, 4.5 min
+- Trend: Improving
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-See milestones/v1.1-ROADMAP.md for full v1.1 decision history.
+Recent decisions affecting current work:
+
+- [v1.2 scope]: Ship 100-200 bullets in v1.2, expand to 500+ in v1.3
+- [v1.2 scope]: pg_trgm for fuzzy search (no Elasticsearch); server-side pagination (no client-side virtualization)
+- [v1.2 scope]: Per-entity paginated response models (not Generic[T]) for FastAPI compatibility
 
 ### Pending Todos
 
@@ -41,11 +52,13 @@ None.
 
 ### Blockers/Concerns
 
-- GRT community database on GitHub (zen/grt_databases) has only 12 powder files. Full 200+ dataset may require GRT installation export.
-- Bullet data compilation (500+ bullets) requires manual work from manufacturer specs -- no automated source exists.
+- GRT community database on GitHub (zen/grt_databases) has limited files. Full 200+ powder dataset may require GRT installation export or manual curation.
+- Bullet data compilation (100-200 bullets) requires manual work from manufacturer PDF specs -- no automated source exists.
+- Breaking API contract: list endpoints change from raw arrays to `{items, total, page, size}` wrappers -- all frontend hooks must update simultaneously.
+- pg_trgm not available in aiosqlite test environment -- search tests need separate PostgreSQL integration test markers.
 
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Starting v1.2 milestone
+Stopped at: Roadmap created for v1.2 milestone
 Resume file: None
