@@ -15,6 +15,7 @@ import type {
   LadderTestInput,
   ParametricSearchInput,
   ParametricSearchResponse,
+  ValidationResponse,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -289,6 +290,16 @@ export async function runParametricSearch(
   return request<ParametricSearchResponse>('/simulate/parametric', {
     method: 'POST',
     body: JSON.stringify(input),
+  });
+}
+
+// ============================================================
+// Validation
+// ============================================================
+
+export async function runValidation(): Promise<ValidationResponse> {
+  return request<ValidationResponse>('/simulate/validate', {
+    method: 'POST',
   });
 }
 

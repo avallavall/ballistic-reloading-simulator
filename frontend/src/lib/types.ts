@@ -288,3 +288,31 @@ export interface ParametricSearchResponse {
   viable_powders: number;
   total_time_ms: number;
 }
+
+// ============================================================
+// Validation
+// ============================================================
+
+export interface ValidationLoadResult {
+  load_id: string;
+  caliber: string;
+  bullet_desc: string;
+  powder_name: string;
+  charge_gr: number;
+  barrel_length_mm: number;
+  published_velocity_fps: number;
+  predicted_velocity_fps: number;
+  error_pct: number;
+  is_pass: boolean;
+  source: string;
+}
+
+export interface ValidationResponse {
+  results: ValidationLoadResult[];
+  total_loads: number;
+  passing_loads: number;
+  pass_rate_pct: number;
+  mean_error_pct: number;
+  max_error_pct: number;
+  worst_load_id: string;
+}

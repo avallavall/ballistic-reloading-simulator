@@ -12,6 +12,7 @@ import {
   Ruler,
   BarChart2,
   Search,
+  ShieldCheck,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -30,6 +31,7 @@ const navItems: { href: string; label: string; icon: typeof Home; indent?: boole
   { href: '/powders', label: 'Polvoras', icon: Flame },
   { href: '/powders/compare', label: 'Comparar Polvoras', icon: Flame, indent: true },
   { href: '/powders/search', label: 'Busqueda Parametrica', icon: Search, indent: true },
+  { href: '/validation', label: 'Validacion', icon: ShieldCheck },
   { href: '/bullets', label: 'Proyectiles', icon: Target },
   { href: '/cartridges', label: 'Cartuchos', icon: Disc },
   { href: '/rifles', label: 'Rifles', icon: Ruler },
