@@ -1,825 +1,745 @@
-# Architecture Patterns
+# Architecture: Component Database Integration
 
-**Domain:** Internal ballistics simulation v2 -- web-based reloading tool
-**Researched:** 2026-02-20
+**Domain:** Internal ballistics simulator -- component database expansion
+**Researched:** 2026-02-21
+**Confidence:** HIGH (based on direct codebase analysis + established PostgreSQL/SQLAlchemy patterns)
 
-## Current Architecture (Baseline)
+## System Overview: Current vs Target
 
-The existing system is a clean three-tier architecture: Next.js 14 frontend -> FastAPI REST API -> PostgreSQL 16. The physics engine (`app.core`) is properly isolated from the HTTP layer. The ODE solver (`solver.py`) takes pure dataclass parameters and returns a `SimResult` dataclass. This separation is the most important architectural asset -- v2 features must preserve it.
-
-```
-Frontend (Next.js 14, Client-Side)
-  |
-  | HTTP (JSON over REST)
-  v
-API Layer (FastAPI, /api/v1/*)
-  |
-  +--- CRUD Routers (powders, bullets, cartridges, rifles, loads)
-  +--- Simulation Router (/simulate/direct, /simulate/ladder, /simulate/parametric)
-  |       |
-  |       | Pure function call (dataclasses in, dataclass out)
-  |       v
-  |    Physics Core (app.core.solver.simulate())
-  |       |
-  |       +--- thermodynamics.py (Noble-Abel EOS, Vieille burn rate, form function)
-  |       +--- internal_ballistics.py (Lagrange pressure, free volume)
-  |       +--- structural.py (hoop stress, case expansion, erosion)
-  |       +--- harmonics.py (barrel frequency, OBT)
-  |       +--- heat_transfer.py (Thornhill convective model)
-  |       |
-  |       v
-  |    SciPy solve_ivp (RK45, 4-variable ODE: Z, x, v, Q_loss)
-  |
-  +--- Data Access (SQLAlchemy AsyncSession + asyncpg)
-  |       |
-  |       v
-  |    PostgreSQL 16 (6 tables, UUID PKs, JSONB for curves)
-  |
-  v
-Seed Data (22 powders, bullets, cartridges, 5 rifles)
-```
-
-## Recommended Architecture for v2
-
-The v2 architecture extends the existing structure with four new subsystems. The core principle is: **extend the existing layers, do not introduce new horizontal layers**. Each v2 feature plugs into the existing structure at a well-defined point.
+### Current State
 
 ```
-Frontend (Next.js 14, Client-Side)
-  |
-  +--- Existing Pages (simulation, ladder, CRUD, parametric search)
-  +--- NEW: Additional Chart Components (burn progress, energy, temp/heat)
-  +--- NEW: 3D Viewer Components (React Three Fiber, dynamically loaded)
-  +--- NEW: Community Pages (submission, browse, powder quality dashboard)
-  |
-  | HTTP (JSON over REST)
-  v
-API Layer (FastAPI, /api/v1/*)
-  |
-  +--- Existing Routers (powders, bullets, cartridges, rifles, loads, simulate, chrono)
-  +--- NEW: /api/v1/import/* (GRT DB import, manufacturer data ETL)
-  +--- NEW: /api/v1/community/* (data submission, reverse-engineering)
-  +--- NEW: /api/v1/validate/* (validation test suite reporting)
-  |
-  +--- Physics Core (app.core)
-  |       |
-  |       +--- MODIFIED: thermodynamics.py (add 3-curve form function)
-  |       +--- MODIFIED: solver.py (extend ODE to 5 variables: Z, x, v, Q_loss, Z2)
-  |       +--- NEW: burn_model.py (3-curve burn rate dispatcher)
-  |       +--- NEW: reverse_engineer.py (chrono -> parameter optimization)
-  |       +--- NEW: validation.py (compare sim results to published data)
-  |       |
-  |       v
-  |    SciPy solve_ivp (RK45) + scipy.optimize (for reverse engineering)
-  |
-  +--- Data Access Layer
-  |       |
-  |       v
-  |    PostgreSQL 16 (extended schema: ~12 tables)
-  |       +--- EXISTING: powders, bullets, cartridges, rifles, loads, simulation_results
-  |       +--- MODIFIED: powders (add 3-curve fields: z1, z2, Bp, Br, Brp, a0, quality_level)
-  |       +--- NEW: community_submissions (chrono data submissions)
-  |       +--- NEW: validation_references (published load manual data)
-  |       +--- NEW: powder_quality_votes (community quality ratings)
-  |       +--- NEW: shared_loads (published community load recipes)
-  |       +--- NEW: import_batches (ETL batch tracking)
-  |
-  +--- NEW: Import Pipeline (app.import_pipeline)
-  |       +--- grt_parser.py (EXISTING, extended)
-  |       +--- grt_converter.py (EXISTING, extended for 3-curve)
-  |       +--- manufacturer_etl.py (NEW: bullet/cartridge data from specs)
-  |       +--- bulk_import.py (NEW: batch import orchestration)
-  |
-  v
-External Data Sources
-  +--- GitHub: zen/grt_databases (200+ .propellant XML files)
-  +--- Manufacturer specs (Sierra, Hornady, Nosler, Berger, Lapua)
-  +--- Published load manuals (Hodgdon, Sierra, Hornady, Nosler)
+Frontend (Next.js 14)                    Backend (FastAPI)                Database (PostgreSQL 16)
++-----------------------+     REST      +---------------------------+    +---------------------+
+| /powders  (flat list) | ----------->  | GET /api/v1/powders       | -> | powders (22 rows)   |
+| /bullets  (flat list) | ----------->  | GET /api/v1/bullets       | -> | bullets (10 rows)   |
+| /cartridges (flat)    | ----------->  | GET /api/v1/cartridges    | -> | cartridges (5 rows) |
++-----------------------+               | POST /powders/import-grt  |    +---------------------+
+                                        +---------------------------+
 ```
 
-### Component Boundaries
+**Problems at scale:**
+- `GET /powders` returns `list[PowderResponse]` with no pagination (loads ALL)
+- No search/filter query params on any list endpoint
+- Seed data is Python dicts in `initial_data.py` (10 powders, 10 bullets, 5 cartridges)
+- No data provenance tracking (who added it, when, from what source)
+- No quality/confidence metadata on records
+- Frontend `usePowders()` fetches entire list into memory on every mount
+- `unique=True` constraint on `name` is good for dedup but insufficient for fuzzy matching
 
-| Component | Responsibility | Communicates With | v2 Changes |
-|-----------|---------------|-------------------|------------|
-| `app.core.solver` | ODE integration, SimResult production | `thermodynamics`, `internal_ballistics`, `structural`, `harmonics`, `heat_transfer` | Extend ODE to support 3-curve model; add Z2 state variable; emit new curve data (burn progress, energy, temperature) |
-| `app.core.thermodynamics` | EOS, burn rate law, form function | `solver` (called during ODE RHS evaluation) | Add `form_function_3curve()` with z1/z2 breakpoints; add piecewise Vieille burn rate |
-| `app.core.burn_model` (NEW) | Dispatch between 2-curve and 3-curve models | `solver`, `thermodynamics` | New module: decides which burn model to use based on powder parameters; encapsulates the 3-phase logic |
-| `app.core.reverse_engineer` (NEW) | Derive powder params from chrono data | `solver`, `scipy.optimize` | New module: runs optimization loop, calls solver repeatedly |
-| `app.core.validation` (NEW) | Compare sim output to reference data | `solver`, database | New module: runs sim with reference load data, computes error metrics |
-| `app.api.simulate` | HTTP endpoint coordination | `solver`, database models | Extend DirectSimulationResponse with new curve arrays; add burn_progress_curve, energy_curve, temperature_curve |
-| `app.api.import_` (NEW) | Bulk data import endpoints | `grt_parser`, `grt_converter`, `manufacturer_etl`, database | New router: POST /import/grt-powders, POST /import/bullets, POST /import/cartridges |
-| `app.api.community` (NEW) | Community data submission endpoints | `reverse_engineer`, database | New router: POST /community/submit-chrono, GET /community/shared-loads |
-| `app.api.validate` (NEW) | Validation test reporting | `validation`, database | New router: POST /validate/run-suite, GET /validate/results |
-| Frontend 3D Viewers (NEW) | Interactive 3D rifle/cartridge models | React Three Fiber, Next.js dynamic import | New component directory: `components/viewers/` with RifleViewer3D, CartridgeViewer3D |
-| Frontend Charts (EXTENDED) | Simulation result visualization | Recharts, simulation hooks | Add BurnProgressChart, EnergyChart, TemperatureChart to `components/charts/` |
-| Frontend Community Pages (NEW) | Community interaction UI | TanStack Query, new API hooks | New pages: `community/submit/page.tsx`, `community/browse/page.tsx` |
-
-## Data Flow: 3-Curve Burn Model
-
-This is the most architecturally significant change. The 3-curve model modifies the innermost loop of the physics engine.
-
-### Current 2-Curve Model Flow
+### Target State
 
 ```
-PowderParams (burn_rate_coeff, burn_rate_exp, theta)
-  |
-  v
-form_function(Z, theta) -> psi = (theta+1)*Z - theta*Z^2  [single quadratic]
-  |
-  v
-vieille_burn_rate(P, a1, n) -> r_b = a1 * P^n  [single law for all Z]
-  |
-  v
-ODE: dZ/dt = r_b / e1  [single burn rate equation]
+Frontend (Next.js 14)                       Backend (FastAPI)                      Database (PostgreSQL 16)
++-----------------------------+   REST     +-------------------------------+      +--------------------------+
+| /powders                    | -------->  | GET /powders?q=&mfg=&page=   | ---> | powders (200+ rows)      |
+|   Search bar + filters      |            |   pg_trgm fuzzy + pagination |      |   + data_source          |
+|   Paginated table           |            |                              |      |   + quality_score        |
+|   Quality badge per row     |            | POST /powders/import/grt     |      |   + GIN trigram index    |
+| /bullets                    | -------->  | GET /bullets?q=&cal=&page=   | ---> | bullets (500+ rows)      |
+|   Search + caliber filter   |            |   pg_trgm fuzzy + pagination |      |   + data_source          |
+|   Manufacturer facets       |            |                              |      |   + bullet_type          |
+| /cartridges                 | -------->  | GET /cartridges?q=&page=     | ---> | cartridges (50+ rows)    |
+|   Search + filter           |            |   pg_trgm fuzzy + pagination |      |   + parent_cartridge     |
++-----------------------------+            +-------------------------------+      +--------------------------+
+                                           | POST /admin/import/bullets   |
+                                           | POST /admin/import/cartridges|
+                                           +-------------------------------+
 ```
 
-### Proposed 3-Curve Model Flow
+## Component Boundaries: New vs Modified
 
-```
-PowderParams (Ba, Bp, Br, Brp, k, z1, z2, a0, web_thickness)
-  |
-  v
-burn_model.select_phase(Z, z1, z2) -> phase (INITIAL | MAIN | TAILOFF)
-  |
-  v
-form_function_3curve(Z, phase, Bp, Br, Brp) -> psi
-  |   Phase 1 (Z < z1): psi = f1(Z, Bp)         [initial ignition]
-  |   Phase 2 (z1 <= Z < z2): psi = f2(Z, Bp, Br)  [main combustion]
-  |   Phase 3 (Z >= z2): psi = f3(Z, Br, Brp)    [tail-off]
-  |
-  v
-vieille_burn_rate_phased(P, Ba, phase) -> r_b
-  |   Each phase can have different rate law coefficients
-  |
-  v
-ODE: dZ/dt = r_b / e1  [same structure, different rate function]
-```
+### Modified Components (Existing Files)
 
-**Key architectural decision: The ODE system structure does NOT need to change.** The 3-curve model changes the `form_function` and `vieille_burn_rate` implementations, not the ODE variables. The existing 4-variable system (Z, x, v, Q_loss) remains sufficient. The Z variable already tracks burn progress from 0 to 1; the 3-curve model simply changes what happens at different Z values.
+| Component | File | Changes Required |
+|-----------|------|-----------------|
+| Powder model | `backend/app/models/powder.py` | Add `data_source`, `quality_score`, `quality_detail`, `created_at`, `updated_at` columns |
+| Bullet model | `backend/app/models/bullet.py` | Add `bullet_type`, `data_source`, `quality_score`, `caliber_family`, `bearing_surface_mm`, timestamps |
+| Cartridge model | `backend/app/models/cartridge.py` | Add `data_source`, `parent_cartridge_id` (self-FK), extra CIP/SAAMI dims, timestamps |
+| Powder schema | `backend/app/schemas/powder.py` | Add quality/source fields to Response, pagination wrapper |
+| Bullet schema | `backend/app/schemas/bullet.py` | Add quality/source/type fields, pagination wrapper |
+| Cartridge schema | `backend/app/schemas/cartridge.py` | Add source/relationship fields, pagination wrapper |
+| Powders API | `backend/app/api/powders.py` | Add pagination, search, filter query params to `list_powders()` |
+| Bullets API | `backend/app/api/bullets.py` | Add pagination, search, filter query params to `list_bullets()` |
+| Cartridges API | `backend/app/api/cartridges.py` | Add pagination, search, filter query params |
+| Seed data | `backend/app/seed/initial_data.py` | Replace Python dicts with JSON fixture loader |
+| Frontend types | `frontend/src/lib/types.ts` | Add quality/source/pagination fields to interfaces |
+| Frontend API | `frontend/src/lib/api.ts` | Add search/filter/pagination params to get functions |
+| usePowders hook | `frontend/src/hooks/usePowders.ts` | Paginated queries with search params |
+| useBullets hook | `frontend/src/hooks/useBullets.ts` | Paginated queries with search params |
+| Powders page | `frontend/src/app/powders/page.tsx` | Search bar, filter dropdowns, paginated table, quality badges |
+| Bullets page | `frontend/src/app/bullets/page.tsx` | Search bar, caliber filter, paginated table |
+| Cartridges page | `frontend/src/app/cartridges/page.tsx` | Search bar, filter, paginated table |
 
-**Backward compatibility:** The existing 2-curve powders (with `burn_rate_coeff` and `burn_rate_exp` but no `z1`, `z2`, `Bp`, `Br`, `Brp`) continue to work unchanged. The `burn_model` dispatcher checks whether 3-curve parameters exist and falls back to the 2-curve model if they do not. This is implemented by checking `PowderParams.z1` -- if it is None or 0.0, use the 2-curve model.
+### New Components
 
-**Implementation approach:**
+| Component | File | Purpose |
+|-----------|------|---------|
+| Bullet import endpoint | `backend/app/api/import_bullets.py` | Batch JSON import with validation and dedup |
+| Cartridge import endpoint | `backend/app/api/import_cartridges.py` | Batch JSON import for CIP/SAAMI specs |
+| Import service | `backend/app/services/import_service.py` | Shared batch processing: validate, dedup, score, insert |
+| Quality scorer | `backend/app/services/quality_scorer.py` | Compute quality_score from data completeness + source reliability |
+| Search helpers | `backend/app/services/search.py` | Reusable pg_trgm search query builder |
+| Pagination helper | `backend/app/services/pagination.py` | Offset/limit pagination with total count |
+| Bullet JSON fixtures | `backend/app/seed/fixtures/bullets.json` | 500+ bullets from manufacturer specs |
+| Cartridge JSON fixtures | `backend/app/seed/fixtures/cartridges.json` | 50+ cartridges with CIP/SAAMI specs |
+| Powder JSON fixtures | `backend/app/seed/fixtures/powders.json` | 200+ powders (converted from GRT community DB) |
+| Alembic migration 005 | `backend/app/db/migrations/versions/005_component_db_expansion.py` | Schema changes + pg_trgm extension + GIN indexes |
+| SearchInput component | `frontend/src/components/ui/SearchInput.tsx` | Debounced search input with clear button |
+| QualityBadge component | `frontend/src/components/ui/QualityBadge.tsx` | Red/yellow/green confidence badge |
+| Pagination component | `frontend/src/components/ui/Pagination.tsx` | Page navigation controls |
+| FilterDropdown component | `frontend/src/components/ui/FilterDropdown.tsx` | Multi-select filter for manufacturer/caliber |
+
+## Architectural Patterns
+
+### Pattern 1: Server-Side Paginated Search
+
+**What:** All list endpoints gain `?q=`, `?page=`, `?size=`, and entity-specific filter params. Backend does the filtering/pagination, frontend only holds one page of data.
+
+**Why this over client-side filtering:** At 500+ bullets the current approach of fetching all records and rendering them in a flat `<Table>` will cause noticeable lag. At 200+ powders it is already borderline. Server-side filtering is the correct architecture for datasets that grow continuously.
+
+**Trade-offs:** More complex API (query params, total count), but eliminates frontend memory/rendering bottlenecks. Existing small datasets (rifles, loads) keep their simple list endpoints unchanged.
+
+**Example backend pattern:**
 
 ```python
-# app/core/burn_model.py
+# backend/app/services/pagination.py
+from dataclasses import dataclass
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 @dataclass
-class BurnPhase:
-    INITIAL = 1   # Z < z1
-    MAIN = 2      # z1 <= Z < z2
-    TAILOFF = 3   # Z >= z2
+class PaginatedResult:
+    items: list
+    total: int
+    page: int
+    size: int
 
-def form_function_3curve(Z: float, z1: float, z2: float,
-                          Bp: float, Br: float, Brp: float) -> float:
-    """GRT-style 3-curve form function.
+async def paginate(
+    db: AsyncSession,
+    query,
+    page: int = 1,
+    size: int = 50,
+) -> PaginatedResult:
+    # Count total
+    count_q = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(count_q)).scalar() or 0
 
-    Phase 1 (0 <= Z < z1): Progressive ignition
-      psi = (1 + Bp) * Z - Bp * Z^2
-    Phase 2 (z1 <= Z < z2): Main combustion
-      psi = psi(z1) + slope * (Z - z1)  [matched at z1]
-    Phase 3 (z2 <= Z <= 1): Tail-off
-      psi = psi(z2) + Br * (Z - z2) + Brp * (Z - z2)^2  [matched at z2]
-    """
-    # ... continuous piecewise implementation with C0 continuity at breakpoints
+    # Fetch page
+    offset = (page - 1) * size
+    result = await db.execute(query.offset(offset).limit(size))
+    items = result.scalars().all()
 
-def get_burn_rate(Z: float, P: float, powder: PowderParams) -> float:
-    """Select burn rate based on whether 3-curve params exist."""
-    if powder.z1 is not None and powder.z1 > 0:
-        return _burn_rate_3curve(Z, P, powder)
-    else:
-        return vieille_burn_rate(P, powder.burn_rate_coeff, powder.burn_rate_exp)
+    return PaginatedResult(items=items, total=total, page=page, size=size)
 ```
 
-**Confidence: MEDIUM.** The exact form function equations for GRT's 3 curves are not published in official documentation. The z1/z2 breakpoint model with Bp/Br/Brp coefficients is reconstructed from GRT parameter names and ballistics literature. The implementation will need calibration against known GRT results for validation.
-
-## Data Flow: 3D Viewer Components
-
-The 3D viewers are purely frontend components. They do not require any backend changes. They generate parametric geometry from existing dimension data already stored in the database.
-
-### Component Architecture
-
-```
-Rifle Detail Page (rifles/[id]/page.tsx)
-  |
-  +--- RifleInfo (existing data display)
-  +--- RifleViewer3D (NEW, dynamically loaded)
-        |
-        +--- next/dynamic({ ssr: false }) -- critical: Three.js cannot render on server
-        |
-        v
-      React Three Fiber <Canvas>
-        +--- <RifleModel rifle={rifleData} cartridge={cartridgeData} />
-        |       |
-        |       +--- BarrelGeometry (LatheGeometry from barrel profile points)
-        |       +--- ChamberGeometry (LatheGeometry from chamber dimensions)
-        |       +--- ReceiverGeometry (simplified box/cylinder)
-        |
-        +--- <OrbitControls /> (from @react-three/drei)
-        +--- <ambientLight />, <directionalLight />
-        +--- <CutawayToggle /> (state: full | cutaway)
-```
-
-### Parametric Geometry Generation
-
-The 3D models are NOT pre-built assets. They are generated parametrically from the dimension data already in the database:
-
-- **Barrel**: `LatheGeometry` from a 2D profile defined by `barrel_length_mm`, `bore_diameter_mm`, `groove_diameter_mm`, and a standard barrel taper profile
-- **Chamber**: `LatheGeometry` from `case_length_mm`, `bore_diameter_mm`, shoulder angle (derived from cartridge family)
-- **Cartridge**: `LatheGeometry` from `case_length_mm`, `overall_length_mm`, `bore_diameter_mm`, neck diameter, shoulder angle, rim diameter
-
-This approach means:
-1. No 3D asset files to manage or store
-2. Every rifle/cartridge gets a unique accurate model
-3. Dimensions update automatically when the user edits them
-4. The cutaway view is achieved by clipping planes, not separate geometry
-
-### Performance Considerations
-
-| Concern | Approach |
-|---------|----------|
-| Bundle size | Dynamic import with `ssr: false`; Three.js (~600KB) only loads on pages that need it |
-| Initial load | The 3D viewer is below the fold; lazy load with IntersectionObserver |
-| Render performance | Parametric geometry is simple (< 10K vertices); no performance concern |
-| Mobile | Detect touch devices; offer 2D SVG fallback for low-end devices |
-
-### Technology Choice
-
-**Use React Three Fiber (@react-three/fiber) + @react-three/drei** because:
-- React component model integrates naturally with Next.js
-- Drei provides OrbitControls, PerspectiveCamera, and other helpers out of the box
-- The pmndrs/react-three-next starter demonstrates the integration pattern
-- Three.js LatheGeometry is perfect for rotationally symmetric objects (barrels, cartridges)
-
-**Do NOT use raw Three.js** because it requires imperative scene management that conflicts with React's declarative model.
-
-**Confidence: HIGH.** React Three Fiber is the established standard for Three.js + React integration. LatheGeometry for rotationally symmetric objects is a well-documented Three.js pattern.
-
-## Data Flow: Community Data Submission Pipeline
-
-This is the most architecturally complex new feature because it introduces user-generated content and a reverse-engineering algorithm.
-
-### Submission Flow
-
-```
-User fires 10 rounds, measures velocities with chronograph
-  |
-  v
-Frontend: Community Submit Page
-  |  User enters:
-  |    - Rifle ID (from their rifles)
-  |    - Powder ID + charge weight
-  |    - Bullet ID
-  |    - Measured velocities (array of FPS values, or CSV import)
-  |    - Ambient temperature (optional)
-  |
-  | POST /api/v1/community/submit-chrono
-  v
-Backend: community.py endpoint
-  |  1. Validate input (minimum 5 shots required)
-  |  2. Calculate measured stats (mean velocity, SD, ES)
-  |  3. Run current sim with user's components -> predicted velocity
-  |  4. Calculate prediction error (measured vs predicted)
-  |  5. Store submission in community_submissions table
-  |
-  | If enough submissions exist for this powder:
-  v
-Reverse Engineering Pipeline (triggered async or on-demand)
-  |
-  +--- reverse_engineer.py
-  |      |
-  |      | Optimization loop:
-  |      |   1. Collect all submissions for powder X
-  |      |   2. Define objective: minimize sum of (predicted_vel - measured_vel)^2
-  |      |      across all submissions
-  |      |   3. Parameters to optimize: Ba, Bp (and z1, z2, Br, Brp if 3-curve)
-  |      |   4. Use scipy.optimize.minimize (L-BFGS-B, bounded)
-  |      |      or scipy.optimize.least_squares (Levenberg-Marquardt)
-  |      |   5. Each evaluation: run simulate() with candidate params
-  |      |   6. Output: optimized powder parameters + residual error
-  |      |
-  |      v
-  |   Updated powder parameters (stored as new quality level)
-  |
-  v
-Powder Quality System
-  |  RED: < 3 submissions, parameters are manufacturer defaults or estimates
-  |  YELLOW: 3-10 submissions, parameters partially calibrated
-  |  GREEN: 10+ submissions with < 2% mean velocity error
-```
-
-### Reverse Engineering Algorithm
+**Example endpoint:**
 
 ```python
-# app/core/reverse_engineer.py
-
-from scipy.optimize import least_squares
-
-def reverse_engineer_powder(
-    submissions: list[CommunitySubmission],
-    powder: PowderParams,
-    bullets: dict[UUID, BulletParams],
-    cartridges: dict[UUID, CartridgeParams],
-    rifles: dict[UUID, RifleParams],
-) -> OptimizedPowderResult:
-    """Optimize powder burn parameters to match community velocity data.
-
-    Each submission has: rifle_id, bullet_id, charge_grains, measured_velocity_fps.
-    We vary Ba (and optionally Bp, Br) to minimize velocity prediction error.
-    """
-    def residuals(params):
-        # params = [Ba, burn_rate_exp] for 2-curve
-        #        = [Ba, Bp, Br, z1, z2] for 3-curve
-        test_powder = powder._replace(burn_rate_coeff=params[0], ...)
-        errors = []
-        for sub in submissions:
-            sim = simulate(test_powder, bullets[sub.bullet_id], ...)
-            errors.append(sim.muzzle_velocity_fps - sub.measured_velocity_fps)
-        return errors
-
-    result = least_squares(residuals, x0=initial_guess, bounds=bounds)
-    return OptimizedPowderResult(params=result.x, residual=result.cost)
+# Modified GET /powders
+@router.get("", response_model=PaginatedPowderResponse)
+async def list_powders(
+    q: str | None = None,
+    manufacturer: str | None = None,
+    has_3curve: bool | None = None,
+    min_quality: int | None = None,
+    sort_by: str = "name",
+    page: int = Query(1, ge=1),
+    size: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+):
+    query = select(Powder)
+    if q:
+        query = query.where(Powder.name.op("%")(q))  # pg_trgm similarity
+    if manufacturer:
+        query = query.where(Powder.manufacturer.ilike(f"%{manufacturer}%"))
+    if has_3curve is True:
+        query = query.where(Powder.ba.isnot(None))
+    if min_quality is not None:
+        query = query.where(Powder.quality_score >= min_quality)
+    query = query.order_by(getattr(Powder, sort_by, Powder.name))
+    return await paginate(db, query, page, size)
 ```
 
-**Performance concern:** Each optimization evaluation calls `simulate()`, which runs `solve_ivp`. With 20 submissions and 50 optimization iterations, that is 1000 solver calls. At ~5ms per call, this takes ~5 seconds. This is acceptable for a background task but too slow for a synchronous API call.
-
-**Solution: Run reverse-engineering as a background task.** Use FastAPI's `BackgroundTasks` or a simple queue. The API endpoint accepts the request and returns immediately with a job ID. The frontend polls for completion.
-
-**Confidence: HIGH.** SciPy's `least_squares` with Levenberg-Marquardt is the standard tool for this type of parameter optimization. The GRT community uses a similar approach (OBT tuning adjusts Ba +/-3%).
-
-## Data Flow: Bulk Data Import (GRT Database)
-
-### Import Pipeline
-
-```
-GitHub: zen/grt_databases/powders/*.propellant
-  |
-  | Clone or download ZIP
-  v
-POST /api/v1/import/grt-powders (multipart file upload: ZIP of .propellant files)
-  |
-  v
-Backend: import_.py endpoint
-  |
-  +--- grt_parser.parse_propellant_zip(zip_bytes)
-  |      -> list[dict] (raw GRT params per powder)
-  |
-  +--- For each parsed powder:
-  |      |
-  |      +--- grt_converter.convert_grt_to_powder(raw_params)
-  |      |      -> PowderCreate dict with:
-  |      |           force_constant_j_kg (from Qex * 1000 * (k-1))
-  |      |           covolume_m3_kg (from eta/1000)
-  |      |           gamma (k directly)
-  |      |           density_g_cm3 (pc/1000)
-  |      |           flame_temp_k (derived)
-  |      |           burn_rate_coeff (from Ba via vivacity conversion)
-  |      |           burn_rate_exp (estimated from Bp/Ba ratio)
-  |      |           grt_params (raw JSON storage of ALL GRT fields)
-  |      |           NEW: z1, z2, Bp, Br, Brp (3-curve params, stored directly)
-  |      |           NEW: quality_level ('red'|'yellow'|'green' from Qlty field)
-  |      |
-  |      +--- Upsert: INSERT ON CONFLICT (name) DO UPDATE
-  |             Skip if existing record has higher quality_level
-  |
-  +--- import_batch record (track what was imported, when, from where)
-  |
-  v
-Response: { created: N, updated: N, skipped: N, errors: [...] }
-```
-
-### Schema Changes Required for Import
-
-The `powders` table needs these new columns for 3-curve support:
-
-```sql
-ALTER TABLE powders ADD COLUMN z1 FLOAT;           -- burn-up limit 1 (phase transition)
-ALTER TABLE powders ADD COLUMN z2 FLOAT;           -- burn-up limit 2 (tail-off transition)
-ALTER TABLE powders ADD COLUMN bp FLOAT;           -- progressivity factor
-ALTER TABLE powders ADD COLUMN br FLOAT;           -- regressivity factor
-ALTER TABLE powders ADD COLUMN brp FLOAT;          -- combined factor
-ALTER TABLE powders ADD COLUMN a0 FLOAT;           -- initial burn coefficient
-ALTER TABLE powders ADD COLUMN qex_kj_kg FLOAT;    -- specific explosive heat
-ALTER TABLE powders ADD COLUMN quality_level VARCHAR(10) DEFAULT 'red';
-ALTER TABLE powders ADD COLUMN temp_coefficient FLOAT;  -- temperature sensitivity
-```
-
-These are all nullable -- existing 2-curve powders have NULLs and continue to work with the 2-curve model. The solver checks for the presence of z1/z2 to decide which model to use.
-
-**Confidence: HIGH.** The GRT parser and converter already exist in the codebase. The 3-curve parameter columns are a straightforward Alembic migration. The grt_params JSON column already stores raw GRT data; the new columns make the 3-curve fields queryable.
-
-## Data Flow: Validation Test Suite
-
-### Validation Architecture
-
-```
-Published Load Data (manual entry or structured import)
-  |
-  +--- validation_references table:
-  |      cartridge_id, powder_id, bullet_id, charge_grains,
-  |      published_velocity_fps, published_pressure_psi,
-  |      source (e.g., "Hodgdon 2024 Manual"),
-  |      barrel_length_inches
-  |
-  v
-POST /api/v1/validate/run-suite
-  |
-  v
-validation.py
-  |  For each reference record:
-  |    1. Build simulation params from reference data
-  |    2. Run simulate()
-  |    3. Compare predicted vs published:
-  |       - velocity_error_pct = (predicted - published) / published * 100
-  |       - pressure_error_pct = (predicted - published) / published * 100
-  |    4. Aggregate: mean error, max error, std dev
-  |
-  v
-Validation Report
-  {
-    total_cases: 150,
-    velocity_mean_error_pct: 3.2,
-    velocity_max_error_pct: 8.1,
-    pressure_mean_error_pct: 5.4,
-    by_cartridge: { ".308 Win": { ... }, "6.5 CM": { ... } },
-    by_powder: { "Varget": { ... }, "H4350": { ... } },
-    worst_cases: [ ... ]
-  }
-```
-
-This is essentially a CI-compatible test harness. The validation suite can be run:
-1. On demand via API (for development)
-2. As part of `pytest` (for CI/CD)
-3. After a bulk powder import (to verify new data quality)
-
-**Confidence: HIGH.** This is a standard testing pattern -- compare model predictions to known-good reference data. No novel architecture needed.
-
-## Data Flow: Additional Chart Types
-
-### New Charts and Their Data Sources
-
-All new charts consume data that the solver ALREADY computes internally but does not currently expose.
-
-| Chart | X-Axis | Y-Axis | Data Source | Backend Change |
-|-------|--------|--------|-------------|----------------|
-| Burn Progress | Time (ms) | Z (burn fraction, 0-1) | `Z_arr` from solver | Add `burn_curve` to SimResult |
-| Gas Generation Rate | Time (ms) | dZ/dt (1/s) | Derivative of Z_arr | Add `gas_generation_curve` to SimResult |
-| Energy | Distance (mm) | KE (ft-lbs or J) | `v_arr` + bullet mass | Add `energy_curve` to SimResult |
-| Recoil Impulse | Time (ms) | Impulse (N*s) | Momentum integration | Add `recoil_curve` to SimResult |
-| Gas Temperature | Time (ms) | T (K) | T_gas from heat transfer | Add `temperature_curve` to SimResult |
-| Heat Flux | Time (ms) | q (W/m2) | dQ_dt from ODE | Add `heat_flux_curve` to SimResult |
-| Sensitivity Bands | Charge (gr) | Velocity/Pressure | Multiple sim runs at +/- charge | Endpoint change: run 3 sims (nominal, +delta, -delta) |
-
-### Implementation Pattern
-
-The solver currently computes 200 sample points along the trajectory. For each new curve, we add a list of dicts to SimResult following the exact same pattern as `pressure_curve` and `velocity_curve`:
-
-```python
-# In solver.py, after the main integration loop:
-burn_curve = []
-energy_curve = []
-temperature_curve = []
-
-for i in range(n_points):
-    burn_curve.append({"t_ms": float(t_eval[i] * 1000.0), "z": float(Z_arr[i])})
-    ke_j = 0.5 * bullet.mass_kg * v_arr[i]**2
-    energy_curve.append({"x_mm": float(x_arr[i] / MM_TO_M), "ke_ft_lbs": float(ke_j * J_TO_FT_LBS)})
-    # temperature from ODE internal state or recomputed
-    ...
-```
-
-Frontend chart components follow the existing pattern exactly (PressureTimeChart.tsx is the template):
+**Example frontend hook:**
 
 ```typescript
-// components/charts/BurnProgressChart.tsx
-export default function BurnProgressChart({ data }: { data: BurnPoint[] }) {
-  return (
-    <ResponsiveContainer>
-      <LineChart data={data}>
-        <XAxis dataKey="t_ms" />
-        <YAxis dataKey="z" domain={[0, 1]} />
-        <Line dataKey="z" stroke="#22c55e" />
-      </LineChart>
-    </ResponsiveContainer>
-  );
+// Modified usePowders with search params
+export function usePowders(params: PowderSearchParams = {}) {
+  return useQuery({
+    queryKey: ['powders', params],
+    queryFn: () => getPowders(params),
+    placeholderData: keepPreviousData,  // Smooth pagination transitions
+  });
 }
 ```
 
-**Key decision: Add curves to SimResult, NOT as separate endpoints.** The data is computed during the same solver run. Splitting into separate API calls would mean re-running the simulation. The JSONB storage in PostgreSQL handles the additional curve data without schema changes.
+### Pattern 2: pg_trgm Fuzzy Search (Not Full-Text Search)
 
-**Confidence: HIGH.** This is a direct extension of existing patterns. No architectural decisions needed -- just more data points from the same computation.
+**What:** Use PostgreSQL's `pg_trgm` extension with GIN indexes for fuzzy name/manufacturer matching. NOT the full-text search (`tsvector/tsquery`) system.
 
-## Database Schema Additions
+**Why pg_trgm over full-text search:** Component names are short strings ("Hodgdon Varget", "Sierra 168gr HPBT MK"), not documents. pg_trgm excels at partial string matching, typo tolerance, and "contains" queries on short text. Full-text search is designed for stemming/ranking natural language documents -- overkill and wrong tool here.
 
-### New and Modified Tables
+**Why pg_trgm over application-level:** Pushing search to PostgreSQL uses GIN indexes for sub-millisecond response on 500+ rows. Application-level filtering loads all data into Python memory on every request.
 
-```
-MODIFIED: powders
-  + z1 FLOAT NULL                    -- 3-curve: burn-up limit 1
-  + z2 FLOAT NULL                    -- 3-curve: burn-up limit 2
-  + bp FLOAT NULL                    -- progressivity factor
-  + br FLOAT NULL                    -- regressivity factor
-  + brp FLOAT NULL                   -- combined brisance/progressivity
-  + a0 FLOAT NULL                    -- initial burn coefficient
-  + qex_kj_kg FLOAT NULL            -- specific explosive heat (kJ/kg)
-  + quality_level VARCHAR(10) DEFAULT 'red'  -- red/yellow/green
-  + temp_coefficient FLOAT NULL      -- temperature sensitivity (%/degC)
+**Trade-offs:** Requires `CREATE EXTENSION pg_trgm` in migration. GIN indexes add ~10% storage overhead. Worth it for the search quality.
 
-NEW: community_submissions
-  id UUID PK
-  user_identifier VARCHAR(100)       -- device ID or future user ID
-  powder_id UUID FK -> powders
-  bullet_id UUID FK -> bullets
-  rifle_id UUID FK -> rifles
-  charge_grains FLOAT NOT NULL
-  measured_velocities JSONB NOT NULL  -- array of FPS values
-  mean_velocity_fps FLOAT NOT NULL
-  sd_fps FLOAT NOT NULL
-  es_fps FLOAT NOT NULL
-  predicted_velocity_fps FLOAT       -- sim result at time of submission
-  prediction_error_pct FLOAT         -- (predicted - measured) / measured * 100
-  ambient_temp_c FLOAT NULL
-  notes TEXT NULL
-  created_at TIMESTAMPTZ NOT NULL
+**Implementation:**
 
-NEW: validation_references
-  id UUID PK
-  cartridge_name VARCHAR(100) NOT NULL
-  powder_name VARCHAR(100) NOT NULL
-  bullet_weight_gr FLOAT NOT NULL
-  bullet_name VARCHAR(100) NULL
-  charge_grains FLOAT NOT NULL
-  published_velocity_fps FLOAT NOT NULL
-  published_pressure_psi FLOAT NULL
-  barrel_length_inches FLOAT NOT NULL
-  source VARCHAR(200) NOT NULL       -- "Hodgdon 2024", "Sierra 6th Edition", etc.
-  cartridge_id UUID FK -> cartridges NULL  -- linked after matching
-  powder_id UUID FK -> powders NULL        -- linked after matching
-  bullet_id UUID FK -> bullets NULL        -- linked after matching
-  created_at TIMESTAMPTZ NOT NULL
-
-NEW: shared_loads
-  id UUID PK
-  user_identifier VARCHAR(100)
-  load_id UUID FK -> loads
-  title VARCHAR(200) NOT NULL
-  description TEXT NULL
-  tags JSONB NULL                     -- ["precision", "hunting", "competition"]
-  votes INT DEFAULT 0
-  is_public BOOLEAN DEFAULT true
-  created_at TIMESTAMPTZ NOT NULL
-
-NEW: import_batches
-  id UUID PK
-  source VARCHAR(100) NOT NULL       -- "grt_community", "hodgdon_manual", etc.
-  file_name VARCHAR(200) NULL
-  records_created INT DEFAULT 0
-  records_updated INT DEFAULT 0
-  records_skipped INT DEFAULT 0
-  errors JSONB NULL
-  created_at TIMESTAMPTZ NOT NULL
-```
-
-### Migration Strategy
-
-All schema changes are additive (new columns with NULL defaults, new tables). This means:
-1. No data loss
-2. No downtime
-3. Existing API contracts preserved
-4. Alembic migrations can be applied incrementally per phase
-
-## Patterns to Follow
-
-### Pattern 1: Solver Extension via Composition
-
-**What:** Extend the solver by composing new modules, not modifying the ODE structure.
-
-**When:** Adding the 3-curve model, new output curves, or new physics models.
-
-**Example:**
 ```python
-# burn_model.py acts as a dispatcher
-def get_form_function(Z, powder):
-    if powder.has_3curve_params():
-        return form_function_3curve(Z, powder.z1, powder.z2, powder.Bp, powder.Br, powder.Brp)
-    else:
-        return form_function(Z, powder.theta)
+# In Alembic migration 005
+def upgrade() -> None:
+    # Enable trigram extension
+    op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
 
-# solver.py calls the dispatcher instead of form_function directly
-psi = burn_model.get_form_function(Z_c, powder)
+    # GIN indexes for fuzzy search
+    op.execute(
+        "CREATE INDEX ix_powders_name_trgm ON powders USING gin (name gin_trgm_ops)"
+    )
+    op.execute(
+        "CREATE INDEX ix_bullets_name_trgm ON bullets USING gin (name gin_trgm_ops)"
+    )
+    op.execute(
+        "CREATE INDEX ix_cartridges_name_trgm ON cartridges USING gin (name gin_trgm_ops)"
+    )
 ```
 
-**Why:** Preserves backward compatibility. Existing tests continue to pass. New model is testable in isolation.
+**Query pattern:**
 
-### Pattern 2: Dynamic Component Loading for 3D
-
-**What:** Use Next.js `dynamic()` with `{ ssr: false }` for all Three.js components.
-
-**When:** Any component that imports from `@react-three/fiber` or `three`.
-
-**Example:**
-```typescript
-// pages/rifles/[id]/page.tsx
-import dynamic from 'next/dynamic';
-
-const RifleViewer3D = dynamic(
-  () => import('@/components/viewers/RifleViewer3D'),
-  { ssr: false, loading: () => <div className="h-96 bg-slate-800 animate-pulse" /> }
-);
-```
-
-**Why:** Three.js requires browser APIs (WebGL, canvas). SSR will crash. Dynamic import also splits the bundle so Three.js is only loaded when the 3D viewer is visible.
-
-### Pattern 3: Background Processing for Heavy Computation
-
-**What:** Use FastAPI BackgroundTasks for operations that take > 2 seconds.
-
-**When:** Reverse engineering, bulk import, validation suite.
-
-**Example:**
 ```python
-@router.post("/community/reverse-engineer/{powder_id}")
-async def trigger_reverse_engineering(
-    powder_id: UUID,
-    background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_db)
-):
-    # Validate powder exists and has enough submissions
-    job_id = uuid4()
-    background_tasks.add_task(run_reverse_engineering, powder_id, job_id)
-    return {"job_id": job_id, "status": "processing"}
+# backend/app/services/search.py
+from sqlalchemy import or_, func
+
+def apply_fuzzy_search(query, model, search_term: str):
+    """Apply pg_trgm similarity search on name and manufacturer."""
+    return query.where(
+        or_(
+            model.name.op("%")(search_term),
+            model.manufacturer.op("%")(search_term),
+        )
+    ).order_by(
+        func.similarity(model.name, search_term).desc()
+    )
 ```
 
-**Why:** The reverse-engineering loop runs 100-1000 solver evaluations. This would timeout a synchronous HTTP request.
+### Pattern 3: Quality Scoring Model
 
-### Pattern 4: Incremental Curve Emission
+**What:** Each component record carries a `quality_score` (0-100 integer) and `data_source` enum. The score is computed deterministically from data completeness and source reliability.
 
-**What:** Add new curve arrays to SimResult without changing the API contract for existing clients.
+**Why a computed score, not manual curation:** With 200+ powders and 500+ bullets, manual quality assignment does not scale. A deterministic formula based on field completeness + source tier is reproducible and auditable.
 
-**When:** Adding burn progress, energy, temperature curves.
+**Quality tiers (for UI badge display):**
 
-**Example:**
+| Score Range | Badge | Color | Meaning |
+|-------------|-------|-------|---------|
+| 80-100 | Alta | GREEN | High confidence: manufacturer data + 3-curve params + community validated |
+| 50-79 | Media | YELLOW | Moderate: has core params but missing some optional data or single source |
+| 0-49 | Baja | RED | Low: estimated/derived params, unverified, significant gaps |
+
+**Scoring formula for powders:**
+
 ```python
-# SimResult gains optional fields with defaults
+# backend/app/services/quality_scorer.py
+def score_powder(powder_data: dict) -> int:
+    score = 0
+
+    # Source tier (40 points max)
+    source = powder_data.get("data_source", "manual")
+    source_scores = {
+        "grt_community": 30,   # GRT community DB (crowd-validated)
+        "manufacturer": 40,     # Manufacturer tech sheet
+        "manual": 10,           # User-entered
+        "estimated": 5,         # Derived/estimated values
+    }
+    score += source_scores.get(source, 5)
+
+    # 3-curve completeness (30 points)
+    three_curve_fields = ["ba", "bp", "br", "brp", "z1", "z2"]
+    present = sum(1 for f in three_curve_fields if powder_data.get(f) is not None)
+    score += int((present / len(three_curve_fields)) * 30)
+
+    # Core thermodynamic completeness (20 points)
+    core_fields = ["force_constant_j_kg", "covolume_m3_kg", "flame_temp_k",
+                   "gamma", "density_g_cm3"]
+    core_present = sum(1 for f in core_fields
+                       if powder_data.get(f) and powder_data[f] > 0)
+    score += int((core_present / len(core_fields)) * 20)
+
+    # Has GRT raw params stored (10 points)
+    if powder_data.get("grt_params"):
+        score += 10
+
+    return min(100, score)
+```
+
+**Scoring formula for bullets:**
+
+```python
+def score_bullet(bullet_data: dict) -> int:
+    score = 0
+
+    # Source tier (40 points)
+    source = bullet_data.get("data_source", "manual")
+    source_scores = {
+        "manufacturer": 40, "community": 25, "manual": 10, "estimated": 5
+    }
+    score += source_scores.get(source, 5)
+
+    # Has both G1 and G7 BC (20 points)
+    if bullet_data.get("bc_g1") and bullet_data.get("bc_g7"):
+        score += 20
+    elif bullet_data.get("bc_g1") or bullet_data.get("bc_g7"):
+        score += 10
+
+    # Physical dimensions complete (20 points)
+    dim_fields = ["weight_grains", "diameter_mm", "length_mm", "sectional_density"]
+    dims = sum(1 for f in dim_fields
+               if bullet_data.get(f) and bullet_data[f] > 0)
+    score += int((dims / len(dim_fields)) * 20)
+
+    # Material specified (10 points)
+    if bullet_data.get("material") and bullet_data["material"] != "unknown":
+        score += 10
+
+    # Bullet type classified (10 points)
+    if bullet_data.get("bullet_type"):
+        score += 10
+
+    return min(100, score)
+```
+
+### Pattern 4: JSON Fixture Seed Data
+
+**What:** Replace the current Python dict arrays in `initial_data.py` with JSON fixture files loaded from `backend/app/seed/fixtures/`. The seed function reads JSON, validates through Pydantic schemas, runs quality scoring, and bulk-inserts.
+
+**Why JSON over Python dicts:** JSON fixtures can be generated programmatically (GRT XML parser output, web scraper output), version-controlled as data files, and validated independently. Python dicts require code changes to add data. With 500+ bullets, embedding data in Python source is unmaintainable.
+
+**Why fixtures over migration-based seed:** Migrations are for schema changes. Data seeding is a separate concern that should be idempotent and re-runnable. The current `seed_initial_data()` pattern in the lifespan event is correct -- it checks if data exists and skips if so. JSON fixtures extend this pattern cleanly.
+
+**Structure:**
+
+```
+backend/app/seed/
+  fixtures/
+    powders.json       # 200+ powders (initially from GRT community DB conversion)
+    bullets.json       # 500+ bullets (from manufacturer spec sheets)
+    cartridges.json    # 50+ cartridges (from CIP/SAAMI standards)
+  initial_data.py      # Modified to load from fixtures/
+```
+
+**Fixture format (bullets.json example):**
+
+```json
+[
+  {
+    "name": "Sierra 168gr HPBT MatchKing .308",
+    "manufacturer": "Sierra",
+    "weight_grains": 168.0,
+    "diameter_mm": 7.82,
+    "length_mm": 31.2,
+    "bc_g1": 0.462,
+    "bc_g7": 0.218,
+    "sectional_density": 0.253,
+    "material": "copper",
+    "bullet_type": "HPBT",
+    "data_source": "manufacturer"
+  }
+]
+```
+
+### Pattern 5: Batch Import Pipeline
+
+**What:** A shared import service handles batch operations for all component types: parse input, validate each record, check for duplicates, score quality, bulk-insert.
+
+**Why a shared service, not per-endpoint logic:** The GRT import endpoint in `powders.py` already has 70 lines of inline import logic (pre-fetch existing, loop, convert, dedup, commit). Duplicating this for bullets and cartridges creates maintenance burden. Extract to a reusable service.
+
+**Pipeline stages:**
+
+```
+Input (JSON/XML/CSV)
+    |
+    v
+1. Parse -> list[dict]           # Format-specific parser (GRT XML, JSON fixture, CSV)
+    |
+    v
+2. Validate -> list[SchemaType]  # Pydantic schema validation, reject invalid
+    |
+    v
+3. Dedup -> list[SchemaType]     # Match on name (case-insensitive), report collisions
+    |
+    v
+4. Score -> list[SchemaType]     # Compute quality_score for each record
+    |
+    v
+5. Insert -> ImportResult        # Bulk insert, return created/skipped/errors
+```
+
+**Implementation:**
+
+```python
+# backend/app/services/import_service.py
+from dataclasses import dataclass
+
 @dataclass
-class SimResult:
-    # ... existing fields ...
-    burn_curve: list[dict] | None = None
-    energy_curve: list[dict] | None = None
-    temperature_curve: list[dict] | None = None
+class ImportResult:
+    created: int
+    updated: int
+    skipped: list[str]
+    errors: list[str]
+
+async def batch_import(
+    db: AsyncSession,
+    model_class,
+    records: list[dict],
+    scorer_fn,
+    overwrite: bool = False,
+    match_field: str = "name",
+) -> ImportResult:
+    """Generic batch import with dedup and quality scoring."""
+    # 1. Pre-fetch existing by match_field for O(1) lookup
+    existing_query = select(model_class)
+    existing_result = await db.execute(existing_query)
+    existing_map = {
+        getattr(r, match_field).lower(): r
+        for r in existing_result.scalars().all()
+    }
+
+    created, updated, skipped, errors = 0, 0, [], []
+
+    for record in records:
+        # 2. Score quality
+        record["quality_score"] = scorer_fn(record)
+
+        # 3. Check duplicate
+        key = record.get(match_field, "").lower()
+        if key in existing_map:
+            if overwrite:
+                existing = existing_map[key]
+                for k, v in record.items():
+                    setattr(existing, k, v)
+                updated += 1
+            else:
+                skipped.append(record.get(match_field, "unknown"))
+            continue
+
+        # 4. Insert
+        obj = model_class(**record)
+        db.add(obj)
+        existing_map[key] = obj
+        created += 1
+
+    if created or updated:
+        await db.commit()
+
+    return ImportResult(
+        created=created, updated=updated, skipped=skipped, errors=errors
+    )
 ```
 
-**Why:** Existing frontend code ignores fields it does not use. New charts are added to the simulation page independently. No breaking changes.
+## Data Flow Changes
+
+### Current: Simple CRUD Flow
+
+```
+User -> Page Mount -> useQuery(['powders']) -> GET /powders
+  -> SELECT * FROM powders ORDER BY name -> All rows -> Render full table
+```
+
+### Target: Paginated Search Flow
+
+```
+User types in search box -> Debounce 300ms -> useQuery(['powders', {q, page, filters}])
+  -> GET /powders?q=varget&page=1&size=50
+  -> SELECT * FROM powders
+       WHERE name % 'varget'
+       ORDER BY similarity(name, 'varget') DESC
+       LIMIT 50 OFFSET 0
+  -> Page of rows + total count
+  -> Render table + pagination controls + quality badges
+```
+
+### Import Flow
+
+```
+User uploads .zip / .json -> POST /powders/import-grt (or /admin/import/bullets)
+  -> Parse file (GRT XML parser, or JSON loader)
+  -> Validate each record through Pydantic schema
+  -> Pre-fetch existing names for O(1) dedup
+  -> Score quality for each record
+  -> Bulk insert (skip or overwrite duplicates)
+  -> Return ImportResult {created, updated, skipped, errors}
+  -> Frontend shows summary dialog (reuses existing pattern from powders page)
+  -> Invalidate query cache -> Re-fetch current page
+```
+
+## Database Schema Changes
+
+### Migration 005: Component DB Expansion
+
+```sql
+-- Enable trigram extension
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- === POWDERS: Add metadata columns ===
+ALTER TABLE powders ADD COLUMN data_source VARCHAR(20) DEFAULT 'manual';
+ALTER TABLE powders ADD COLUMN quality_score INTEGER DEFAULT 50;
+ALTER TABLE powders ADD COLUMN quality_detail JSONB;
+ALTER TABLE powders ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE powders ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- === BULLETS: Add metadata + type columns ===
+ALTER TABLE bullets ADD COLUMN bullet_type VARCHAR(30);
+ALTER TABLE bullets ADD COLUMN bearing_surface_mm FLOAT;
+ALTER TABLE bullets ADD COLUMN data_source VARCHAR(20) DEFAULT 'manual';
+ALTER TABLE bullets ADD COLUMN quality_score INTEGER DEFAULT 50;
+ALTER TABLE bullets ADD COLUMN caliber_family VARCHAR(20);
+ALTER TABLE bullets ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE bullets ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- === CARTRIDGES: Add metadata + relationship columns ===
+ALTER TABLE cartridges ADD COLUMN data_source VARCHAR(20) DEFAULT 'manual';
+ALTER TABLE cartridges ADD COLUMN quality_score INTEGER DEFAULT 50;
+ALTER TABLE cartridges ADD COLUMN shoulder_angle_deg FLOAT;
+ALTER TABLE cartridges ADD COLUMN neck_diameter_mm FLOAT;
+ALTER TABLE cartridges ADD COLUMN base_diameter_mm FLOAT;
+ALTER TABLE cartridges ADD COLUMN rim_diameter_mm FLOAT;
+ALTER TABLE cartridges ADD COLUMN cartridge_type VARCHAR(20);
+ALTER TABLE cartridges ADD COLUMN parent_cartridge_id UUID REFERENCES cartridges(id);
+ALTER TABLE cartridges ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
+ALTER TABLE cartridges ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- === GIN INDEXES for pg_trgm fuzzy search ===
+CREATE INDEX ix_powders_name_trgm ON powders USING gin (name gin_trgm_ops);
+CREATE INDEX ix_powders_mfg_trgm ON powders USING gin (manufacturer gin_trgm_ops);
+CREATE INDEX ix_bullets_name_trgm ON bullets USING gin (name gin_trgm_ops);
+CREATE INDEX ix_bullets_mfg_trgm ON bullets USING gin (manufacturer gin_trgm_ops);
+CREATE INDEX ix_cartridges_name_trgm ON cartridges USING gin (name gin_trgm_ops);
+
+-- === B-tree indexes for filtered queries ===
+CREATE INDEX ix_powders_quality ON powders (quality_score);
+CREATE INDEX ix_bullets_caliber ON bullets (caliber_family);
+CREATE INDEX ix_bullets_quality ON bullets (quality_score);
+CREATE INDEX ix_bullets_mfg ON bullets (manufacturer);
+CREATE INDEX ix_cartridges_quality ON cartridges (quality_score);
+
+-- === Backfill existing data ===
+UPDATE powders SET data_source = 'manual', quality_score = 50
+  WHERE data_source IS NULL;
+UPDATE bullets SET data_source = 'manual', quality_score = 50
+  WHERE data_source IS NULL;
+UPDATE cartridges SET data_source = 'manual', quality_score = 50
+  WHERE data_source IS NULL;
+
+-- Backfill caliber_family for existing bullets based on diameter
+UPDATE bullets SET caliber_family = '.224'
+  WHERE diameter_mm BETWEEN 5.5 AND 5.8;
+UPDATE bullets SET caliber_family = '.264'
+  WHERE diameter_mm BETWEEN 6.5 AND 6.8;
+UPDATE bullets SET caliber_family = '.308'
+  WHERE diameter_mm BETWEEN 7.7 AND 7.9;
+UPDATE bullets SET caliber_family = '.338'
+  WHERE diameter_mm BETWEEN 8.5 AND 8.7;
+```
+
+### Backward Compatibility
+
+All new columns are nullable or have defaults. No existing data is lost. No API contract changes for existing fields. The list endpoints gain optional query params but still work with no params (returning paginated results with default page=1, size=50).
+
+The `PaginatedResponse<T>` type already exists in `frontend/src/lib/types.ts` (line 267-273) but is unused. It becomes the standard response wrapper for all list endpoints.
+
+## New Column Summary Per Model
+
+### Powder (5 new columns)
+
+| Column | Type | Default | Purpose |
+|--------|------|---------|---------|
+| `data_source` | VARCHAR(20) | 'manual' | Provenance: manual, grt_community, manufacturer, estimated |
+| `quality_score` | INTEGER | 50 | Computed 0-100 confidence |
+| `quality_detail` | JSONB | null | Breakdown of score components for tooltip |
+| `created_at` | TIMESTAMPTZ | NOW() | Record creation timestamp |
+| `updated_at` | TIMESTAMPTZ | NOW() | Last modification timestamp |
+
+### Bullet (7 new columns)
+
+| Column | Type | Default | Purpose |
+|--------|------|---------|---------|
+| `bullet_type` | VARCHAR(30) | null | HPBT, FMJ, OTM, VLD, SP, etc. |
+| `bearing_surface_mm` | FLOAT | null | Bearing surface length for engraving calc |
+| `data_source` | VARCHAR(20) | 'manual' | Provenance tracking |
+| `quality_score` | INTEGER | 50 | Computed 0-100 confidence |
+| `caliber_family` | VARCHAR(20) | null | Grouping: .224, .264, .308, .338 etc. |
+| `created_at` | TIMESTAMPTZ | NOW() | Record creation timestamp |
+| `updated_at` | TIMESTAMPTZ | NOW() | Last modification timestamp |
+
+### Cartridge (10 new columns)
+
+| Column | Type | Default | Purpose |
+|--------|------|---------|---------|
+| `data_source` | VARCHAR(20) | 'manual' | Provenance tracking |
+| `quality_score` | INTEGER | 50 | Computed 0-100 confidence |
+| `shoulder_angle_deg` | FLOAT | null | CIP/SAAMI spec dimension |
+| `neck_diameter_mm` | FLOAT | null | CIP/SAAMI spec dimension |
+| `base_diameter_mm` | FLOAT | null | CIP/SAAMI spec dimension |
+| `rim_diameter_mm` | FLOAT | null | CIP/SAAMI spec dimension |
+| `cartridge_type` | VARCHAR(20) | null | rimless, belted, rimmed, rebated |
+| `parent_cartridge_id` | UUID FK | null | Self-referencing for wildcat lineage |
+| `created_at` | TIMESTAMPTZ | NOW() | Record creation timestamp |
+| `updated_at` | TIMESTAMPTZ | NOW() | Last modification timestamp |
+
+## Frontend Architecture Changes
+
+### Pagination Strategy: Server-Side with keepPreviousData
+
+Do NOT use TanStack Virtual / windowed scrolling. At 500 bullets with server-side pagination (50 per page = 10 pages), standard DOM rendering is fast. Virtualization adds complexity (TanStack Virtual dependency, row height management, scroll position) that is not justified at this scale.
+
+Use TanStack Query's `keepPreviousData` (via `placeholderData: keepPreviousData`) for smooth page transitions where the previous page's data stays visible while the next page loads.
+
+### Search UX: Debounced Input with URL Sync
+
+```
+SearchInput (300ms debounce) -> URL query params (?q=&page=&mfg=)
+  -> useQuery(['powders', params]) re-fetches
+  -> Table re-renders with server results
+  -> Pagination resets to page 1 on new search
+```
+
+URL-synced search means users can bookmark/share filtered views and browser back/forward works correctly.
+
+### Quality Badge Component
+
+```typescript
+// frontend/src/components/ui/QualityBadge.tsx
+function QualityBadge({ score }: { score: number }) {
+  if (score >= 80) return <Badge variant="success">Alta</Badge>;
+  if (score >= 50) return <Badge variant="warning">Media</Badge>;
+  return <Badge variant="danger">Baja</Badge>;
+}
+```
+
+Reuses existing `<Badge>` component (already has success/warning/danger variants). No new UI library needed.
+
+### No New Frontend Dependencies Required
+
+| Need | Solution | Why Not Add Library |
+|------|----------|---------------------|
+| Pagination UI | Custom `<Pagination>` component | Simple prev/next/page buttons with Tailwind |
+| Search input | Custom `<SearchInput>` with `setTimeout` debounce | 10 lines of code vs adding lodash/use-debounce |
+| Filter dropdowns | Custom `<FilterDropdown>` | Existing Tailwind dropdown patterns |
+| Quality badges | Existing `<Badge>` component | Already has success/warning/danger variants |
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Monolithic Solver Function
+### Anti-Pattern 1: Client-Side Search on Large Lists
 
-**What:** Adding all 3-curve logic directly into `solver.py`'s `_build_ode_system()`.
+**What people do:** Fetch all 500 bullets, filter with `array.filter()` in the component.
+**Why it is wrong:** Every keystroke re-renders 500 rows. Initial fetch sends 500 objects over the wire. Memory grows linearly with database.
+**Do this instead:** Server-side search with pg_trgm. Frontend only ever holds one page (50 items).
 
-**Why bad:** `solver.py` is already 445 lines. Adding 3-curve logic, new curve emissions, and sensitivity analysis inline would make it unmaintainable and untestable.
+### Anti-Pattern 2: Separate Quality Table
 
-**Instead:** Create `burn_model.py` as a dispatcher. Each burn model variant is a separate function with its own unit tests. The solver calls the dispatcher.
+**What people do:** Create a `component_quality` join table with FK to powder/bullet/cartridge.
+**Why it is wrong:** Adds a JOIN to every list query. Quality is 1:1 with the component, not a separate entity. Complicates the import pipeline.
+**Do this instead:** Inline `quality_score` INTEGER column directly on each component table. Recompute on import/update. Store breakdown in `quality_detail` JSONB for debugging.
 
-### Anti-Pattern 2: Pre-built 3D Assets
+### Anti-Pattern 3: Overwriting User Data on Bulk Import
 
-**What:** Creating .glTF/.glb files for each rifle/cartridge combination.
+**What people do:** Bulk import blindly overwrites all matching records.
+**Why it is wrong:** Users may have manually corrected values (custom covolume, calibrated burn rate). Overwriting destroys their work.
+**Do this instead:** Default to skip-if-exists. Offer explicit overwrite option with collision list UI (the existing GRT import pattern in `powders.py` already does this correctly -- extend to all import types).
 
-**Why bad:** There are thousands of rifle/cartridge combinations. Managing a 3D asset library is a content management problem, not a software problem. Assets go stale when dimensions change.
+### Anti-Pattern 4: Using Full-Text Search for Component Names
 
-**Instead:** Generate geometry parametrically from dimension data using Three.js LatheGeometry. The dimensions already exist in the database.
+**What people do:** Set up `tsvector` columns, `to_tsquery`, and text search configurations.
+**Why it is wrong:** Component names are short identifiers, not natural language documents. Full-text search applies stemming ("bullets" matches "bullet" but "168gr" does not match "168 grain"). Trigram search handles partial matches ("168" matches "168gr HPBT") and typo tolerance ("hodgon" matches "Hodgdon").
+**Do this instead:** pg_trgm with GIN indexes. Simpler setup, better results for this data shape.
 
-### Anti-Pattern 3: Synchronous Reverse Engineering
+### Anti-Pattern 5: Virtualizing Tables at This Scale
 
-**What:** Running the scipy.optimize loop inside the HTTP request handler.
+**What people do:** Add TanStack Virtual or react-window for 500-row tables.
+**Why it is wrong:** Server-side pagination means the DOM never holds more than 50 rows. Virtualization adds scroll-position management complexity, makes Ctrl+F unreliable, and breaks accessibility for screen readers.
+**Do this instead:** Server-side pagination with 50 items per page. Standard DOM rendering handles 50 table rows trivially.
 
-**Why bad:** 100+ solver evaluations take 5-30 seconds. This blocks the API worker thread and will hit the rate limiter and/or timeout.
+## Build Order (Dependency-Driven)
 
-**Instead:** Background task with job ID. Frontend polls for completion. Consider FastAPI BackgroundTasks for simplicity (no need for Celery/Redis at this scale).
+### Phase 1: Backend Foundation (no frontend changes)
 
-### Anti-Pattern 4: Separate Endpoints per Chart
+**Dependencies: None (pure backend, can be deployed independently)**
 
-**What:** Creating `/api/v1/simulate/burn-curve`, `/api/v1/simulate/energy-curve`, etc.
+1. **Alembic migration 005** -- schema changes, pg_trgm extension, GIN indexes, backfill existing data
+2. **Pagination service** -- `backend/app/services/pagination.py`
+3. **Search service** -- `backend/app/services/search.py`
+4. **Quality scorer** -- `backend/app/services/quality_scorer.py`
+5. **Update models** -- Add new columns to powder.py, bullet.py, cartridge.py
+6. **Update schemas** -- Add new fields to response schemas, add paginated response wrappers
+7. **Update list endpoints** -- Add pagination + search + filter params to GET /powders, /bullets, /cartridges
 
-**Why bad:** Each endpoint would re-run the same simulation. The data is computed in a single solver call. Separate endpoints waste CPU and introduce consistency issues (different random seeds, timing).
+**Verification:** Existing tests pass. New endpoints return paginated JSON. `curl` with `?q=varget` returns filtered results. Default (no params) returns first page of 50.
 
-**Instead:** Return all curves in a single response. Frontend components pick the curves they need.
+### Phase 2: Import Pipeline + Seed Data
 
-## Suggested Build Order (Dependencies)
+**Dependencies: Phase 1 (schema must have new columns for data_source, quality_score)**
 
-The v2 features have clear dependency chains. Build order must respect these:
+1. **Import service** -- `backend/app/services/import_service.py` (shared batch validate/dedup/insert)
+2. **Create fixtures directory** -- `backend/app/seed/fixtures/`
+3. **Generate powder fixtures** -- Convert GRT community DB XML to JSON using existing `grt_parser.py` + `grt_converter.py`
+4. **Curate bullet fixtures** -- Compile 500+ bullets from manufacturer spec PDFs into JSON
+5. **Curate cartridge fixtures** -- Compile 50+ cartridges from CIP/SAAMI specs into JSON
+6. **Update seed loader** -- Modify `initial_data.py` to load from fixtures + score quality
+7. **Bullet import endpoint** -- POST /admin/import/bullets
+8. **Cartridge import endpoint** -- POST /admin/import/cartridges
+9. **Refactor GRT import** -- Move inline logic from `powders.py` to use shared import service
 
-```
-Phase 1: 3-Curve Model Foundation
-  |  - Extend PowderParams dataclass with 3-curve fields
-  |  - Create burn_model.py dispatcher
-  |  - Implement form_function_3curve()
-  |  - Modify solver to call dispatcher
-  |  - Alembic migration for powders table
-  |  - Tests: 3-curve vs 2-curve parity, known GRT test cases
-  |
-  |  WHY FIRST: Every other feature benefits from better accuracy.
-  |  The 3-curve model is the core engine upgrade.
-  v
-Phase 2: Bulk Data Import + Additional Charts
-  |  (These two are independent and can run in parallel)
-  |
-  +--- 2a: Bulk Import Pipeline
-  |      - Extend grt_converter for 3-curve params
-  |      - POST /import/grt-powders endpoint
-  |      - Manufacturer bullet/cartridge ETL
-  |      - import_batches table
-  |
-  |      WHY SECOND: Populates the database with 200+ powders.
-  |      All downstream features need data to work with.
-  |
-  +--- 2b: Additional Charts
-  |      - Add burn_curve, energy_curve, temp_curve to SimResult
-  |      - BurnProgressChart, EnergyChart, TemperatureChart components
-  |      - Sensitivity analysis (run sim at +/- charge)
-  |
-  |      WHY PARALLEL: Pure additive. No dependency on import.
-  |      Extends existing solver output.
-  v
-Phase 3: Validation Test Suite
-  |  - validation_references table + seed data from load manuals
-  |  - validation.py comparison engine
-  |  - POST /validate/run-suite endpoint
-  |  - pytest integration for CI
-  |
-  |  DEPENDS ON: Phase 1 (3-curve model) + Phase 2a (imported powders)
-  |  Need accurate model + real data to validate against.
-  v
-Phase 4: Community Features
-  |  - community_submissions table
-  |  - POST /community/submit-chrono endpoint
-  |  - reverse_engineer.py optimization loop
-  |  - Powder quality level system
-  |  - shared_loads table + browse/submit pages
-  |
-  |  DEPENDS ON: Phase 1 (3-curve model) + Phase 3 (validation)
-  |  Need validated model before accepting community data.
-  |  Reverse engineering needs 3-curve params to optimize.
-  v
-Phase 5: 3D Viewers (Independent)
-  |  - Install @react-three/fiber + @react-three/drei
-  |  - RifleViewer3D component (LatheGeometry from dimensions)
-  |  - CartridgeViewer3D component
-  |  - 2D SVG cutaway fallback
-  |  - Integration into rifle/cartridge detail pages
-  |
-  |  INDEPENDENT: No backend dependency. Can be built any time.
-  |  Deferred because it is the lowest-impact feature for accuracy.
-```
+**Verification:** Fresh `docker-compose up` seeds 200+ powders, 500+ bullets, 50+ cartridges. All have quality scores. Import endpoints handle collisions correctly.
 
-### Dependency Graph (Simplified)
+### Phase 3: Frontend Integration
 
-```
-3-Curve Model (P1)
-  |
-  +---> Bulk Import (P2a) ---> Validation Suite (P3) ---> Community Features (P4)
-  |
-  +---> Additional Charts (P2b) [independent]
+**Dependencies: Phase 1 (paginated API must exist for hooks to consume)**
 
-3D Viewers (P5) [fully independent, no dependencies]
-```
+1. **Update types.ts** -- Add quality/source fields, update PaginatedResponse usage
+2. **Update api.ts** -- Add search/filter/pagination params to get functions
+3. **SearchInput component** -- Debounced input with clear button
+4. **QualityBadge component** -- Score-to-badge mapping (uses existing Badge)
+5. **Pagination component** -- Page navigation controls
+6. **FilterDropdown component** -- Multi-select for manufacturer/caliber
+7. **Update hooks** -- usePowders/useBullets/useCartridges with parameterized queries
+8. **Update /powders page** -- Search bar, filters, paginated table, quality badges
+9. **Update /bullets page** -- Search bar, caliber filter, paginated table
+10. **Update /cartridges page** -- Search bar, filter, paginated table
 
-## Scalability Considerations
+**Verification:** Pages load fast with 500+ items. Search returns results in <200ms. Pagination works. Quality badges display. Browser back/forward preserves search state.
 
-| Concern | Current (v1) | v2 Target | Approach |
-|---------|-------------|-----------|----------|
-| Powder database size | 22 powders | 200+ powders | No concern; index on name for search |
-| Simulation response size | ~50KB (200 points x 2 curves) | ~150KB (200 points x 7 curves) | Still small; JSONB handles it. Consider optional curve flag if needed |
-| Bulk import throughput | N/A | 200 powders in one batch | Sequential processing fine; ~1s total for parsing + DB writes |
-| Community submissions | N/A | 100-1000 records | Standard CRUD; no scaling concern |
-| Reverse engineering | N/A | ~5s per powder (100 evals x 50ms) | Background task; fine for single-user |
-| 3D rendering | N/A | Client-side only | Browser GPU handles it; parametric geometry is tiny |
-| Validation suite | N/A | 150 reference cases x ~50ms each = ~7.5s | Background task or dedicated endpoint; cache results |
+### Phase 4: Testing and Polish
+
+**Dependencies: Phases 1-3**
+
+1. **Backend tests** -- Pagination edge cases, search accuracy, import dedup, quality scoring
+2. **Migration test** -- Verify migration runs cleanly on fresh DB and on existing DB with data
+3. **Import pipeline tests** -- Batch import with collisions, invalid records, overwrite mode
+4. **Frontend smoke tests** -- Search, paginate, filter on each component page
+
+## Scaling Considerations
+
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| Current (22 powders, 10 bullets) | No changes needed, current flat list works |
+| Target (200 powders, 500 bullets, 50 cartridges) | Server-side pagination + pg_trgm. This is the sweet spot. |
+| Future (2000+ powders, 5000 bullets via community) | Add cursor-based pagination, consider Elasticsearch if pg_trgm becomes bottleneck. Current GIN indexes handle 10K rows easily. |
+
+**First bottleneck:** The parametric search endpoint (`POST /simulate/parametric`) iterates ALL powders. At 200+ powders this could take 20+ seconds. This is pre-existing and not worsened by this milestone, but should be noted. A future optimization would filter to compatible powders before simulating.
 
 ## Sources
 
-### Context7 / Official Documentation
-- SciPy solve_ivp documentation: https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html (HIGH confidence)
-- SciPy least_squares documentation: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.least_squares.html (HIGH confidence)
-- React Three Fiber official docs: https://r3f.docs.pmnd.rs/ (HIGH confidence)
-- pmndrs/react-three-next starter: https://github.com/pmndrs/react-three-next (HIGH confidence)
+- [PostgreSQL pg_trgm documentation](https://www.postgresql.org/docs/12/pgtrgm.html)
+- [Crunchy Data: Postgres Full-Text Search](https://www.crunchydata.com/blog/postgres-full-text-search-a-search-engine-in-a-database)
+- [Performant text searching in PSQL: trigrams vs full text search](https://medium.com/@daniel.tooke/performant-text-searching-and-indexes-in-psql-trigrams-like-and-full-text-search-784c000efaa6)
+- [SQLAlchemy pg_trgm discussion](https://github.com/sqlalchemy/sqlalchemy/discussions/7641)
+- [TanStack Table pagination guide](https://tanstack.com/table/v8/docs/guide/pagination)
+- [TanStack Virtual](https://tanstack.com/virtual/latest) (evaluated but rejected for this scale)
+- [Staging tables for faster bulk upserts with PostgreSQL](https://overflow.no/blog/2025/1/5/using-staging-tables-for-faster-bulk-upserts-with-python-and-postgresql/)
+- [SQLAlchemy 2.0 bulk insert patterns](https://docs.sqlalchemy.org/en/20/_modules/examples/performance/bulk_inserts.html)
+- [GRT propellant file format](https://grtools.de/doku.php?id=en:doku:file_propellant)
+- [GRT community databases on GitHub](https://github.com/zen/grt_databases)
 
-### Codebase Analysis (HIGH confidence)
-- Existing solver.py, thermodynamics.py, grt_parser.py, grt_converter.py analyzed directly
-- Current ODE system structure: 4 variables (Z, x, v, Q_loss)
-- Current GRT parameter handling: Ba, Bp, Br, Brp, k, z1, z2, eta, pc, pcd already parsed
-
-### GRT Technical References (MEDIUM confidence)
-- GRT propellant database page: https://grtools.de/doku.php?id=en:doku:dbpropellant (page currently 404, but parameter names confirmed via existing parser)
-- GRT community databases: https://github.com/zen/grt_databases (confirmed file structure)
-- GRT manual (Scribd): https://www.scribd.com/document/866321500/grt-manual-2021-09-29-en (limited technical depth accessible)
-- GRT powder model development discussion: https://forum.accurateshooter.com/threads/gathering-data-for-powder-model-development-gordons-reloading-tool.4072119/ (MEDIUM confidence)
-
-### Ballistics Literature (MEDIUM confidence)
-- Form function and z1/z2 breakpoints: https://www.jes.or.jp/mag/stem/Vol.76/documents/Vol.76,No.1,p.1-7.pdf
-- Internal ballistics modeling review: https://www.sciencedirect.com/science/article/pii/S2214914724001120
-- Experimental form function derivation: https://www.ballistics.org/docs/posterISB32.pdf
-
-### Web Search (LOW-MEDIUM confidence)
-- Three.js LatheGeometry documentation: https://threejs.org/docs/#api/en/geometries/LatheGeometry
-- React Three Fiber Next.js integration patterns: https://medium.com/@divyanshsharma0631/unlocking-the-third-dimension-building-immersive-3d-experiences-with-react-three-fiber-in-next-js-153397f27802
-- Reverse engineering powder models community discussion: https://www.shootersforum.com/threads/reverse-engineering-powder-for-gordons-reloading-tool.245682/
+---
+*Architecture research for: Component Database Integration into Ballistics Simulator*
+*Researched: 2026-02-21*
