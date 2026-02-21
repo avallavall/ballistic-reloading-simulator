@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 2 of 7 (Extended Simulation Charts)
-Plan: 1 of 3 in current phase (02-01 complete)
+Plan: 2 of 3 in current phase (02-02 complete)
 Status: In progress
-Last activity: 2026-02-21 -- 02-01-PLAN.md complete (extended solver curves + sensitivity endpoint)
+Last activity: 2026-02-21 -- 02-02-PLAN.md complete (frontend chart infrastructure + dashboard grid)
 
-Progress: [██░░░░░░░░] 19%
+Progress: [██▓░░░░░░░] 24%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 6.3min
-- Total execution time: 0.42 hours
+- Total plans completed: 5
+- Average duration: 6.2min
+- Total execution time: 0.52 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 - 3-Curve Burn Model | 3/3 | 20min | 6.7min |
-| 2 - Extended Simulation Charts | 1/3 | 5min | 5min |
+| 2 - Extended Simulation Charts | 2/3 | 11min | 5.5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (4min), 01-02 (6min), 01-03 (10min), 02-01 (5min)
-- Trend: Consistent pace, Phase 2 started
+- Last 5 plans: 01-02 (6min), 01-03 (10min), 02-01 (5min), 02-02 (6min)
+- Trend: Consistent pace, Phase 2 progressing well
 
 *Updated after each plan completion*
 
@@ -59,6 +59,11 @@ Recent decisions affecting current work:
 - [02-01]: Sensitivity endpoint runs 3 full simulations (center, +delta, -delta) returning complete DirectSimulationResponse for each
 - [02-01]: Rate limit sensitivity at 10/minute (same as direct sim)
 - [02-01]: _sim_result_to_response helper centralizes SimResult-to-API conversion
+- [02-02]: ChartTile uses lookup objects for Tailwind color classes (purge-safe) instead of template literals
+- [02-02]: EnergyRecoilChart stacks two sub-charts vertically (KE vs distance + recoil vs time) due to different x-axes
+- [02-02]: Single ChartModal instance at page level controlled by expandedChart state
+- [02-02]: html2canvas with dark bg (#0f172a) and 2x scale for PNG export quality
+- [02-02]: Domain color system: blue (P/V/harmonics), orange (burn), red (temperature), green (energy/recoil)
 
 ### Pending Todos
 
@@ -73,5 +78,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 02-01-PLAN.md -- Extended solver curves + sensitivity endpoint
+Stopped at: Completed 02-02-PLAN.md -- Frontend chart infrastructure + dashboard grid
 Resume file: None
