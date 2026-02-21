@@ -16,6 +16,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
 import Badge from '@/components/ui/Badge';
+import { getSourceLabel } from '@/lib/utils';
 import { usePowders, useCreatePowder, useUpdatePowder, useDeletePowder, useImportGrtPowders } from '@/hooks/usePowders';
 import type { PowderCreate } from '@/lib/types';
 
@@ -37,6 +38,7 @@ const emptyForm: PowderCreate = {
   z1: undefined,
   z2: undefined,
   a0: undefined,
+  web_thickness_mm: undefined,
 };
 
 const THREECURVE_FIELDS = [
@@ -97,9 +99,10 @@ export default function PowdersPage() {
       z1: powder.z1 ?? undefined,
       z2: powder.z2 ?? undefined,
       a0: powder.a0 ?? undefined,
+      web_thickness_mm: powder.web_thickness_mm ?? undefined,
     });
-    // Show advanced section if powder has 3-curve data
-    if (powder.has_3curve) {
+    // Show advanced section if powder has 3-curve data or web_thickness
+    if (powder.has_3curve || powder.web_thickness_mm != null) {
       setShowAdvanced(true);
     }
     setShowForm(true);
@@ -122,6 +125,12 @@ export default function PowdersPage() {
         cleanedForm[k] = null;
       }
     }
+    // Clean web_thickness_mm: undefined/NaN -> null
+    if (cleanedForm.web_thickness_mm === undefined || (typeof cleanedForm.web_thickness_mm === 'number' && isNaN(cleanedForm.web_thickness_mm))) {
+      cleanedForm.web_thickness_mm = null;
+    }
+    // Remove data_source from submission (server manages it)
+    delete cleanedForm.data_source;
 
     if (editingId) {
       updateMutation.mutate(
@@ -402,6 +411,19 @@ export default function PowdersPage() {
                           placeholder={field.placeholder}
                         />
                       ))}
+                      <Input
+                        label="Espesor de alma (mm)"
+                        id="web_thickness_mm"
+                        type="number"
+                        step="0.01"
+                        min="0.1"
+                        max="2.0"
+                        value={form.web_thickness_mm ?? ''}
+                        onChange={(e) => setForm(prev => ({
+                          ...prev,
+                          web_thickness_mm: e.target.value ? parseFloat(e.target.value) : undefined,
+                        }))}
+                      />
                     </div>
                   </div>
                 )}
@@ -641,6 +663,8 @@ export default function PowdersPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
+              <TableHead>Calidad</TableHead>
+              <TableHead>Fuente</TableHead>
               <TableHead>Fabricante</TableHead>
               <TableHead>Burn Rate Rel</TableHead>
               <TableHead>Fuerza (J/kg)</TableHead>
@@ -658,6 +682,23 @@ export default function PowdersPage() {
                     <Badge variant={powder.has_3curve ? 'success' : 'default'}>
                       {powder.has_3curve ? '3C' : '2C'}
                     </Badge>
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className="group relative inline-flex items-center cursor-default">
+                    <Badge variant={powder.quality_level as 'success' | 'warning' | 'danger'}>
+                      {powder.quality_score}
+                    </Badge>
+                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+                      whitespace-nowrap rounded bg-slate-800 px-3 py-1.5 text-xs text-slate-200
+                      opacity-0 transition-opacity group-hover:opacity-100 border border-slate-600 shadow-lg z-10">
+                      {powder.quality_tooltip}
+                    </span>
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <span className="text-xs text-slate-400">
+                    {getSourceLabel(powder.data_source)}
                   </span>
                 </TableCell>
                 <TableCell>{powder.manufacturer}</TableCell>
