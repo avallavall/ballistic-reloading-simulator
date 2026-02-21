@@ -24,6 +24,11 @@ export interface Powder {
   z2?: number | null;
   a0?: number | null;
   has_3curve: boolean;
+  data_source: string;
+  quality_score: number;
+  quality_level: string;      // "success" | "warning" | "danger"
+  quality_tooltip: string;    // One-line breakdown from API
+  web_thickness_mm: number | null;
 }
 
 export interface GrtImportResult {
@@ -51,6 +56,30 @@ export interface PowderCreate {
   z1?: number | null;
   z2?: number | null;
   a0?: number | null;
+  data_source?: string;       // defaults to "manual" on server
+  web_thickness_mm?: number | null;
+}
+
+export interface PowderUpdate {
+  name?: string;
+  manufacturer?: string;
+  burn_rate_relative?: number;
+  force_constant_j_kg?: number;
+  covolume_m3_kg?: number;
+  flame_temp_k?: number;
+  gamma?: number;
+  density_g_cm3?: number;
+  burn_rate_coeff?: number;
+  burn_rate_exp?: number;
+  ba?: number | null;
+  bp?: number | null;
+  br?: number | null;
+  brp?: number | null;
+  z1?: number | null;
+  z2?: number | null;
+  a0?: number | null;
+  data_source?: string;
+  web_thickness_mm?: number | null;
 }
 
 // ============================================================

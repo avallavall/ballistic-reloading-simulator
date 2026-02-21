@@ -87,6 +87,20 @@ export function getSafetyBgColor(level: 'safe' | 'warning' | 'danger'): string {
   }
 }
 
+/** Source labels for human-readable display (Spanish UI) */
+export const SOURCE_LABELS: Record<string, string> = {
+  manufacturer: 'Fabricante',
+  grt_community: 'GRT Community',
+  grt_modified: 'GRT Modificado',
+  manual: 'Manual',
+  estimated: 'Estimado',
+};
+
+/** Get human-readable source label */
+export function getSourceLabel(source: string): string {
+  return SOURCE_LABELS[source] || source;
+}
+
 /** Convert ft-lbs to Joules */
 export function ftLbsToJoules(ftLbs: number): number {
   return ftLbs / 0.737562;
