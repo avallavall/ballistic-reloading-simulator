@@ -19,7 +19,7 @@
 
 **Milestone Goal:** Build comprehensive pre-loaded component databases with quality indicators, multi-source import pipelines, and advanced search/filtering so users can simulate immediately without manual data entry.
 
-- [ ] **Phase 3: Schema and Quality System** - Alembic migration with new columns, quality scorer, data provenance, solver web_thickness fix
+- [x] **Phase 3: Schema and Quality System** - Alembic migration with new columns, quality scorer, data provenance, solver web_thickness fix
 - [ ] **Phase 4: Search and Pagination** - pg_trgm fuzzy search, server-side pagination, multi-field filtering on all component endpoints
 - [ ] **Phase 5: Import Pipelines and Fixture Data** - GRT powder import, powder aliases, bullet/cartridge fixture compilation, batch import endpoints
 - [ ] **Phase 6: Frontend Integration** - Searchable picker modals, pagination UI, quality badges display on all component pages
@@ -40,7 +40,7 @@
 
 Plans:
 - [x] 03-01-PLAN.md — Backend: migration, ORM, quality scorer, schemas, CRUD auto-recompute, solver web_thickness, tests
-- [ ] 03-02-PLAN.md — Frontend: quality badges with tooltip, source labels, web_thickness in Advanced form
+- [x] 03-02-PLAN.md — Frontend: quality badges with tooltip, source labels, web_thickness in Advanced form
 
 ### Phase 4: Search and Pagination
 **Goal**: Users can efficiently find components in large databases using fuzzy text search, multi-field filters, and paginated results
@@ -97,7 +97,7 @@ Note: Phase 5 (fixture data compilation) can begin in parallel with Phase 6 (fro
 |-------|-----------|----------------|--------|-----------|
 | 1. 3-Curve Burn Model | v1.1 | 3/3 | Complete | 2026-02-21 |
 | 2. Extended Simulation Charts | v1.1 | 4/4 | Complete | 2026-02-21 |
-| 3. Schema and Quality System | v1.2 | 1/2 | In Progress | - |
+| 3. Schema and Quality System | v1.2 | 2/2 | Complete | 2026-02-21 |
 | 4. Search and Pagination | v1.2 | 0/? | Not started | - |
 | 5. Import Pipelines and Fixture Data | v1.2 | 0/? | Not started | - |
 | 6. Frontend Integration | v1.2 | 0/? | Not started | - |
