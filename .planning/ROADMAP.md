@@ -20,7 +20,7 @@
 **Milestone Goal:** Build comprehensive pre-loaded component databases with quality indicators, multi-source import pipelines, and advanced search/filtering so users can simulate immediately without manual data entry.
 
 - [x] **Phase 3: Schema and Quality System** - Alembic migration with new columns, quality scorer, data provenance, solver web_thickness fix
-- [ ] **Phase 4: Search and Pagination** - pg_trgm fuzzy search, server-side pagination, multi-field filtering on all component endpoints
+- [x] **Phase 4: Search and Pagination** - pg_trgm fuzzy search, server-side pagination, multi-field filtering on all component endpoints
 - [ ] **Phase 5: Import Pipelines and Fixture Data** - GRT powder import, powder aliases, bullet/cartridge fixture compilation, batch import endpoints
 - [ ] **Phase 6: Frontend Integration** - Searchable picker modals, pagination UI, quality badges display on all component pages
 
@@ -53,8 +53,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Foundation: Alembic migration (pg_trgm, GIN indexes, bullet/cartridge quality+caliber columns), ORM models, quality scorers, paginated response schemas, reusable pagination/search service helpers
-- [ ] 04-02-PLAN.md — Endpoints: modify powders/bullets/cartridges list endpoints with pagination+search+filtering, dynamic manufacturer/caliber-family routes, frontend backward compat (hooks unwrap .items), comprehensive tests
+- [x] 04-01-PLAN.md — Foundation: Alembic migration (pg_trgm, GIN indexes, bullet/cartridge quality+caliber columns), ORM models, quality scorers, paginated response schemas, reusable pagination/search service helpers
+- [x] 04-02-PLAN.md — Endpoints: modify powders/bullets/cartridges list endpoints with pagination+search+filtering, dynamic manufacturer/caliber-family routes, frontend backward compat (hooks unwrap .items), comprehensive tests
 
 ### Phase 5: Import Pipelines and Fixture Data
 **Goal**: Simulator ships with 200+ powders, 100-200 bullets, and 50+ cartridges pre-loaded from authoritative sources, with batch import capability for future expansion
@@ -99,6 +99,6 @@ Note: Phase 5 (fixture data compilation) can begin in parallel with Phase 6 (fro
 | 1. 3-Curve Burn Model | v1.1 | 3/3 | Complete | 2026-02-21 |
 | 2. Extended Simulation Charts | v1.1 | 4/4 | Complete | 2026-02-21 |
 | 3. Schema and Quality System | v1.2 | Complete    | 2026-02-21 | 2026-02-21 |
-| 4. Search and Pagination | v1.2 | 0/2 | Planning complete | - |
+| 4. Search and Pagination | v1.2 | 2/2 | Complete | 2026-02-21 |
 | 5. Import Pipelines and Fixture Data | v1.2 | 0/? | Not started | - |
 | 6. Frontend Integration | v1.2 | 0/? | Not started | - |

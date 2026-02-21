@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 
 ## Current Position
 
-Phase: 4 of 6 (Search and Pagination)
-Plan: 1 of 2 in current phase
-Status: Executing Phase 4 plans
-Last activity: 2026-02-21 — Completed 04-01-PLAN.md (search and pagination foundation)
+Phase: 4 of 6 (Search and Pagination) -- COMPLETE
+Plan: 2 of 2 in current phase
+Status: Phase 4 complete. Ready for Phase 5.
+Last activity: 2026-02-21 — Completed 04-02-PLAN.md (endpoint integration, frontend compat, tests)
 
-Progress: [========--] 77% (10 plans complete across all milestones)
+Progress: [==========-] 85% (12 plans complete across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Average duration: 5.2min
-- Total execution time: 0.89 hours
+- Total plans completed: 12
+- Average duration: 5.3min
+- Total execution time: 1.06 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [========--] 77% (10 plans complete across all milestones)
 | 1 - 3-Curve Burn Model | 3/3 | 20min | 6.7min |
 | 2 - Extended Simulation Charts | 4/4 | 19min | 4.8min |
 | 3 - Schema and Quality System | 2/2 | 10min | 5min |
-| 4 - Search and Pagination | 1/2 | 4min | 4min |
+| 4 - Search and Pagination | 2/2 | 11min | 5.5min |
 
 **Recent Trend:**
-- Last 5 plans: 4, 5, 4.5, 7, 3, 4 min
+- Last 5 plans: 4.5, 7, 3, 4, 7 min
 - Trend: Stable
 
 ## Accumulated Context
@@ -53,6 +53,9 @@ Recent decisions affecting current work:
 - [04-01]: Same 30/70 quality formula applied consistently across powder, bullet, and cartridge scorers
 - [04-01]: 11 caliber families defined (.224 through .510) with diameter_mm ranges
 - [04-01]: apply_fuzzy_search orders by similarity desc with quality_score desc as tiebreaker
+- [04-02]: Cartridge caliber_family derived from groove_diameter_mm (not bore_diameter_mm)
+- [04-02]: apply_fuzzy_search accepts configurable fields parameter for models without manufacturer
+- [04-02]: Frontend hooks use TanStack Query select to unwrap .items for backward compat
 
 ### Pending Todos
 
@@ -62,11 +65,11 @@ None.
 
 - GRT community database on GitHub (zen/grt_databases) has limited files. Full 200+ powder dataset may require GRT installation export or manual curation.
 - Bullet data compilation (100-200 bullets) requires manual work from manufacturer PDF specs -- no automated source exists.
-- Breaking API contract: list endpoints change from raw arrays to `{items, total, page, size}` wrappers -- all frontend hooks must update simultaneously.
-- pg_trgm not available in aiosqlite test environment -- search tests need separate PostgreSQL integration test markers.
+- ~~Breaking API contract~~ RESOLVED: Frontend hooks updated with select unwrap in 04-02.
+- ~~pg_trgm not available in aiosqlite~~ RESOLVED: Search tests skip fuzzy search; 22 new tests cover pagination/filtering with SQLite.
 
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 04-01-PLAN.md (search and pagination foundation)
+Stopped at: Completed 04-02-PLAN.md (Phase 4 complete)
 Resume file: None
