@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AlertTriangle, CheckCircle, XCircle, Activity, Download } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
@@ -15,10 +15,12 @@ import HarmonicsChart from '@/components/charts/HarmonicsChart';
 import BurnProgressChart from '@/components/charts/BurnProgressChart';
 import EnergyRecoilChart from '@/components/charts/EnergyRecoilChart';
 import TemperatureChart from '@/components/charts/TemperatureChart';
+import SensitivityPanel from '@/components/panels/SensitivityPanel';
 import { useRifles } from '@/hooks/useRifles';
 import { useBullets } from '@/hooks/useBullets';
 import { usePowders } from '@/hooks/usePowders';
 import { useSimulation } from '@/hooks/useSimulation';
+import { useSensitivity } from '@/hooks/useSensitivity';
 import type { SimulationInput, SimulationResult } from '@/lib/types';
 import {
   formatNum,
@@ -84,7 +86,27 @@ function SafetyIndicator({
   );
 }
 
-function ResultCards({ result }: { result: SimulationResult }) {
+function DeltaBadge({ value, unit, invert = false }: { value: number; unit: string; invert?: boolean }) {
+  if (Math.abs(value) < 0.01) return null;
+  const positive = value > 0;
+  const color = invert
+    ? (positive ? 'text-amber-400' : 'text-green-400')
+    : (positive ? 'text-green-400' : 'text-amber-400');
+  const arrow = positive ? '+' : '';
+  return (
+    <span className={`ml-1 text-xs font-mono ${color}`}>
+      ({arrow}{formatNum(value, 1)})
+    </span>
+  );
+}
+
+function ResultCards({
+  result,
+  deltas,
+}: {
+  result: SimulationResult;
+  deltas?: { pressure_psi: number; velocity_fps: number; barrel_time_ms: number } | null;
+}) {
   const { unitSystem, formatPressure, formatVelocity } = useUnits();
   const pressure = formatPressure(result.peak_pressure_psi);
   const velocity = formatVelocity(result.muzzle_velocity_fps);
@@ -104,6 +126,7 @@ function ResultCards({ result }: { result: SimulationResult }) {
           <p className="mt-1 font-mono text-2xl font-bold text-red-400">
             {pressure.formatted}
             <span className="ml-1 text-sm font-normal text-slate-400">{pressure.unit}</span>
+            {deltas && <DeltaBadge value={deltas.pressure_psi} unit="PSI" invert />}
           </p>
           <p className="mt-0.5 font-mono text-sm text-slate-500">
             {pressureAlt}
@@ -117,6 +140,7 @@ function ResultCards({ result }: { result: SimulationResult }) {
           <p className="mt-1 font-mono text-2xl font-bold text-blue-400">
             {velocity.formatted}
             <span className="ml-1 text-sm font-normal text-slate-400">{velocity.unit}</span>
+            {deltas && <DeltaBadge value={deltas.velocity_fps} unit="FPS" />}
           </p>
           <p className="mt-0.5 font-mono text-sm text-slate-500">
             {velocityAlt}
@@ -130,6 +154,7 @@ function ResultCards({ result }: { result: SimulationResult }) {
           <p className="mt-1 font-mono text-2xl font-bold text-green-400">
             {formatNum(result.barrel_time_ms, 3)}
             <span className="ml-1 text-sm font-normal text-slate-400">ms</span>
+            {deltas && <DeltaBadge value={deltas.barrel_time_ms} unit="ms" />}
           </p>
         </CardContent>
       </Card>
@@ -381,11 +406,14 @@ export default function SimulatePage() {
   const { data: powders, isLoading: loadingPowders } = usePowders();
   const simulation = useSimulation();
   const [result, setResult] = useState<SimulationResult | null>(null);
+  const [lastParams, setLastParams] = useState<SimulationInput | null>(null);
   const [expandedChart, setExpandedChart] = useState<ExpandedChart>(null);
+  const [sensitivityOpen, setSensitivityOpen] = useState(false);
 
   const isLoadingData = loadingRifles || loadingBullets || loadingPowders;
 
   const handleSimulate = (input: SimulationInput) => {
+    setLastParams(input);
     simulation.mutate(input, {
       onSuccess: (data) => setResult(data),
     });
@@ -396,9 +424,54 @@ export default function SimulatePage() {
   const saamiMaxPsi =
     selectedRifle?.cartridge?.saami_max_pressure_psi || 62000;
 
+  // Get rifle barrel length for sensitivity panel
+  const rifleBarrelLength = useMemo(() => {
+    if (lastParams?.rifle_id && rifles) {
+      const r = rifles.find((r) => r.id === lastParams.rifle_id);
+      return r?.barrel_length_mm ?? 610;
+    }
+    return 610;
+  }, [lastParams, rifles]);
+
+  // Build original params for sensitivity hook
+  const sensitivityParams = useMemo(() => {
+    if (!lastParams) return null;
+    return {
+      powder_id: lastParams.powder_id || '',
+      bullet_id: lastParams.bullet_id || '',
+      rifle_id: lastParams.rifle_id || '',
+      powder_charge_grains: lastParams.powder_charge_grains || 42,
+      coal_mm: lastParams.coal_mm || 71,
+      seating_depth_mm: lastParams.seating_depth_mm || 8,
+    };
+  }, [lastParams]);
+
+  // Sensitivity hook - only enabled when panel is open and we have a result
+  const sensitivity = useSensitivity({
+    originalParams: sensitivityParams || {
+      powder_id: '',
+      bullet_id: '',
+      rifle_id: '',
+      powder_charge_grains: 42,
+      coal_mm: 71,
+      seating_depth_mm: 8,
+    },
+    originalResult: result || ({} as SimulationResult),
+    enabled: sensitivityOpen && !!result,
+  });
+
+  // Determine which result to display: sensitivity override or original
+  const activeResult = (sensitivityOpen && sensitivity.currentResult) ? sensitivity.currentResult : result;
+
+  // Error band data from sensitivity endpoint
+  const pressureUpperData = sensitivity.sensitivityData?.upper?.pressure_curve;
+  const pressureLowerData = sensitivity.sensitivityData?.lower?.pressure_curve;
+  const velocityUpperData = sensitivity.sensitivityData?.upper?.velocity_curve;
+  const velocityLowerData = sensitivity.sensitivityData?.lower?.velocity_curve;
+
   // Check if extended curves are available
-  const hasExtendedCurves = result &&
-    result.burn_curve && result.burn_curve.length > 0;
+  const hasExtendedCurves = activeResult &&
+    activeResult.burn_curve && activeResult.burn_curve.length > 0;
 
   return (
     <div className="space-y-8">
@@ -477,29 +550,32 @@ export default function SimulatePage() {
               {/* Safety indicator + CSV export */}
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <SafetyIndicator result={result} saamiMaxPsi={saamiMaxPsi} />
+                  <SafetyIndicator result={activeResult || result} saamiMaxPsi={saamiMaxPsi} />
                 </div>
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => exportCsv(result)}
+                  onClick={() => exportCsv(activeResult || result)}
                 >
                   <Download size={14} />
                   Exportar CSV
                 </Button>
               </div>
 
-              {/* Key values */}
-              <ResultCards result={result} />
+              {/* Key values with delta badges */}
+              <ResultCards
+                result={activeResult || result}
+                deltas={sensitivityOpen ? sensitivity.deltas : null}
+              />
 
               {/* Structural / Harmonics cards */}
-              <StructuralCards result={result} />
+              <StructuralCards result={activeResult || result} />
 
               {/* Recoil cards */}
-              <RecoilCards result={result} />
+              <RecoilCards result={activeResult || result} />
 
               {/* Warnings */}
-              {result.warnings && result.warnings.length > 0 && (
+              {(activeResult || result).warnings && (activeResult || result).warnings.length > 0 && (
                 <Card className="border-yellow-500/20">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-yellow-400">
@@ -509,7 +585,7 @@ export default function SimulatePage() {
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
-                      {result.warnings.map((w, i) => (
+                      {(activeResult || result).warnings.map((w, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm">
                           <Badge variant="warning">!</Badge>
                           <span className="text-slate-300">{w}</span>
@@ -520,126 +596,157 @@ export default function SimulatePage() {
                 </Card>
               )}
 
-              {/* ====== CHART DASHBOARD GRID ====== */}
+              {/* ====== CHART DASHBOARD WITH SENSITIVITY PANEL ====== */}
+              <div className="flex gap-4">
+                {/* Chart grid area */}
+                <div className="min-w-0 flex-1 space-y-4">
+                  {/* Hero row: Pressure + Velocity (2-column) */}
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <ChartTile
+                      title="Presion vs Tiempo"
+                      domainColor="blue"
+                      data={(activeResult || result).pressure_curve as unknown as Record<string, unknown>[]}
+                      csvHeaders={['t_ms', 'p_psi']}
+                      csvFilename="presion_tiempo"
+                      onExpand={() => setExpandedChart('pressure')}
+                      badge="P(t)"
+                    >
+                      <PressureTimeChart
+                        data={(activeResult || result).pressure_curve}
+                        saamiMaxPsi={saamiMaxPsi}
+                        syncId="sim-time"
+                        upperData={pressureUpperData}
+                        lowerData={pressureLowerData}
+                        showBands={sensitivity.showBands}
+                      />
+                    </ChartTile>
 
-              {/* Hero row: Pressure + Velocity (2-column) */}
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <ChartTile
-                  title="Presion vs Tiempo"
-                  domainColor="blue"
-                  data={result.pressure_curve as unknown as Record<string, unknown>[]}
-                  csvHeaders={['t_ms', 'p_psi']}
-                  csvFilename="presion_tiempo"
-                  onExpand={() => setExpandedChart('pressure')}
-                  badge="P(t)"
-                >
-                  <PressureTimeChart
-                    data={result.pressure_curve}
-                    saamiMaxPsi={saamiMaxPsi}
-                    syncId="sim-time"
-                  />
-                </ChartTile>
+                    <ChartTile
+                      title="Velocidad vs Distancia"
+                      domainColor="blue"
+                      data={(activeResult || result).velocity_curve as unknown as Record<string, unknown>[]}
+                      csvHeaders={['x_mm', 'v_fps']}
+                      csvFilename="velocidad_distancia"
+                      onExpand={() => setExpandedChart('velocity')}
+                      badge="V(x)"
+                    >
+                      <VelocityDistanceChart
+                        data={(activeResult || result).velocity_curve}
+                        syncId="sim-distance"
+                        upperData={velocityUpperData}
+                        lowerData={velocityLowerData}
+                        showBands={sensitivity.showBands}
+                      />
+                    </ChartTile>
+                  </div>
 
-                <ChartTile
-                  title="Velocidad vs Distancia"
-                  domainColor="blue"
-                  data={result.velocity_curve as unknown as Record<string, unknown>[]}
-                  csvHeaders={['x_mm', 'v_fps']}
-                  csvFilename="velocidad_distancia"
-                  onExpand={() => setExpandedChart('velocity')}
-                  badge="V(x)"
-                >
-                  <VelocityDistanceChart
-                    data={result.velocity_curve}
-                    syncId="sim-distance"
-                  />
-                </ChartTile>
-              </div>
+                  {/* Secondary chart grid (2-column responsive) */}
+                  {hasExtendedCurves && activeResult && (
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                      <ChartTile
+                        title="Progreso de Combustion"
+                        domainColor="orange"
+                        data={activeResult.burn_curve as unknown as Record<string, unknown>[]}
+                        csvHeaders={['t_ms', 'z', 'dz_dt', 'psi']}
+                        csvFilename="combustion"
+                        onExpand={() => setExpandedChart('burn')}
+                        badge="Z(t)"
+                      >
+                        <BurnProgressChart data={activeResult.burn_curve} syncId="sim-time" />
+                      </ChartTile>
 
-              {/* Secondary chart grid (2-column responsive) */}
-              {hasExtendedCurves && (
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <ChartTile
-                    title="Progreso de Combustion"
-                    domainColor="orange"
-                    data={result.burn_curve as unknown as Record<string, unknown>[]}
-                    csvHeaders={['t_ms', 'z', 'dz_dt', 'psi']}
-                    csvFilename="combustion"
-                    onExpand={() => setExpandedChart('burn')}
-                    badge="Z(t)"
-                  >
-                    <BurnProgressChart data={result.burn_curve} syncId="sim-time" />
-                  </ChartTile>
+                      <ChartTile
+                        title="Energia y Retroceso"
+                        domainColor="green"
+                        data={activeResult.energy_curve as unknown as Record<string, unknown>[]}
+                        csvHeaders={['t_ms', 'x_mm', 'ke_j', 'ke_ft_lbs', 'momentum_ns']}
+                        csvFilename="energia_retroceso"
+                        onExpand={() => setExpandedChart('energy')}
+                        badge="KE(x)"
+                      >
+                        <EnergyRecoilChart
+                          energyData={activeResult.energy_curve}
+                          recoilData={activeResult.recoil_curve}
+                        />
+                      </ChartTile>
 
-                  <ChartTile
-                    title="Energia y Retroceso"
-                    domainColor="green"
-                    data={result.energy_curve as unknown as Record<string, unknown>[]}
-                    csvHeaders={['t_ms', 'x_mm', 'ke_j', 'ke_ft_lbs', 'momentum_ns']}
-                    csvFilename="energia_retroceso"
-                    onExpand={() => setExpandedChart('energy')}
-                    badge="KE(x)"
-                  >
-                    <EnergyRecoilChart
-                      energyData={result.energy_curve}
-                      recoilData={result.recoil_curve}
-                    />
-                  </ChartTile>
+                      <ChartTile
+                        title="Temperatura y Calor"
+                        domainColor="red"
+                        data={activeResult.temperature_curve as unknown as Record<string, unknown>[]}
+                        csvHeaders={['t_ms', 't_gas_k', 'q_loss_j']}
+                        csvFilename="temperatura"
+                        onExpand={() => setExpandedChart('temperature')}
+                        badge="T(t)"
+                      >
+                        <TemperatureChart data={activeResult.temperature_curve} syncId="sim-time" />
+                      </ChartTile>
 
-                  <ChartTile
-                    title="Temperatura y Calor"
-                    domainColor="red"
-                    data={result.temperature_curve as unknown as Record<string, unknown>[]}
-                    csvHeaders={['t_ms', 't_gas_k', 'q_loss_j']}
-                    csvFilename="temperatura"
-                    onExpand={() => setExpandedChart('temperature')}
-                    badge="T(t)"
-                  >
-                    <TemperatureChart data={result.temperature_curve} syncId="sim-time" />
-                  </ChartTile>
+                      {activeResult.optimal_barrel_times && activeResult.optimal_barrel_times.length > 0 && (
+                        <ChartTile
+                          title="Armonicos del Canon"
+                          domainColor="blue"
+                          data={activeResult.pressure_curve as unknown as Record<string, unknown>[]}
+                          csvHeaders={['t_ms', 'p_psi']}
+                          csvFilename="armonicos"
+                          onExpand={() => setExpandedChart('harmonics')}
+                          badge={activeResult.obt_match ? 'En nodo' : 'Fuera de nodo'}
+                        >
+                          <HarmonicsChart
+                            data={activeResult.pressure_curve}
+                            barrelTimeMs={activeResult.barrel_time_ms}
+                            optimalBarrelTimes={activeResult.optimal_barrel_times}
+                            obtMatch={activeResult.obt_match}
+                            syncId="sim-time"
+                          />
+                        </ChartTile>
+                      )}
+                    </div>
+                  )}
 
-                  {result.optimal_barrel_times && result.optimal_barrel_times.length > 0 && (
+                  {/* Fallback: show harmonics without extended curves */}
+                  {!hasExtendedCurves && (activeResult || result).optimal_barrel_times && (activeResult || result).optimal_barrel_times!.length > 0 && (
                     <ChartTile
                       title="Armonicos del Canon"
                       domainColor="blue"
-                      data={result.pressure_curve as unknown as Record<string, unknown>[]}
+                      data={(activeResult || result).pressure_curve as unknown as Record<string, unknown>[]}
                       csvHeaders={['t_ms', 'p_psi']}
                       csvFilename="armonicos"
                       onExpand={() => setExpandedChart('harmonics')}
-                      badge={result.obt_match ? 'En nodo' : 'Fuera de nodo'}
+                      badge={(activeResult || result).obt_match ? 'En nodo' : 'Fuera de nodo'}
                     >
                       <HarmonicsChart
-                        data={result.pressure_curve}
-                        barrelTimeMs={result.barrel_time_ms}
-                        optimalBarrelTimes={result.optimal_barrel_times}
-                        obtMatch={result.obt_match}
+                        data={(activeResult || result).pressure_curve}
+                        barrelTimeMs={(activeResult || result).barrel_time_ms}
+                        optimalBarrelTimes={(activeResult || result).optimal_barrel_times!}
+                        obtMatch={(activeResult || result).obt_match}
                         syncId="sim-time"
                       />
                     </ChartTile>
                   )}
                 </div>
-              )}
 
-              {/* Fallback: show hero charts without tile wrapper if no extended curves */}
-              {!hasExtendedCurves && result.optimal_barrel_times && result.optimal_barrel_times.length > 0 && (
-                <ChartTile
-                  title="Armonicos del Canon"
-                  domainColor="blue"
-                  data={result.pressure_curve as unknown as Record<string, unknown>[]}
-                  csvHeaders={['t_ms', 'p_psi']}
-                  csvFilename="armonicos"
-                  onExpand={() => setExpandedChart('harmonics')}
-                  badge={result.obt_match ? 'En nodo' : 'Fuera de nodo'}
-                >
-                  <HarmonicsChart
-                    data={result.pressure_curve}
-                    barrelTimeMs={result.barrel_time_ms}
-                    optimalBarrelTimes={result.optimal_barrel_times}
-                    obtMatch={result.obt_match}
-                    syncId="sim-time"
+                {/* Sensitivity Panel */}
+                {result && sensitivityParams && (
+                  <SensitivityPanel
+                    isOpen={sensitivityOpen}
+                    onToggle={() => setSensitivityOpen((prev) => !prev)}
+                    chargeGrains={sensitivity.chargeGrains}
+                    onChargeChange={sensitivity.setChargeGrains}
+                    seatingDepthMm={sensitivity.seatingDepthMm}
+                    onSeatingDepthChange={sensitivity.setSeatingDepthMm}
+                    barrelLengthMm={rifleBarrelLength}
+                    originalCharge={sensitivityParams.powder_charge_grains}
+                    originalSeatingDepth={sensitivityParams.seating_depth_mm}
+                    originalBarrelLength={rifleBarrelLength}
+                    showBands={sensitivity.showBands}
+                    onShowBandsChange={sensitivity.setShowBands}
+                    deltas={sensitivity.deltas}
+                    isSimulating={sensitivity.isSimulating}
+                    onReset={sensitivity.reset}
                   />
-                </ChartTile>
-              )}
+                )}
+              </div>
 
               {/* ====== CHART MODAL (single instance) ====== */}
               <ChartModal
@@ -649,46 +756,52 @@ export default function SimulatePage() {
               >
                 {expandedChart === 'pressure' && (
                   <PressureTimeChart
-                    data={result.pressure_curve}
+                    data={(activeResult || result).pressure_curve}
                     saamiMaxPsi={saamiMaxPsi}
                     syncId="sim-time"
                     expanded
+                    upperData={pressureUpperData}
+                    lowerData={pressureLowerData}
+                    showBands={sensitivity.showBands}
                   />
                 )}
                 {expandedChart === 'velocity' && (
                   <VelocityDistanceChart
-                    data={result.velocity_curve}
+                    data={(activeResult || result).velocity_curve}
                     syncId="sim-distance"
                     expanded
+                    upperData={velocityUpperData}
+                    lowerData={velocityLowerData}
+                    showBands={sensitivity.showBands}
                   />
                 )}
-                {expandedChart === 'burn' && result.burn_curve && (
+                {expandedChart === 'burn' && (activeResult || result).burn_curve && (
                   <BurnProgressChart
-                    data={result.burn_curve}
+                    data={(activeResult || result).burn_curve}
                     syncId="sim-time"
                     expanded
                   />
                 )}
-                {expandedChart === 'energy' && result.energy_curve && (
+                {expandedChart === 'energy' && (activeResult || result).energy_curve && (
                   <EnergyRecoilChart
-                    energyData={result.energy_curve}
-                    recoilData={result.recoil_curve}
+                    energyData={(activeResult || result).energy_curve}
+                    recoilData={(activeResult || result).recoil_curve}
                     expanded
                   />
                 )}
-                {expandedChart === 'temperature' && result.temperature_curve && (
+                {expandedChart === 'temperature' && (activeResult || result).temperature_curve && (
                   <TemperatureChart
-                    data={result.temperature_curve}
+                    data={(activeResult || result).temperature_curve}
                     syncId="sim-time"
                     expanded
                   />
                 )}
-                {expandedChart === 'harmonics' && result.optimal_barrel_times && (
+                {expandedChart === 'harmonics' && (activeResult || result).optimal_barrel_times && (
                   <HarmonicsChart
-                    data={result.pressure_curve}
-                    barrelTimeMs={result.barrel_time_ms}
-                    optimalBarrelTimes={result.optimal_barrel_times}
-                    obtMatch={result.obt_match}
+                    data={(activeResult || result).pressure_curve}
+                    barrelTimeMs={(activeResult || result).barrel_time_ms}
+                    optimalBarrelTimes={(activeResult || result).optimal_barrel_times!}
+                    obtMatch={(activeResult || result).obt_match}
                     syncId="sim-time"
                     expanded
                   />
