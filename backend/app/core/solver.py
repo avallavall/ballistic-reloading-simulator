@@ -132,6 +132,10 @@ class SimResult:
     recoil_energy_ft_lbs: float = 0.0
     recoil_impulse_ns: float = 0.0
     recoil_velocity_fps: float = 0.0
+    burn_curve: list[dict] | None = None
+    energy_curve: list[dict] | None = None
+    temperature_curve: list[dict] | None = None
+    recoil_curve: list[dict] | None = None
 
 
 def _build_ode_system(
@@ -281,6 +285,10 @@ def simulate(
             barrel_time_ms=0.0,
             is_safe=False,
             warnings=warnings,
+            burn_curve=[],
+            energy_curve=[],
+            temperature_curve=[],
+            recoil_curve=[],
         )
 
     if sol.t_events[0].size > 0:
@@ -303,7 +311,14 @@ def simulate(
 
     pressure_curve = []
     velocity_curve = []
+    burn_curve = []
+    energy_curve = []
+    temperature_curve = []
+    recoil_curve = []
     peak_pressure_pa = 0.0
+
+    # Compute dZ/dt array via finite differences for burn progress chart
+    dZ_dt_arr = np.gradient(Z_arr, t_eval)
 
     for i in range(n_points):
         Z_c = min(max(Z_arr[i], 0.0), 1.0)
@@ -335,6 +350,49 @@ def simulate(
         velocity_curve.append({
             "x_mm": float(x_arr[i] / MM_TO_M),
             "v_fps": float(v_arr[i] * MPS_TO_FPS),
+        })
+
+        # --- Burn progress curve ---
+        burn_curve.append({
+            "t_ms": float(t_eval[i] * 1000.0),
+            "z": float(Z_c),
+            "dz_dt": float(dZ_dt_arr[i]),
+            "psi": float(psi),
+        })
+
+        # --- Energy / momentum curve ---
+        ke_j = 0.5 * m * v_arr[i] ** 2
+        momentum_ns = m * float(v_arr[i])
+        energy_curve.append({
+            "t_ms": float(t_eval[i] * 1000.0),
+            "x_mm": float(x_arr[i] / MM_TO_M),
+            "ke_j": float(ke_j),
+            "ke_ft_lbs": float(ke_j * J_TO_FT_LBS),
+            "momentum_ns": float(momentum_ns),
+        })
+
+        # --- Temperature / heat loss curve ---
+        gas_mass = omega * psi
+        if gas_mass > 0.0 and P_avg > 0.0:
+            V_corrected = V_f - gas_mass * powder.covolume_m3_kg
+            if V_corrected > 0.0:
+                T_gas = P_avg * V_corrected * GAS_MOLECULAR_WEIGHT / (gas_mass * 8.314)
+            else:
+                T_gas = powder.flame_temp_k
+        else:
+            T_gas = powder.flame_temp_k * psi  # scale with burn fraction before gas exists
+
+        temperature_curve.append({
+            "t_ms": float(t_eval[i] * 1000.0),
+            "t_gas_k": float(T_gas),
+            "q_loss_j": float(Q_arr[i]),
+        })
+
+        # --- Recoil impulse curve ---
+        impulse_ns = m * float(v_arr[i]) + omega * psi * 1.75 * float(v_arr[i])
+        recoil_curve.append({
+            "t_ms": float(t_eval[i] * 1000.0),
+            "impulse_ns": float(impulse_ns),
         })
 
     peak_pressure_psi = peak_pressure_pa * PA_TO_PSI
@@ -430,6 +488,10 @@ def simulate(
         recoil_energy_ft_lbs=recoil_energy_ft_lbs,
         recoil_impulse_ns=recoil_impulse,
         recoil_velocity_fps=recoil_velocity_fps,
+        burn_curve=burn_curve,
+        energy_curve=energy_curve,
+        temperature_curve=temperature_curve,
+        recoil_curve=recoil_curve,
     )
 
 

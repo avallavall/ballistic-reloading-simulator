@@ -38,6 +38,10 @@ class SimulationResultResponse(BaseModel):
     recoil_energy_ft_lbs: float = 0.0
     recoil_impulse_ns: float = 0.0
     recoil_velocity_fps: float = 0.0
+    burn_curve: list[dict] = []
+    energy_curve: list[dict] = []
+    temperature_curve: list[dict] = []
+    recoil_curve: list[dict] = []
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -69,6 +73,10 @@ class DirectSimulationResponse(BaseModel):
     recoil_energy_ft_lbs: float = 0.0
     recoil_impulse_ns: float = 0.0
     recoil_velocity_fps: float = 0.0
+    burn_curve: list[dict] = []
+    energy_curve: list[dict] = []
+    temperature_curve: list[dict] = []
+    recoil_curve: list[dict] = []
 
 
 class LadderTestResponse(BaseModel):

@@ -99,6 +99,32 @@ def _make_params(powder_row, bullet_row, cartridge_row, rifle_row, charge_grains
     return powder, bullet, cart, rif, ld
 
 
+def _sim_result_to_response(result) -> DirectSimulationResponse:
+    """Convert a SimResult to a DirectSimulationResponse."""
+    return DirectSimulationResponse(
+        peak_pressure_psi=result.peak_pressure_psi,
+        muzzle_velocity_fps=result.muzzle_velocity_fps,
+        pressure_curve=result.pressure_curve,
+        velocity_curve=result.velocity_curve,
+        barrel_time_ms=result.barrel_time_ms,
+        is_safe=result.is_safe,
+        warnings=result.warnings,
+        hoop_stress_mpa=result.hoop_stress_mpa,
+        case_expansion_mm=result.case_expansion_mm,
+        erosion_per_shot_mm=result.erosion_per_shot_mm,
+        barrel_frequency_hz=result.barrel_frequency_hz,
+        optimal_barrel_times=result.optimal_barrel_times,
+        obt_match=result.obt_match,
+        recoil_energy_ft_lbs=result.recoil_energy_ft_lbs,
+        recoil_impulse_ns=result.recoil_impulse_ns,
+        recoil_velocity_fps=result.recoil_velocity_fps,
+        burn_curve=result.burn_curve or [],
+        energy_curve=result.energy_curve or [],
+        temperature_curve=result.temperature_curve or [],
+        recoil_curve=result.recoil_curve or [],
+    )
+
+
 @router.post("", response_model=SimulationResultResponse, status_code=201)
 @limiter.limit("10/minute")
 async def run_simulation(request: Request, req: SimulationRequest, db: AsyncSession = Depends(get_db)):
@@ -162,24 +188,7 @@ async def run_ladder_test(request: Request, req: LadderTestRequest, db: AsyncSes
         )
         sim_result = simulate(powder, bullet, cart, rif, ld)
 
-        results.append(DirectSimulationResponse(
-            peak_pressure_psi=sim_result.peak_pressure_psi,
-            muzzle_velocity_fps=sim_result.muzzle_velocity_fps,
-            pressure_curve=sim_result.pressure_curve,
-            velocity_curve=sim_result.velocity_curve,
-            barrel_time_ms=sim_result.barrel_time_ms,
-            is_safe=sim_result.is_safe,
-            warnings=sim_result.warnings,
-            hoop_stress_mpa=sim_result.hoop_stress_mpa,
-            case_expansion_mm=sim_result.case_expansion_mm,
-            erosion_per_shot_mm=sim_result.erosion_per_shot_mm,
-            barrel_frequency_hz=sim_result.barrel_frequency_hz,
-            optimal_barrel_times=sim_result.optimal_barrel_times,
-            obt_match=sim_result.obt_match,
-            recoil_energy_ft_lbs=sim_result.recoil_energy_ft_lbs,
-            recoil_impulse_ns=sim_result.recoil_impulse_ns,
-            recoil_velocity_fps=sim_result.recoil_velocity_fps,
-        ))
+        results.append(_sim_result_to_response(sim_result))
         charge_weights.append(charge_gr)
 
     return LadderTestResponse(results=results, charge_weights=charge_weights)
@@ -205,24 +214,7 @@ async def run_direct_simulation(request: Request, req: DirectSimulationRequest, 
 
     result = simulate(powder, bullet, cart, rif, ld)
 
-    return DirectSimulationResponse(
-        peak_pressure_psi=result.peak_pressure_psi,
-        muzzle_velocity_fps=result.muzzle_velocity_fps,
-        pressure_curve=result.pressure_curve,
-        velocity_curve=result.velocity_curve,
-        barrel_time_ms=result.barrel_time_ms,
-        is_safe=result.is_safe,
-        warnings=result.warnings,
-        hoop_stress_mpa=result.hoop_stress_mpa,
-        case_expansion_mm=result.case_expansion_mm,
-        erosion_per_shot_mm=result.erosion_per_shot_mm,
-        barrel_frequency_hz=result.barrel_frequency_hz,
-        optimal_barrel_times=result.optimal_barrel_times,
-        obt_match=result.obt_match,
-        recoil_energy_ft_lbs=result.recoil_energy_ft_lbs,
-        recoil_impulse_ns=result.recoil_impulse_ns,
-        recoil_velocity_fps=result.recoil_velocity_fps,
-    )
+    return _sim_result_to_response(result)
 
 
 @router.get("/export/{simulation_id}")

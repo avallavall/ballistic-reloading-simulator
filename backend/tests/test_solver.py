@@ -567,3 +567,109 @@ class TestSimulate3Curve:
     def test_3curve_pressure_curve_nonempty(self, result_3curve: SimResult):
         """3-curve simulation must produce a non-empty pressure curve."""
         assert len(result_3curve.pressure_curve) > 0
+
+
+# ---------------------------------------------------------------------------
+# Tests: extended curve arrays (burn, energy, temperature, recoil)
+# ---------------------------------------------------------------------------
+
+
+class TestExtendedCurves:
+    """Verify that the solver returns all 4 new curve arrays with correct data."""
+
+    @pytest.fixture(scope="class")
+    def result(self) -> SimResult:
+        powder, bullet, cartridge, rifle, load = make_308_params()
+        return simulate_with_primer(powder, bullet, cartridge, rifle, load)
+
+    # --- Burn curve ---
+
+    def test_burn_curve_has_200_points(self, result: SimResult):
+        """Burn curve must have 200 data points."""
+        assert len(result.burn_curve) == 200
+
+    def test_burn_curve_initial_z_near_primer(self, result: SimResult):
+        """First burn fraction Z should be close to Z_PRIMER (0.01)."""
+        assert result.burn_curve[0]["z"] == pytest.approx(Z_PRIMER, abs=0.005)
+
+    def test_burn_curve_final_z_near_one(self, result: SimResult):
+        """Final burn fraction Z should be close to 1.0 (fully burned)."""
+        assert result.burn_curve[-1]["z"] == pytest.approx(1.0, abs=0.05)
+
+    def test_burn_curve_keys(self, result: SimResult):
+        """Each burn curve point must have t_ms, z, dz_dt, psi."""
+        for pt in result.burn_curve:
+            assert "t_ms" in pt
+            assert "z" in pt
+            assert "dz_dt" in pt
+            assert "psi" in pt
+
+    # --- Energy curve ---
+
+    def test_energy_curve_has_200_points(self, result: SimResult):
+        """Energy curve must have 200 data points."""
+        assert len(result.energy_curve) == 200
+
+    def test_energy_curve_final_ke_positive(self, result: SimResult):
+        """Final kinetic energy must be positive (bullet is moving)."""
+        assert result.energy_curve[-1]["ke_j"] > 0
+
+    def test_energy_curve_final_ke_ft_lbs_positive(self, result: SimResult):
+        """Final kinetic energy in ft-lbs must be positive."""
+        assert result.energy_curve[-1]["ke_ft_lbs"] > 0
+
+    def test_energy_curve_ke_conversion_consistent(self, result: SimResult):
+        """ke_ft_lbs should equal ke_j * J_TO_FT_LBS."""
+        from app.core.solver import J_TO_FT_LBS
+        last = result.energy_curve[-1]
+        assert last["ke_ft_lbs"] == pytest.approx(last["ke_j"] * J_TO_FT_LBS, rel=1e-6)
+
+    def test_energy_curve_keys(self, result: SimResult):
+        """Each energy curve point must have t_ms, x_mm, ke_j, ke_ft_lbs, momentum_ns."""
+        for pt in result.energy_curve:
+            assert "t_ms" in pt
+            assert "x_mm" in pt
+            assert "ke_j" in pt
+            assert "ke_ft_lbs" in pt
+            assert "momentum_ns" in pt
+
+    # --- Temperature curve ---
+
+    def test_temperature_curve_has_200_points(self, result: SimResult):
+        """Temperature curve must have 200 data points."""
+        assert len(result.temperature_curve) == 200
+
+    def test_temperature_curve_initial_above_ambient(self, result: SimResult):
+        """Initial gas temperature should be above ambient (300 K) due to primer burn."""
+        assert result.temperature_curve[0]["t_gas_k"] > 300.0
+
+    def test_temperature_curve_keys(self, result: SimResult):
+        """Each temperature curve point must have t_ms, t_gas_k, q_loss_j."""
+        for pt in result.temperature_curve:
+            assert "t_ms" in pt
+            assert "t_gas_k" in pt
+            assert "q_loss_j" in pt
+
+    # --- Recoil curve ---
+
+    def test_recoil_curve_has_200_points(self, result: SimResult):
+        """Recoil curve must have 200 data points."""
+        assert len(result.recoil_curve) == 200
+
+    def test_recoil_curve_final_impulse_positive(self, result: SimResult):
+        """Final recoil impulse must be positive."""
+        assert result.recoil_curve[-1]["impulse_ns"] > 0
+
+    def test_recoil_curve_keys(self, result: SimResult):
+        """Each recoil curve point must have t_ms and impulse_ns."""
+        for pt in result.recoil_curve:
+            assert "t_ms" in pt
+            assert "impulse_ns" in pt
+
+    # --- Backward compatibility ---
+
+    def test_golden_output_unchanged_with_new_curves(self, result: SimResult):
+        """Adding new curve arrays must not change the golden output values."""
+        assert result.peak_pressure_psi == pytest.approx(96880.44677292932, rel=1e-3)
+        assert result.muzzle_velocity_fps == pytest.approx(3258.1299761938285, rel=1e-3)
+        assert result.barrel_time_ms == pytest.approx(0.9396475304600503, rel=1e-3)
