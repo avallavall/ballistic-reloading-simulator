@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — TDD: 3-curve piecewise form function + dual-mode solver with backward compat (Wave 1)
+- [x] 01-01-PLAN.md — TDD: 3-curve piecewise form function + dual-mode solver with backward compat (Wave 1)
 - [ ] 01-02-PLAN.md — DB migration, GRT converter, API wiring, frontend 3C/2C badges + collapsible params (Wave 2)
 - [ ] 01-03-PLAN.md — Validation fixture (21+ loads), pytest quality gate, /validation page with charts (Wave 3)
 
@@ -147,7 +147,7 @@ Note: Phases 2, 4, and 5 have minimal interdependency and could overlap. Phase 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. 3-Curve Burn Model | 0/3 | Not started | - |
+| 1. 3-Curve Burn Model | 1/3 | In Progress | - |
 | 2. Extended Simulation Charts | 0/3 | Not started | - |
 | 3. Data Import Pipeline | 0/4 | Not started | - |
 | 4. Advanced Simulation Models | 0/3 | Not started | - |

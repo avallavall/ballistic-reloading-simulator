@@ -9,7 +9,7 @@ Requirements for the v2 milestone. Each maps to roadmap phases.
 
 ### Simulation Engine
 
-- [ ] **SIM-01**: Solver uses 3-curve powder burn model with piecewise form function (z1/z2 phase transitions for initial, main, and tail-off combustion)
+- [x] **SIM-01**: Solver uses 3-curve powder burn model with piecewise form function (z1/z2 phase transitions for initial, main, and tail-off combustion)
 - [ ] **SIM-02**: Powder model stores and uses GRT-native parameters (Ba, k, z1, z2, Bp, Br, Brp) as first-class fields
 - [ ] **SIM-03**: Temperature sensitivity coefficient modifies burn rate based on ambient temperature (tcc/tch fields per powder)
 - [ ] **SIM-04**: Validation test suite verifies predictions within 5% of published load manual data for 20-30 reference loads (Hodgdon, Sierra, Hornady)
@@ -83,7 +83,7 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SIM-01 | Phase 1 | Pending |
+| SIM-01 | Phase 1 | Complete |
 | SIM-02 | Phase 1 | Pending |
 | SIM-03 | Phase 4 | Pending |
 | SIM-04 | Phase 1 | Pending |
