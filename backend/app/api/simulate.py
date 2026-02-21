@@ -71,6 +71,13 @@ def _make_params(powder_row, bullet_row, cartridge_row, rifle_row, charge_grains
         gamma=powder_row.gamma,
         density_kg_m3=powder_row.density_g_cm3 * GCM3_TO_KGM3,
         flame_temp_k=powder_row.flame_temp_k,
+        # 3-curve fields (None if not present -> 2-curve fallback)
+        ba=powder_row.ba,
+        bp=powder_row.bp,
+        br=powder_row.br,
+        brp=powder_row.brp,
+        z1=powder_row.z1,
+        z2=powder_row.z2,
     )
     bullet = BulletParams(
         mass_kg=bullet_row.weight_grains * GRAINS_TO_KG,

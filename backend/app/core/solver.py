@@ -443,6 +443,13 @@ def simulate_from_db(powder_row, bullet_row, cartridge_row, rifle_row, load_row)
         gamma=powder_row.gamma,
         density_kg_m3=powder_row.density_g_cm3 * GCM3_TO_KGM3,
         flame_temp_k=powder_row.flame_temp_k,
+        # 3-curve fields (None if not present -> 2-curve fallback)
+        ba=getattr(powder_row, 'ba', None),
+        bp=getattr(powder_row, 'bp', None),
+        br=getattr(powder_row, 'br', None),
+        brp=getattr(powder_row, 'brp', None),
+        z1=getattr(powder_row, 'z1', None),
+        z2=getattr(powder_row, 'z2', None),
     )
 
     bullet = BulletParams(

@@ -5,7 +5,7 @@ import uuid
 import pytest
 from pydantic import ValidationError
 
-from app.schemas.powder import PowderCreate, PowderUpdate
+from app.schemas.powder import PowderCreate, PowderResponse, PowderUpdate
 from app.schemas.bullet import BulletCreate, BulletUpdate
 from app.schemas.cartridge import CartridgeCreate, CartridgeUpdate
 from app.schemas.rifle import RifleCreate, RifleUpdate
@@ -139,6 +139,68 @@ class TestPowderValidation:
         data["burn_rate_exp"] = 3.0  # > 2.0 limit
         with pytest.raises(ValidationError):
             PowderCreate(**data)
+
+    def test_powder_create_3curve_fields_optional(self):
+        """PowderCreate without 3-curve fields is valid."""
+        p = PowderCreate(**valid_powder_data())
+        assert p.ba is None
+        assert p.bp is None
+        assert p.br is None
+        assert p.brp is None
+        assert p.z1 is None
+        assert p.z2 is None
+        assert p.a0 is None
+
+    def test_powder_create_3curve_fields_valid(self):
+        """PowderCreate with all 7 GRT fields passes validation."""
+        data = valid_powder_data()
+        data.update(ba=1.5, bp=0.3, br=0.2, brp=0.1, z1=0.30, z2=0.70, a0=5.0)
+        p = PowderCreate(**data)
+        assert p.ba == 1.5
+        assert p.bp == 0.3
+        assert p.br == 0.2
+        assert p.brp == 0.1
+        assert p.z1 == 0.30
+        assert p.z2 == 0.70
+        assert p.a0 == 5.0
+
+    def test_powder_create_z1_z2_bounds(self):
+        """z1 and z2 outside [0.01, 0.99] rejected."""
+        data = valid_powder_data()
+        data["z1"] = 0.0  # below 0.01
+        with pytest.raises(ValidationError):
+            PowderCreate(**data)
+
+        data = valid_powder_data()
+        data["z2"] = 1.0  # above 0.99
+        with pytest.raises(ValidationError):
+            PowderCreate(**data)
+
+    def test_powder_response_has_3curve_true(self):
+        """PowderResponse with all 6 core fields set has has_3curve=True."""
+        resp = PowderResponse(
+            id=VALID_UUID,
+            **valid_powder_data(),
+            ba=1.5, bp=0.3, br=0.2, brp=0.1, z1=0.30, z2=0.70, a0=5.0,
+        )
+        assert resp.has_3curve is True
+
+    def test_powder_response_has_3curve_false(self):
+        """PowderResponse with missing fields has has_3curve=False."""
+        # No 3-curve fields
+        resp = PowderResponse(
+            id=VALID_UUID,
+            **valid_powder_data(),
+        )
+        assert resp.has_3curve is False
+
+        # Partial (only ba and bp set)
+        resp2 = PowderResponse(
+            id=VALID_UUID,
+            **valid_powder_data(),
+            ba=1.5, bp=0.3,
+        )
+        assert resp2.has_3curve is False
 
 
 # ---------------------------------------------------------------------------

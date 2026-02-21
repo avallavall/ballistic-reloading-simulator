@@ -91,6 +91,13 @@ def convert_grt_to_powder(grt_params: dict) -> dict:
     # Adjusted to align with our seed data scale (52-120 range)
     burn_rate_relative = round(ba * 30.0, 1)
 
+    # Extract 3-curve parameters (None if not present in GRT data)
+    br_val = grt_params.get("Br", None)
+    brp_val = grt_params.get("Brp", None)
+    z1_val = grt_params.get("z1", None)
+    z2_val = grt_params.get("z2", None)
+    a0_val = grt_params.get("a0", None)
+
     # Build the result
     powder_data = {
         "name": pname.strip(),
@@ -103,6 +110,14 @@ def convert_grt_to_powder(grt_params: dict) -> dict:
         "burn_rate_coeff": burn_rate_coeff,
         "burn_rate_exp": round(burn_rate_exp, 4),
         "burn_rate_relative": burn_rate_relative,
+        # 3-curve GRT parameters as first-class fields
+        "ba": ba if ba > 0 else None,
+        "bp": bp if bp and bp > 0 else None,
+        "br": br_val,
+        "brp": brp_val,
+        "z1": z1_val,
+        "z2": z2_val,
+        "a0": a0_val,
         "grt_params": _build_grt_storage(grt_params),
     }
 

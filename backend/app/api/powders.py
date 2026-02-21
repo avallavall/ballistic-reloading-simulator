@@ -32,11 +32,12 @@ async def create_powder(data: PowderCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/import-grt", response_model=GrtImportResult)
-async def import_grt(file: UploadFile, db: AsyncSession = Depends(get_db)):
+async def import_grt(file: UploadFile, overwrite: bool = False, db: AsyncSession = Depends(get_db)):
     """Import powders from a GRT .propellant file or a .zip of .propellant files.
 
     Parses the file, converts GRT parameters to our internal format, and creates
-    powder records. Powders whose names already exist in the DB are skipped.
+    powder records. Powders whose names already exist in the DB are skipped
+    unless overwrite=True, in which case they are updated.
     """
     if not file.filename:
         raise HTTPException(400, "No filename provided")
@@ -72,9 +73,9 @@ async def import_grt(file: UploadFile, db: AsyncSession = Depends(get_db)):
     created: list[Powder] = []
     skipped: list[str] = []
 
-    # Pre-fetch existing powder names for duplicate detection
-    existing_result = await db.execute(select(Powder.name))
-    existing_names = {row[0].lower() for row in existing_result.all()}
+    # Pre-fetch existing powders for duplicate detection
+    existing_result = await db.execute(select(Powder))
+    existing_powders = {p.name.lower(): p for p in existing_result.scalars().all()}
 
     for grt_params in grt_list:
         try:
@@ -84,13 +85,20 @@ async def import_grt(file: UploadFile, db: AsyncSession = Depends(get_db)):
             continue
 
         name = powder_data["name"]
-        if name.lower() in existing_names:
-            skipped.append(name)
+        if name.lower() in existing_powders:
+            if overwrite:
+                # Update existing powder with new data
+                existing_powder = existing_powders[name.lower()]
+                for key, value in powder_data.items():
+                    setattr(existing_powder, key, value)
+                created.append(existing_powder)
+            else:
+                skipped.append(name)
             continue
 
         powder = Powder(**powder_data)
         db.add(powder)
-        existing_names.add(name.lower())
+        existing_powders[name.lower()] = powder
         created.append(powder)
 
     if created:

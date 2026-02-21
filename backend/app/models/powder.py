@@ -17,3 +17,12 @@ class Powder(UUIDMixin, Base):
     burn_rate_coeff = Column(Float, nullable=False)
     burn_rate_exp = Column(Float, nullable=False)
     grt_params = Column(JSON, nullable=True)
+
+    # GRT 3-curve burn model parameters (optional)
+    ba = Column(Float, nullable=True)    # GRT vivacity coefficient
+    bp = Column(Float, nullable=True)    # Progressivity factor
+    br = Column(Float, nullable=True)    # Brisance factor
+    brp = Column(Float, nullable=True)   # Combined factor
+    z1 = Column(Float, nullable=True)    # Phase 1/2 transition
+    z2 = Column(Float, nullable=True)    # Phase 2/3 transition
+    a0 = Column(Float, nullable=True)    # Ba(phi) coefficient 0

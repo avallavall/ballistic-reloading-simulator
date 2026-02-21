@@ -1,7 +1,7 @@
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class PowderCreate(BaseModel):
@@ -17,6 +17,15 @@ class PowderCreate(BaseModel):
     burn_rate_exp: float = Field(gt=0, le=2.0, description="Vieille burn rate exponent n, typically 0.6-1.0")
     grt_params: dict[str, Any] | None = Field(None, description="Raw GRT parameters for reference")
 
+    # 3-curve GRT parameters (optional)
+    ba: float | None = Field(None, ge=0.01, le=10.0, description="GRT vivacity coefficient")
+    bp: float | None = Field(None, ge=0.0, le=1.0, description="Progressivity factor")
+    br: float | None = Field(None, ge=0.0, le=1.0, description="Brisance factor")
+    brp: float | None = Field(None, ge=0.0, le=1.0, description="Combined Bp/Br factor")
+    z1: float | None = Field(None, ge=0.01, le=0.99, description="Phase 1/2 burn-up limit")
+    z2: float | None = Field(None, ge=0.02, le=0.99, description="Phase 2/3 burn-up limit")
+    a0: float | None = Field(None, ge=0.0, le=20.0, description="Ba(phi) coefficient 0")
+
 
 class PowderUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=100)
@@ -29,6 +38,15 @@ class PowderUpdate(BaseModel):
     density_g_cm3: float | None = Field(None, gt=0, le=3.0)
     burn_rate_coeff: float | None = Field(None, gt=0, le=1.0)
     burn_rate_exp: float | None = Field(None, gt=0, le=2.0)
+
+    # 3-curve GRT parameters (optional)
+    ba: float | None = Field(None, ge=0.01, le=10.0, description="GRT vivacity coefficient")
+    bp: float | None = Field(None, ge=0.0, le=1.0, description="Progressivity factor")
+    br: float | None = Field(None, ge=0.0, le=1.0, description="Brisance factor")
+    brp: float | None = Field(None, ge=0.0, le=1.0, description="Combined Bp/Br factor")
+    z1: float | None = Field(None, ge=0.01, le=0.99, description="Phase 1/2 burn-up limit")
+    z2: float | None = Field(None, ge=0.02, le=0.99, description="Phase 2/3 burn-up limit")
+    a0: float | None = Field(None, ge=0.0, le=20.0, description="Ba(phi) coefficient 0")
 
 
 class PowderResponse(BaseModel):
@@ -44,6 +62,21 @@ class PowderResponse(BaseModel):
     burn_rate_coeff: float
     burn_rate_exp: float
     grt_params: dict[str, Any] | None = None
+
+    # 3-curve GRT parameters (optional)
+    ba: float | None = None
+    bp: float | None = None
+    br: float | None = None
+    brp: float | None = None
+    z1: float | None = None
+    z2: float | None = None
+    a0: float | None = None
+
+    @computed_field
+    @property
+    def has_3curve(self) -> bool:
+        """True if all 6 core 3-curve parameters are present."""
+        return all(v is not None for v in [self.ba, self.bp, self.br, self.brp, self.z1, self.z2])
 
     model_config = {"from_attributes": True}
 

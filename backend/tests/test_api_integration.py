@@ -455,6 +455,19 @@ async def test_get_nonexistent_powder_returns_404(client):
 # Tests: Parametric Search (8 tests)
 # ---------------------------------------------------------------------------
 
+POWDER_DATA_3CURVE = {
+    **POWDER_DATA,
+    "name": "Test 3Curve Powder",
+    "ba": 1.5,
+    "bp": 0.3,
+    "br": 0.2,
+    "brp": 0.1,
+    "z1": 0.30,
+    "z2": 0.70,
+    "a0": 5.0,
+}
+
+
 SECOND_POWDER_DATA = {
     "name": "Test H4895",
     "manufacturer": "Hodgdon",
@@ -619,3 +632,64 @@ async def test_parametric_search_custom_charge_range(client):
 
     assert narrow_min >= full_min
     assert narrow_max <= full_max
+
+
+# ---------------------------------------------------------------------------
+# Tests: 3-Curve Powder Support (2 tests)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_create_powder_with_3curve_fields(client):
+    """POST /powders with 3-curve fields stores and returns them correctly."""
+    resp = await client.post("/api/v1/powders", json=POWDER_DATA_3CURVE)
+    assert resp.status_code == 201
+    data = resp.json()
+
+    assert data["ba"] == 1.5
+    assert data["bp"] == 0.3
+    assert data["br"] == 0.2
+    assert data["brp"] == 0.1
+    assert data["z1"] == 0.30
+    assert data["z2"] == 0.70
+    assert data["a0"] == 5.0
+    assert data["has_3curve"] is True
+
+    # Verify GET returns same fields
+    resp2 = await client.get(f"/api/v1/powders/{data['id']}")
+    assert resp2.status_code == 200
+    data2 = resp2.json()
+    assert data2["has_3curve"] is True
+    assert data2["ba"] == 1.5
+
+
+@pytest.mark.asyncio
+async def test_direct_simulation_with_3curve_powder(client):
+    """Direct simulation with a 3-curve powder works end-to-end."""
+    # Create 3-curve powder
+    powder_resp = await client.post("/api/v1/powders", json=POWDER_DATA_3CURVE)
+    assert powder_resp.status_code == 201
+    powder = powder_resp.json()
+
+    # Create bullet, cartridge, rifle
+    bullet = await _create_bullet(client)
+    cartridge = await _create_cartridge(client)
+    rifle = await _create_rifle(client, cartridge["id"])
+
+    sim_req = {
+        "powder_id": powder["id"],
+        "bullet_id": bullet["id"],
+        "rifle_id": rifle["id"],
+        "powder_charge_grains": 44.0,
+        "coal_mm": 71.0,
+        "seating_depth_mm": 5.0,
+    }
+    resp = await client.post("/api/v1/simulate/direct", json=sim_req)
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # Should produce valid results
+    assert data["peak_pressure_psi"] > 0
+    assert data["muzzle_velocity_fps"] > 0
+    assert data["barrel_time_ms"] > 0
+    assert isinstance(data["is_safe"], bool)
