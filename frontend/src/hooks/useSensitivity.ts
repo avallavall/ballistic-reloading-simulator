@@ -14,6 +14,7 @@ interface UseSensitivityOptions {
     coal_mm: number;
     seating_depth_mm: number;
   };
+  originalBarrelLengthMm: number;
   originalResult: SimulationResult;
   enabled: boolean;
 }
@@ -52,13 +53,14 @@ const DEFAULT_CHARGE_DELTA = 0.3;
 
 export function useSensitivity({
   originalParams,
+  originalBarrelLengthMm,
   originalResult,
   enabled,
 }: UseSensitivityOptions): UseSensitivityReturn {
   // Slider state
   const [chargeGrains, setChargeGrains] = useState(originalParams.powder_charge_grains);
   const [seatingDepthMm, setSeatingDepthMm] = useState(originalParams.seating_depth_mm);
-  const [barrelLengthMm, setBarrelLengthMm] = useState(0); // Display only - initialized from rifle
+  const [barrelLengthMm, setBarrelLengthMm] = useState(originalBarrelLengthMm);
 
   // Band toggle
   const [showBands, setShowBands] = useState(true);
@@ -78,6 +80,7 @@ export function useSensitivity({
     origRef.current = originalParams;
     setChargeGrains(originalParams.powder_charge_grains);
     setSeatingDepthMm(originalParams.seating_depth_mm);
+    setBarrelLengthMm(originalBarrelLengthMm);
     setCurrentResult(null);
     setSensitivityData(null);
   }, [
@@ -87,6 +90,7 @@ export function useSensitivity({
     originalParams.powder_charge_grains,
     originalParams.coal_mm,
     originalParams.seating_depth_mm,
+    originalBarrelLengthMm,
   ]);
 
   // Simulation mutation
@@ -121,9 +125,10 @@ export function useSensitivity({
     const orig = origRef.current;
     return (
       chargeGrains !== orig.powder_charge_grains ||
-      seatingDepthMm !== orig.seating_depth_mm
+      seatingDepthMm !== orig.seating_depth_mm ||
+      barrelLengthMm !== originalBarrelLengthMm
     );
-  }, [chargeGrains, seatingDepthMm]);
+  }, [chargeGrains, seatingDepthMm, barrelLengthMm, originalBarrelLengthMm]);
 
   // Debounced re-simulation effect
   useEffect(() => {
@@ -133,6 +138,9 @@ export function useSensitivity({
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
     }
+
+    // Compute barrel length override (only send if different from original)
+    const barrelOverride = barrelLengthMm !== originalBarrelLengthMm ? barrelLengthMm : undefined;
 
     // Don't fire if values equal original
     if (!hasChanged()) {
@@ -159,6 +167,7 @@ export function useSensitivity({
         powder_charge_grains: chargeGrains,
         coal_mm: origRef.current.coal_mm,
         seating_depth_mm: seatingDepthMm,
+        barrel_length_mm_override: barrelOverride,
       };
 
       simMutation.mutate(params);
@@ -176,7 +185,7 @@ export function useSensitivity({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chargeGrains, seatingDepthMm, enabled]);
+  }, [chargeGrains, seatingDepthMm, barrelLengthMm, enabled]);
 
   // Compute deltas
   const deltas = useMemo<Deltas | null>(() => {
@@ -194,8 +203,9 @@ export function useSensitivity({
     const orig = origRef.current;
     setChargeGrains(orig.powder_charge_grains);
     setSeatingDepthMm(orig.seating_depth_mm);
+    setBarrelLengthMm(originalBarrelLengthMm);
     setCurrentResult(null);
-  }, []);
+  }, [originalBarrelLengthMm]);
 
   const isSimulating = simMutation.isPending || sensMutation.isPending;
 

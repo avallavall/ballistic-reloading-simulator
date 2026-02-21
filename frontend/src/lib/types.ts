@@ -242,6 +242,7 @@ export interface SimulationInput {
   powder_charge_grains?: number;
   coal_mm?: number;
   seating_depth_mm?: number;
+  barrel_length_mm_override?: number;
 }
 
 export interface LadderTestInput {
@@ -335,6 +336,7 @@ export interface SensitivityInput {
   coal_mm: number;
   seating_depth_mm: number;
   charge_delta_grains?: number;
+  barrel_length_mm_override?: number;
 }
 
 export interface SensitivityResponse {

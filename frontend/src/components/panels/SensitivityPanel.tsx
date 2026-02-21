@@ -12,6 +12,7 @@ interface SensitivityPanelProps {
   seatingDepthMm: number;
   onSeatingDepthChange: (v: number) => void;
   barrelLengthMm: number;
+  onBarrelLengthChange: (v: number) => void;
   // Original values (for range and delta)
   originalCharge: number;
   originalSeatingDepth: number;
@@ -55,6 +56,7 @@ export default function SensitivityPanel({
   seatingDepthMm,
   onSeatingDepthChange,
   barrelLengthMm,
+  onBarrelLengthChange,
   originalCharge,
   originalSeatingDepth,
   originalBarrelLength,
@@ -166,13 +168,15 @@ export default function SensitivityPanel({
           </div>
         </div>
 
-        {/* Barrel Length Slider (disabled - coming soon) */}
-        <div className="opacity-50">
-          <label className="mb-1.5 flex items-center justify-between text-xs font-medium text-slate-400">
+        {/* Barrel Length Slider */}
+        <div>
+          <label className="mb-1.5 flex items-center justify-between text-xs font-medium text-slate-300">
             <span>Largo Canon (mm)</span>
-            <span className="font-mono">
-              {formatNum(barrelLengthMm || originalBarrelLength, 0)}
-              <span className="ml-1 text-[10px] italic text-slate-500">(proximamente)</span>
+            <span className="font-mono text-white">
+              {formatNum(barrelLengthMm, 0)}
+              {Math.abs(barrelLengthMm - originalBarrelLength) >= 1 && (
+                <DeltaBadge value={barrelLengthMm - originalBarrelLength} unit="mm" />
+              )}
             </span>
           </label>
           <input
@@ -180,12 +184,13 @@ export default function SensitivityPanel({
             min={barrelMin}
             max={barrelMax}
             step={10}
-            value={barrelLengthMm || originalBarrelLength}
-            disabled
-            className="h-2 w-full cursor-not-allowed appearance-none rounded-lg bg-slate-700 opacity-50"
+            value={barrelLengthMm}
+            onChange={(e) => onBarrelLengthChange(parseFloat(e.target.value))}
+            className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-700 accent-blue-500"
           />
           <div className="mt-0.5 flex justify-between text-[10px] text-slate-500">
             <span>{formatNum(barrelMin, 0)}</span>
+            <span className="text-slate-400">{formatNum(originalBarrelLength, 0)}</span>
             <span>{formatNum(barrelMax, 0)}</span>
           </div>
         </div>

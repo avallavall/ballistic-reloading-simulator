@@ -461,6 +461,7 @@ export default function SimulatePage() {
       coal_mm: 71,
       seating_depth_mm: 8,
     },
+    originalBarrelLengthMm: rifleBarrelLength,
     originalResult: result || ({} as SimulationResult),
     enabled: sensitivityOpen && !!result,
   });
@@ -740,7 +741,8 @@ export default function SimulatePage() {
                     onChargeChange={sensitivity.setChargeGrains}
                     seatingDepthMm={sensitivity.seatingDepthMm}
                     onSeatingDepthChange={sensitivity.setSeatingDepthMm}
-                    barrelLengthMm={rifleBarrelLength}
+                    barrelLengthMm={sensitivity.barrelLengthMm}
+                    onBarrelLengthChange={sensitivity.setBarrelLengthMm}
                     originalCharge={sensitivityParams.powder_charge_grains}
                     originalSeatingDepth={sensitivityParams.seating_depth_mm}
                     originalBarrelLength={rifleBarrelLength}
