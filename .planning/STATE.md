@@ -5,34 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases and modern web UX.
-**Current focus:** Phase 2: Extended Simulation Charts -- In Progress
+**Current focus:** Phase 2: Extended Simulation Charts -- Complete. Ready for Phase 3.
 
 ## Current Position
 
-Phase: 2 of 7 (Extended Simulation Charts)
-Plan: 3 of 3 in current phase (02-03 Tasks 1-2 complete, awaiting checkpoint)
-Status: Checkpoint - human-verify
-Last activity: 2026-02-21 -- 02-03-PLAN.md Tasks 1-2 complete (error bands + sensitivity panel)
+Phase: 2 of 7 (Extended Simulation Charts) -- COMPLETE
+Plan: 4 of 4 in current phase (all plans complete)
+Status: Phase complete
+Last activity: 2026-02-21 -- 02-04-PLAN.md complete (barrel length slider gap closure)
 
-Progress: [██▓░░░░░░░] 24%
+Progress: [███░░░░░░░] 28%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 6.2min
-- Total execution time: 0.52 hours
+- Total plans completed: 7
+- Average duration: 5.6min
+- Total execution time: 0.65 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 - 3-Curve Burn Model | 3/3 | 20min | 6.7min |
-| 2 - Extended Simulation Charts | 2/3 | 11min | 5.5min |
+| 2 - Extended Simulation Charts | 4/4 | 19min | 4.8min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (6min), 01-03 (10min), 02-01 (5min), 02-02 (6min)
-- Trend: Consistent pace, Phase 2 progressing well
+- Last 5 plans: 01-03 (10min), 02-01 (5min), 02-02 (6min), 02-03 (4min), 02-04 (4min)
+- Trend: Consistent pace, Phase 2 complete
 
 *Updated after each plan completion*
 
@@ -64,6 +64,9 @@ Recent decisions affecting current work:
 - [02-02]: Single ChartModal instance at page level controlled by expandedChart state
 - [02-02]: html2canvas with dark bg (#0f172a) and 2x scale for PNG export quality
 - [02-02]: Domain color system: blue (P/V/harmonics), orange (burn), red (temperature), green (energy/recoil)
+- [02-04]: Barrel length override is transient (optional nullable field, no DB writes) -- slider does not modify rifle record
+- [02-04]: Override field validates gt=100, le=1500 mm (realistic barrel length range)
+- [02-04]: Optional override pattern: request schemas accept nullable override fields that fall back to DB values when None
 
 ### Pending Todos
 
@@ -78,5 +81,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: 02-03-PLAN.md checkpoint:human-verify (Task 3) -- awaiting visual verification of complete dashboard
+Stopped at: Completed 02-04-PLAN.md -- Phase 2 fully complete
 Resume file: None

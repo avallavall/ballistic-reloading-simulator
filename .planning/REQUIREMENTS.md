@@ -29,7 +29,7 @@ Requirements for the v2 milestone. Each maps to roadmap phases.
 - [x] **CHART-02**: Powder burn progress chart shows burn fraction Z vs time and gas generation rate dZ/dt
 - [x] **CHART-03**: Temperature and heat curves show gas temperature, barrel wall temperature estimate, and cumulative heat loss over time
 - [x] **CHART-04**: Sensitivity analysis shows error bands on pressure/velocity charts for +/- charge weight variation
-- [ ] **CHART-05**: Interactive sensitivity explorer allows user to drag sliders (charge weight, seating depth, barrel length) and see pressure/velocity update in real-time
+- [x] **CHART-05**: Interactive sensitivity explorer allows user to drag sliders (charge weight, seating depth, barrel length) and see pressure/velocity update in real-time
 
 ### 2D/3D Viewers
 
@@ -97,7 +97,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | CHART-02 | Phase 2 | Complete |
 | CHART-03 | Phase 2 | Complete |
 | CHART-04 | Phase 2 | Complete |
-| CHART-05 | Phase 2 | Pending |
+| CHART-05 | Phase 2 | Complete |
 | VIEW-01 | Phase 6 | Pending |
 | VIEW-02 | Phase 6 | Pending |
 | VIEW-03 | Phase 6 | Pending |

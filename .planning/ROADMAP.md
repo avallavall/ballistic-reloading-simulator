@@ -13,7 +13,7 @@ This milestone transforms the simulator from a functional prototype with a 2-cur
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: 3-Curve Burn Model** - Upgrade solver to GRT-style 3-phase combustion model with validation against published load data
-- [ ] **Phase 2: Extended Simulation Charts** - Expose solver-computed data as new chart types (burn progress, energy, temperature, sensitivity)
+- [x] **Phase 2: Extended Simulation Charts** - Expose solver-computed data as new chart types (burn progress, energy, temperature, sensitivity)
 - [ ] **Phase 3: Data Import Pipeline** - Populate databases with 200+ powders, 500+ bullets, 50+ cartridges from GRT and manufacturer sources
 - [ ] **Phase 4: Advanced Simulation Models** - Add temperature sensitivity, bullet jump resistance, and gas port pressure modeling
 - [ ] **Phase 5: Analysis & UX Tools** - Shot group analysis, input validation inspector, and printable load data sheets
@@ -54,7 +54,7 @@ Plans:
 - [x] 02-01-PLAN.md — Extend solver SimResult with burn/energy/temperature/recoil curves + sensitivity endpoint (Wave 1)
 - [x] 02-02-PLAN.md — Frontend chart infrastructure, new chart components, dashboard grid layout (Wave 2)
 - [x] 02-03-PLAN.md — Error bands on P/V charts + sensitivity explorer with interactive sliders (Wave 3)
-- [ ] 02-04-PLAN.md — Gap closure: enable barrel length slider (backend override + frontend wiring) (Wave 4)
+- [x] 02-04-PLAN.md — Gap closure: enable barrel length slider (backend override + frontend wiring) (Wave 4)
 
 ### Phase 3: Data Import Pipeline
 **Goal**: Users can simulate with any common powder, bullet, or cartridge without manual data entry
@@ -149,7 +149,7 @@ Note: Phases 2, 4, and 5 have minimal interdependency and could overlap. Phase 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. 3-Curve Burn Model | 3/3 | Complete | 2026-02-21 |
-| 2. Extended Simulation Charts | 3/4 | In progress | - |
+| 2. Extended Simulation Charts | 4/4 | Complete | 2026-02-21 |
 | 3. Data Import Pipeline | 0/4 | Not started | - |
 | 4. Advanced Simulation Models | 0/3 | Not started | - |
 | 5. Analysis & UX Tools | 0/3 | Not started | - |
