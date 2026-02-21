@@ -70,6 +70,59 @@ def form_function(z: float, theta: float) -> float:
     return float(np.clip(psi, 0.0, 1.0))
 
 
+def form_function_3curve(z: float, z1: float, z2: float,
+                         bp: float, br: float, brp: float) -> float:
+    """Three-phase piecewise form function for GRT-style 3-curve burn model.
+
+    Divides combustion into three phases:
+      Phase 1 (0 <= z < z1): Initial ignition. psi_raw = z + bp * z^2
+      Phase 2 (z1 <= z < z2): Main combustion. psi_raw = psi(z1) + (z-z1) + brp*(z-z1)*(z+z1)
+      Phase 3 (z2 <= z <= 1): Tail-off. psi_raw = psi(z2) + (z-z2) + br*(z-z2)*(z+z2)
+
+    Normalized so psi(1.0) = 1.0.
+
+    Args:
+        z: Normalized burn depth (0 to 1).
+        z1: Phase 1/2 transition point.
+        z2: Phase 2/3 transition point.
+        bp: Progressivity factor.
+        br: Brisance factor.
+        brp: Combined progressivity/brisance factor.
+
+    Returns:
+        Fraction burned psi (0 to 1).
+    """
+    z_c = float(np.clip(z, 0.0, 1.0))
+
+    # Phase 1: 0 to z1
+    psi_z1 = z1 + bp * z1 ** 2
+
+    if z_c <= z1:
+        psi_raw = z_c + bp * z_c ** 2
+    elif z_c <= z2:
+        # Phase 2: z1 to z2 (transition using brp)
+        dz = z_c - z1
+        psi_raw = psi_z1 + dz + brp * dz * (z_c + z1)
+    else:
+        # Phase 3: z2 to 1.0 (tail-off using br)
+        dz12 = z2 - z1
+        psi_z2 = psi_z1 + dz12 + brp * dz12 * (z2 + z1)
+        dz = z_c - z2
+        psi_raw = psi_z2 + dz + br * dz * (z_c + z2)
+
+    # Normalize so psi(1.0) = 1.0
+    # Compute psi_raw at z=1.0
+    dz12 = z2 - z1
+    psi_z2_total = psi_z1 + dz12 + brp * dz12 * (z2 + z1)
+    dz_tail = 1.0 - z2
+    psi_total = psi_z2_total + dz_tail + br * dz_tail * (1.0 + z2)
+
+    if psi_total <= 0.0:
+        return 0.0
+
+    return float(np.clip(psi_raw / psi_total, 0.0, 1.0))
+
+
 def flame_temperature(force: float, molecular_weight: float) -> float:
     """Calculate adiabatic flame temperature from propellant force.
 

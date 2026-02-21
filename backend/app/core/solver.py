@@ -22,7 +22,7 @@ from app.core.harmonics import cantilever_frequency, ocw_barrel_times
 from app.core.heat_transfer import convective_area, wall_heat_flux
 from app.core.internal_ballistics import free_volume, lagrange_base_pressure, lagrange_breech_pressure
 from app.core.structural import case_expansion, lame_hoop_stress, lawton_erosion
-from app.core.thermodynamics import form_function, noble_abel_pressure, vieille_burn_rate
+from app.core.thermodynamics import form_function, form_function_3curve, noble_abel_pressure, vieille_burn_rate
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +52,19 @@ class PowderParams:
     flame_temp_k: float
     web_thickness_m: float = 0.0004   # 0.4 mm default
     theta: float = -0.2              # slightly progressive
+
+    # 3-curve GRT parameters (optional -- None = use 2-curve Vieille)
+    ba: float | None = None
+    bp: float | None = None
+    br: float | None = None
+    brp: float | None = None
+    z1: float | None = None
+    z2: float | None = None
+
+    @property
+    def has_3curve(self) -> bool:
+        """Check if all 3-curve parameters are available."""
+        return all(v is not None for v in [self.ba, self.bp, self.br, self.brp, self.z1, self.z2])
 
 
 @dataclass
@@ -144,11 +157,23 @@ def _build_ode_system(
     theta = powder.theta
     T_flame = powder.flame_temp_k
 
+    # 3-curve dispatch: extract once, use in inner function
+    use_3curve = powder.has_3curve
+    if use_3curve:
+        bp_val = powder.bp
+        br_val = powder.br
+        brp_val = powder.brp
+        z1_val = powder.z1
+        z2_val = powder.z2
+
     def rhs(t, y):
         Z, x, v, Q_loss = y
 
         Z_c = min(max(Z, 0.0), 1.0)
-        psi = form_function(Z_c, theta)
+        if use_3curve:
+            psi = form_function_3curve(Z_c, z1_val, z2_val, bp_val, br_val, brp_val)
+        else:
+            psi = form_function(Z_c, theta)
 
         V_f = free_volume(V0, bore_area, x, omega, rho_p, psi)
 
@@ -282,7 +307,10 @@ def simulate(
 
     for i in range(n_points):
         Z_c = min(max(Z_arr[i], 0.0), 1.0)
-        psi = form_function(Z_c, powder.theta)
+        if powder.has_3curve:
+            psi = form_function_3curve(Z_c, powder.z1, powder.z2, powder.bp, powder.br, powder.brp)
+        else:
+            psi = form_function(Z_c, powder.theta)
         V_f = free_volume(V0, bore_area, x_arr[i], omega, rho_p, psi)
 
         # Heat-loss-corrected pressure (same as ODE uses)
