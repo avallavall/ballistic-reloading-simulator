@@ -5,33 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-02-20)
 
 **Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases and modern web UX.
-**Current focus:** Phase 1: 3-Curve Burn Model -- COMPLETE. Next: Phase 2: Extended Simulation Charts
+**Current focus:** Phase 2: Extended Simulation Charts -- In Progress
 
 ## Current Position
 
-Phase: 1 of 7 (3-Curve Burn Model) -- COMPLETE
-Plan: 3 of 3 in current phase (all complete)
-Status: Phase complete
-Last activity: 2026-02-21 -- 01-03-PLAN.md Task 3 checkpoint approved, Phase 1 complete
+Phase: 2 of 7 (Extended Simulation Charts)
+Plan: 1 of 3 in current phase (02-01 complete)
+Status: In progress
+Last activity: 2026-02-21 -- 02-01-PLAN.md complete (extended solver curves + sensitivity endpoint)
 
-Progress: [█░░░░░░░░░] 14%
+Progress: [██░░░░░░░░] 19%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
-- Average duration: 6.7min
-- Total execution time: 0.33 hours
+- Total plans completed: 4
+- Average duration: 6.3min
+- Total execution time: 0.42 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1 - 3-Curve Burn Model | 3/3 | 20min | 6.7min |
+| 2 - Extended Simulation Charts | 1/3 | 5min | 5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (4min), 01-02 (6min), 01-03 (10min)
-- Trend: Consistent pace, Phase 1 complete
+- Last 5 plans: 01-01 (4min), 01-02 (6min), 01-03 (10min), 02-01 (5min)
+- Trend: Consistent pace, Phase 2 started
 
 *Updated after each plan completion*
 
@@ -54,10 +55,14 @@ Recent decisions affecting current work:
 - [01-03]: Tuned 7 powder parameter profiles per burn-speed class (Varget, IMR 4064, H4350, H4895, H335, H1000, Retumbo). Slow powders use web_thickness=0.5mm.
 - [01-03]: Validation suite achieves 1.45% mean velocity error across 21 loads (well below 5% target).
 - [01-03]: Three published velocities adjusted within natural manual variation for 3 loads.
+- [02-01]: Extract curves from existing ODE arrays in post-processing loop, no new physics needed
+- [02-01]: Sensitivity endpoint runs 3 full simulations (center, +delta, -delta) returning complete DirectSimulationResponse for each
+- [02-01]: Rate limit sensitivity at 10/minute (same as direct sim)
+- [02-01]: _sim_result_to_response helper centralizes SimResult-to-API conversion
 
 ### Pending Todos
 
-None -- Phase 1 complete.
+None.
 
 ### Blockers/Concerns
 
@@ -68,5 +73,5 @@ None -- Phase 1 complete.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 01-03-PLAN.md -- Phase 1 complete
+Stopped at: Completed 02-01-PLAN.md -- Extended solver curves + sensitivity endpoint
 Resume file: None

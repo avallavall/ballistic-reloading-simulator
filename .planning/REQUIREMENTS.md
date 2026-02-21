@@ -25,10 +25,10 @@ Requirements for the v2 milestone. Each maps to roadmap phases.
 
 ### Simulation Charts
 
-- [ ] **CHART-01**: Energy and momentum curves displayed (kinetic energy vs distance, recoil impulse over time)
-- [ ] **CHART-02**: Powder burn progress chart shows burn fraction Z vs time and gas generation rate dZ/dt
-- [ ] **CHART-03**: Temperature and heat curves show gas temperature, barrel wall temperature estimate, and cumulative heat loss over time
-- [ ] **CHART-04**: Sensitivity analysis shows error bands on pressure/velocity charts for +/- charge weight variation
+- [x] **CHART-01**: Energy and momentum curves displayed (kinetic energy vs distance, recoil impulse over time)
+- [x] **CHART-02**: Powder burn progress chart shows burn fraction Z vs time and gas generation rate dZ/dt
+- [x] **CHART-03**: Temperature and heat curves show gas temperature, barrel wall temperature estimate, and cumulative heat loss over time
+- [x] **CHART-04**: Sensitivity analysis shows error bands on pressure/velocity charts for +/- charge weight variation
 - [ ] **CHART-05**: Interactive sensitivity explorer allows user to drag sliders (charge weight, seating depth, barrel length) and see pressure/velocity update in real-time
 
 ### 2D/3D Viewers
@@ -93,10 +93,10 @@ Deferred to future release. Tracked but not in current roadmap.
 | DATA-02 | Phase 3 | Pending |
 | DATA-03 | Phase 3 | Pending |
 | DATA-04 | Phase 3 | Pending |
-| CHART-01 | Phase 2 | Pending |
-| CHART-02 | Phase 2 | Pending |
-| CHART-03 | Phase 2 | Pending |
-| CHART-04 | Phase 2 | Pending |
+| CHART-01 | Phase 2 | Complete |
+| CHART-02 | Phase 2 | Complete |
+| CHART-03 | Phase 2 | Complete |
+| CHART-04 | Phase 2 | Complete |
 | CHART-05 | Phase 2 | Pending |
 | VIEW-01 | Phase 6 | Pending |
 | VIEW-02 | Phase 6 | Pending |
