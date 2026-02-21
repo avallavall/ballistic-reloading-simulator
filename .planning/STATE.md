@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 4 of 6 (Search and Pagination)
-Plan: 0 of ? in current phase
-Status: Phase 3 complete, ready for Phase 4
-Last activity: 2026-02-21 — Completed 03-02-PLAN.md (frontend quality display)
+Plan: 1 of 2 in current phase
+Status: Executing Phase 4 plans
+Last activity: 2026-02-21 — Completed 04-01-PLAN.md (search and pagination foundation)
 
-Progress: [=======---] 69% (9 plans complete across all milestones)
+Progress: [========--] 77% (10 plans complete across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 5.3min
-- Total execution time: 0.82 hours
+- Total plans completed: 10
+- Average duration: 5.2min
+- Total execution time: 0.89 hours
 
 **By Phase:**
 
@@ -30,9 +30,10 @@ Progress: [=======---] 69% (9 plans complete across all milestones)
 | 1 - 3-Curve Burn Model | 3/3 | 20min | 6.7min |
 | 2 - Extended Simulation Charts | 4/4 | 19min | 4.8min |
 | 3 - Schema and Quality System | 2/2 | 10min | 5min |
+| 4 - Search and Pagination | 1/2 | 4min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 5, 4, 5, 4.5, 7, 3 min
+- Last 5 plans: 4, 5, 4.5, 7, 3, 4 min
 - Trend: Stable
 
 ## Accumulated Context
@@ -49,6 +50,9 @@ Recent decisions affecting current work:
 - [03-01]: _make_params returns extra_warnings tuple for per-powder parameter warnings
 - [03-02]: CSS-only tooltip via group-hover pattern for quality badge (no tooltip library)
 - [03-02]: data_source excluded from forms (server-managed provenance)
+- [04-01]: Same 30/70 quality formula applied consistently across powder, bullet, and cartridge scorers
+- [04-01]: 11 caliber families defined (.224 through .510) with diameter_mm ranges
+- [04-01]: apply_fuzzy_search orders by similarity desc with quality_score desc as tiebreaker
 
 ### Pending Todos
 
@@ -64,5 +68,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 03-02-PLAN.md (Phase 3 complete)
+Stopped at: Completed 04-01-PLAN.md (search and pagination foundation)
 Resume file: None
