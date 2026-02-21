@@ -15,6 +15,8 @@ import type {
   LadderTestInput,
   ParametricSearchInput,
   ParametricSearchResponse,
+  SensitivityInput,
+  SensitivityResponse,
   ValidationResponse,
 } from './types';
 
@@ -278,6 +280,19 @@ export async function runLadderTest(
     body: JSON.stringify(input),
   });
   return resp.results;
+}
+
+// ============================================================
+// Sensitivity
+// ============================================================
+
+export async function runSensitivity(
+  input: SensitivityInput
+): Promise<SensitivityResponse> {
+  return request<SensitivityResponse>('/simulate/sensitivity', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
 }
 
 // ============================================================

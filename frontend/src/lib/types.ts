@@ -181,6 +181,32 @@ export interface DistanceCurvePoint {
   v_fps: number;
 }
 
+export interface BurnCurvePoint {
+  t_ms: number;
+  z: number;
+  dz_dt: number;
+  psi: number;
+}
+
+export interface EnergyCurvePoint {
+  t_ms: number;
+  x_mm: number;
+  ke_j: number;
+  ke_ft_lbs: number;
+  momentum_ns: number;
+}
+
+export interface TemperatureCurvePoint {
+  t_ms: number;
+  t_gas_k: number;
+  q_loss_j: number;
+}
+
+export interface RecoilCurvePoint {
+  t_ms: number;
+  impulse_ns: number;
+}
+
 export interface SimulationResult {
   id?: string;
   load_id?: string;
@@ -188,6 +214,10 @@ export interface SimulationResult {
   muzzle_velocity_fps: number;
   pressure_curve: CurvePoint[];
   velocity_curve: DistanceCurvePoint[];
+  burn_curve: BurnCurvePoint[];
+  energy_curve: EnergyCurvePoint[];
+  temperature_curve: TemperatureCurvePoint[];
+  recoil_curve: RecoilCurvePoint[];
   barrel_time_ms: number;
   is_safe: boolean;
   warnings: string[];
@@ -287,6 +317,33 @@ export interface ParametricSearchResponse {
   total_powders_tested: number;
   viable_powders: number;
   total_time_ms: number;
+}
+
+// ============================================================
+// Validation
+// ============================================================
+
+// ============================================================
+// Sensitivity
+// ============================================================
+
+export interface SensitivityInput {
+  powder_id: string;
+  bullet_id: string;
+  rifle_id: string;
+  powder_charge_grains: number;
+  coal_mm: number;
+  seating_depth_mm: number;
+  charge_delta_grains?: number;
+}
+
+export interface SensitivityResponse {
+  center: SimulationResult;
+  upper: SimulationResult;
+  lower: SimulationResult;
+  charge_center_grains: number;
+  charge_upper_grains: number;
+  charge_lower_grains: number;
 }
 
 // ============================================================
