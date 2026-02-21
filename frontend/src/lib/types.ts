@@ -347,6 +347,38 @@ export interface SensitivityResponse {
 }
 
 // ============================================================
+// Error Bands
+// ============================================================
+
+export interface ErrorBandPoint {
+  // For pressure chart
+  t_ms?: number;
+  // For velocity chart
+  x_mm?: number;
+  // Band values
+  center: number;
+  upper: number;
+  lower: number;
+  band: number; // upper - lower (for stacked Area trick)
+}
+
+export function buildErrorBandData(
+  center: Record<string, number>[],
+  upper: Record<string, number>[],
+  lower: Record<string, number>[],
+  xKey: string,
+  valueKey: string
+): ErrorBandPoint[] {
+  return center.map((c, i) => ({
+    [xKey]: c[xKey],
+    center: c[valueKey],
+    upper: upper[i]?.[valueKey] ?? c[valueKey],
+    lower: lower[i]?.[valueKey] ?? c[valueKey],
+    band: (upper[i]?.[valueKey] ?? c[valueKey]) - (lower[i]?.[valueKey] ?? c[valueKey]),
+  }));
+}
+
+// ============================================================
 // Validation
 // ============================================================
 
