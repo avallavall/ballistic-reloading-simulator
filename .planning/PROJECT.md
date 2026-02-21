@@ -4,6 +4,17 @@
 
 A web-based internal ballistics simulator for precision ammunition reloading with a GRT-style 3-curve burn model achieving 1.45% mean velocity error, comprehensive chart dashboard with interactive sensitivity explorer, and validated accuracy across 4 calibers. Built as a modern web app (Next.js + FastAPI + PostgreSQL) with cloud storage, cross-platform access, and responsive dark-mode UI.
 
+## Current Milestone: v1.2 Component Databases + Search
+
+**Goal:** Build comprehensive pre-loaded component databases (powders, bullets, cartridges) with multi-source import pipelines, quality indicators, and advanced search/filtering UI so users can simulate immediately without manual data entry.
+
+**Target features:**
+- GRT powder import pipeline (XML/JSON parser, GitHub ingest, manual curation from tech sheets)
+- Comprehensive bullet database (500+ from Sierra, Hornady, Nosler, Berger, Lapua, etc.)
+- Comprehensive cartridge database (50+ with CIP/SAAMI specs)
+- Powder model quality indicators (red/yellow/green confidence badges)
+- Advanced search & filtering UI for all component databases
+
 ## Core Value
 
 The most accurate internal ballistics simulation available, validated against published load manual data, with a comprehensive pre-loaded component database so users can simulate immediately without manual data entry.
@@ -117,4 +128,4 @@ Known technical debt: Z_PRIMER=0.01 bootstrapping hack, h=2000 heat loss coeffic
 | Community features included | GRT's killer feature is crowdsourced data; we need this to compete | — Pending |
 
 ---
-*Last updated: 2026-02-21 after v1.1 milestone*
+*Last updated: 2026-02-21 after v1.2 milestone start*

@@ -5,16 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases and modern web UX.
-**Current focus:** v1.1 milestone shipped. Planning next milestone.
+**Current focus:** v1.2 Component Databases + Search
 
 ## Current Position
 
-Phase: 2 of 7 — v1.1 milestone complete (Phases 1-2 shipped)
-Plan: N/A — between milestones
-Status: Milestone shipped
-Last activity: 2026-02-21 — v1.1 milestone archived
-
-Progress: [███░░░░░░░] 28%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-21 — Milestone v1.2 started
 
 ## Performance Metrics
 
@@ -49,5 +47,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: v1.1 milestone archived and tagged
+Stopped at: Starting v1.2 milestone
 Resume file: None
