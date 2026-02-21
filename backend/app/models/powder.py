@@ -1,4 +1,4 @@
-from sqlalchemy import JSON, Column, Float, String
+from sqlalchemy import JSON, Column, Float, Integer, String
 
 from app.models.base import Base, UUIDMixin
 
@@ -26,3 +26,8 @@ class Powder(UUIDMixin, Base):
     z1 = Column(Float, nullable=True)    # Phase 1/2 transition
     z2 = Column(Float, nullable=True)    # Phase 2/3 transition
     a0 = Column(Float, nullable=True)    # Ba(phi) coefficient 0
+
+    # Data provenance and quality scoring
+    data_source = Column(String(20), nullable=False, default="manual")
+    quality_score = Column(Integer, nullable=False, default=0)
+    web_thickness_mm = Column(Float, nullable=True)
