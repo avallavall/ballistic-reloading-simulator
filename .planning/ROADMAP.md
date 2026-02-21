@@ -36,11 +36,11 @@
   3. Powder records display their data source (grt_community, manufacturer, manual, estimated) and this value persists across edits
   4. Editing a powder via PUT automatically recomputes its quality score so the badge stays accurate
   5. Running a simulation with a powder that has web_thickness set uses that value instead of the hardcoded 0.0004m default
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01-PLAN.md — Backend: migration, ORM, quality scorer, schemas, CRUD auto-recompute, solver web_thickness, tests
+- [ ] 03-02-PLAN.md — Frontend: quality badges with tooltip, source labels, web_thickness in Advanced form
 
 ### Phase 4: Search and Pagination
 **Goal**: Users can efficiently find components in large databases using fuzzy text search, multi-field filters, and paginated results
