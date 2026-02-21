@@ -1,7 +1,7 @@
 import logging
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,17 +9,94 @@ from app.core.grt_converter import convert_grt_to_powder
 from app.core.grt_parser import parse_propellant_file, parse_propellant_zip
 from app.db.session import get_db
 from app.models.powder import Powder
-from app.schemas.powder import GrtImportResult, PowderCreate, PowderResponse, PowderUpdate
+from app.schemas.powder import (
+    GrtImportResult,
+    PaginatedPowderResponse,
+    PowderCreate,
+    PowderResponse,
+    PowderUpdate,
+)
+from app.services.pagination import paginate
+from app.services.search import apply_fuzzy_search
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/powders", tags=["powders"])
 
+# Allowed sort columns for powders
+_POWDER_SORT_COLUMNS = {
+    "name": Powder.name,
+    "manufacturer": Powder.manufacturer,
+    "quality_score": Powder.quality_score,
+}
 
-@router.get("", response_model=list[PowderResponse])
-async def list_powders(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Powder).order_by(Powder.name))
-    return result.scalars().all()
+# Quality level -> (min_score, max_score) inclusive
+_QUALITY_RANGES = {
+    "success": (70, 100),
+    "warning": (40, 69),
+    "danger": (0, 39),
+}
+
+
+@router.get("", response_model=PaginatedPowderResponse)
+async def list_powders(
+    db: AsyncSession = Depends(get_db),
+    q: str | None = Query(None, min_length=3, description="Fuzzy search on name/manufacturer"),
+    manufacturer: str | None = Query(None, description="Filter by exact manufacturer"),
+    burn_rate_min: float | None = Query(None, ge=0, description="Min burn rate relative"),
+    burn_rate_max: float | None = Query(None, le=500, description="Max burn rate relative"),
+    quality_level: str | None = Query(None, description="Badge tier: success/warning/danger"),
+    min_quality: int | None = Query(None, ge=0, le=100, description="Minimum quality score"),
+    sort: str = Query("quality_score", description="Sort column: name, manufacturer, quality_score"),
+    order: str = Query("desc", description="Sort order: asc, desc"),
+    page: int = Query(1, ge=1, description="Page number (1-based)"),
+    size: int = Query(50, ge=1, le=200, description="Items per page (max 200)"),
+):
+    query = select(Powder)
+
+    # Fuzzy search (requires PostgreSQL pg_trgm)
+    if q:
+        query = apply_fuzzy_search(query, Powder, q)
+    else:
+        # Apply user sort when not searching (search has its own ordering)
+        sort_col = _POWDER_SORT_COLUMNS.get(sort, Powder.quality_score)
+        if order == "asc":
+            query = query.order_by(sort_col.asc())
+        else:
+            query = query.order_by(sort_col.desc())
+
+    # Exact manufacturer filter
+    if manufacturer:
+        query = query.where(Powder.manufacturer == manufacturer)
+
+    # Burn rate range filters
+    if burn_rate_min is not None:
+        query = query.where(Powder.burn_rate_relative >= burn_rate_min)
+    if burn_rate_max is not None:
+        query = query.where(Powder.burn_rate_relative <= burn_rate_max)
+
+    # Quality level badge filter
+    if quality_level and quality_level in _QUALITY_RANGES:
+        min_s, max_s = _QUALITY_RANGES[quality_level]
+        query = query.where(Powder.quality_score >= min_s, Powder.quality_score <= max_s)
+
+    # Minimum quality score filter
+    if min_quality is not None:
+        query = query.where(Powder.quality_score >= min_quality)
+
+    return await paginate(db, query, page, size)
+
+
+@router.get("/manufacturers", response_model=list[str])
+async def list_powder_manufacturers(db: AsyncSession = Depends(get_db)):
+    """Return distinct manufacturer names for powders."""
+    result = await db.execute(
+        select(Powder.manufacturer)
+        .distinct()
+        .where(Powder.manufacturer.isnot(None))
+        .order_by(Powder.manufacturer)
+    )
+    return list(result.scalars().all())
 
 
 @router.post("", response_model=PowderResponse, status_code=201)

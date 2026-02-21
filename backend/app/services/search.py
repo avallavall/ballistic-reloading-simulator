@@ -37,29 +37,43 @@ def derive_caliber_family(diameter_mm: float) -> str | None:
     return None
 
 
-def apply_fuzzy_search(query, model, search_term: str):
-    """Apply pg_trgm fuzzy search on name and manufacturer columns.
+def apply_fuzzy_search(
+    query,
+    model,
+    search_term: str,
+    fields: list[str] | None = None,
+):
+    """Apply pg_trgm fuzzy search on specified columns.
 
-    Filters rows where either name or manufacturer is similar to the search term
+    Filters rows where any of the specified fields is similar to the search term
     (using the % trigram operator), then orders by similarity descending with
     quality_score as tiebreaker.
 
     Args:
         query: SQLAlchemy select statement to modify.
-        model: ORM model class (must have name, manufacturer, quality_score columns).
+        model: ORM model class (must have quality_score column).
         search_term: User-provided search string.
+        fields: List of column names to search. Defaults to ["name", "manufacturer"].
+            Columns that don't exist on the model are silently skipped.
 
     Returns:
         Modified query with WHERE and ORDER BY clauses.
     """
-    query = query.where(
-        or_(
-            model.name.op("%")(search_term),
-            model.manufacturer.op("%")(search_term),
-        )
-    )
+    if fields is None:
+        fields = ["name", "manufacturer"]
+
+    # Only include columns that actually exist on the model
+    search_columns = [getattr(model, f) for f in fields if hasattr(model, f)]
+
+    if not search_columns:
+        return query
+
+    conditions = [col.op("%")(search_term) for col in search_columns]
+    query = query.where(or_(*conditions))
+
+    # Order by similarity on the first search column (typically name)
     query = query.order_by(
-        func.similarity(model.name, search_term).desc(),
+        func.similarity(search_columns[0], search_term).desc(),
         model.quality_score.desc(),
     )
     return query
