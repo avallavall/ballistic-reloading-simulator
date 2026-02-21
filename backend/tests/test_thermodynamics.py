@@ -8,6 +8,7 @@ import pytest
 from app.core.thermodynamics import (
     flame_temperature,
     form_function,
+    form_function_3curve,
     noble_abel_pressure,
     vieille_burn_rate,
     R_UNIVERSAL,
@@ -228,3 +229,104 @@ class TestFlameTemperature:
     def test_zero_force(self):
         """Zero force => zero temperature."""
         assert flame_temperature(0.0, 0.025) == 0.0
+
+
+# ---------------------------------------------------------------------------
+# form_function_3curve
+# ---------------------------------------------------------------------------
+
+
+class TestFormFunction3Curve:
+    """Tests for form_function_3curve(z, z1, z2, bp, br, brp).
+
+    The 3-curve model divides combustion into three phases:
+      Phase 1 (0 <= z < z1): Initial ignition.
+      Phase 2 (z1 <= z < z2): Main combustion.
+      Phase 3 (z2 <= z <= 1): Tail-off.
+    """
+
+    # Default test parameters
+    Z1 = 0.4
+    Z2 = 0.8
+    BP = 0.15
+    BR = 0.10
+    BRP = 0.12
+
+    def test_form_function_3curve_boundary_values(self):
+        """psi(0) must be 0.0 and psi(1) must be 1.0."""
+        assert form_function_3curve(0.0, self.Z1, self.Z2, self.BP, self.BR, self.BRP) == 0.0
+        assert form_function_3curve(1.0, self.Z1, self.Z2, self.BP, self.BR, self.BRP) == pytest.approx(1.0, abs=1e-12)
+
+    def test_form_function_3curve_monotonic(self):
+        """psi must be monotonically non-decreasing from z=0 to z=1."""
+        z_values = [i / 10.0 for i in range(11)]  # [0.0, 0.1, ..., 1.0]
+        vals = [form_function_3curve(z, self.Z1, self.Z2, self.BP, self.BR, self.BRP) for z in z_values]
+        assert all(vals[i + 1] >= vals[i] for i in range(len(vals) - 1)), (
+            f"Monotonicity violated: {vals}"
+        )
+
+    def test_form_function_3curve_continuity_at_z1(self):
+        """psi must be C0-continuous at the z1 transition point (no jump)."""
+        eps = 1e-10
+        left = form_function_3curve(self.Z1 - eps, self.Z1, self.Z2, self.BP, self.BR, self.BRP)
+        right = form_function_3curve(self.Z1 + eps, self.Z1, self.Z2, self.BP, self.BR, self.BRP)
+        assert abs(left - right) < 1e-6, (
+            f"Discontinuity at z1={self.Z1}: left={left}, right={right}, diff={abs(left-right)}"
+        )
+
+    def test_form_function_3curve_continuity_at_z2(self):
+        """psi must be C0-continuous at the z2 transition point (no jump)."""
+        eps = 1e-10
+        left = form_function_3curve(self.Z2 - eps, self.Z1, self.Z2, self.BP, self.BR, self.BRP)
+        right = form_function_3curve(self.Z2 + eps, self.Z1, self.Z2, self.BP, self.BR, self.BRP)
+        assert abs(left - right) < 1e-6, (
+            f"Discontinuity at z2={self.Z2}: left={left}, right={right}, diff={abs(left-right)}"
+        )
+
+    def test_form_function_3curve_clamping(self):
+        """Negative z should return 0.0 and z > 1.0 should return 1.0."""
+        assert form_function_3curve(-0.5, self.Z1, self.Z2, self.BP, self.BR, self.BRP) == 0.0
+        assert form_function_3curve(1.5, self.Z1, self.Z2, self.BP, self.BR, self.BRP) == pytest.approx(1.0, abs=1e-12)
+
+    @pytest.mark.parametrize("bp,br,brp,z1,z2,name", [
+        (0.0936, 0.0794, 0.0868, 0.4804, 0.8363, "Hodgdon 50BMG"),
+        (0.1717, 0.1259, 0.1506, 0.3391, 0.4215, "Hodgdon H380 #3"),
+        (0.1238, 0.0892, 0.1079, 0.6264, 0.6890, "Alliant RL 25"),
+        (0.1995, 0.1310, 0.1688, 0.4296, 0.8867, "Win StaBALL Match"),
+    ])
+    def test_form_function_3curve_multiple_powders(self, bp, br, brp, z1, z2, name):
+        """For real GRT powder data: psi(0)=0, psi(1)=1, monotonic, continuous at z1/z2."""
+        # Boundary values
+        assert form_function_3curve(0.0, z1, z2, bp, br, brp) == 0.0, f"{name}: psi(0) != 0"
+        assert form_function_3curve(1.0, z1, z2, bp, br, brp) == pytest.approx(1.0, abs=1e-10), (
+            f"{name}: psi(1) != 1"
+        )
+
+        # Monotonicity
+        z_values = [i / 100.0 for i in range(101)]
+        vals = [form_function_3curve(z, z1, z2, bp, br, brp) for z in z_values]
+        assert all(vals[i + 1] >= vals[i] for i in range(len(vals) - 1)), (
+            f"{name}: monotonicity violated"
+        )
+
+        # Continuity at z1
+        eps = 1e-10
+        left_z1 = form_function_3curve(z1 - eps, z1, z2, bp, br, brp)
+        right_z1 = form_function_3curve(z1 + eps, z1, z2, bp, br, brp)
+        assert abs(left_z1 - right_z1) < 1e-6, (
+            f"{name}: discontinuity at z1={z1}: diff={abs(left_z1 - right_z1)}"
+        )
+
+        # Continuity at z2
+        left_z2 = form_function_3curve(z2 - eps, z1, z2, bp, br, brp)
+        right_z2 = form_function_3curve(z2 + eps, z1, z2, bp, br, brp)
+        assert abs(left_z2 - right_z2) < 1e-6, (
+            f"{name}: discontinuity at z2={z2}: diff={abs(left_z2 - right_z2)}"
+        )
+
+    def test_form_function_3curve_midpoint_progressive(self):
+        """For a progressive powder (Bp > 0, Br > 0), psi(0.5) should be between 0.3 and 0.7."""
+        psi_mid = form_function_3curve(0.5, self.Z1, self.Z2, self.BP, self.BR, self.BRP)
+        assert 0.3 <= psi_mid <= 0.7, (
+            f"psi(0.5) = {psi_mid} outside expected range [0.3, 0.7]"
+        )

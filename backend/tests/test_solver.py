@@ -415,3 +415,155 @@ class TestRecoilCalculation:
 
         result = simulate_with_primer(powder, bullet, cartridge, rifle, light_load)
         assert result.recoil_energy_ft_lbs < 10.0
+
+
+# ---------------------------------------------------------------------------
+# Tests: golden output -- backward compatibility guard for 2-curve solver
+# ---------------------------------------------------------------------------
+
+
+class TestGoldenOutput2Curve:
+    """Verify that the 2-curve solver produces bit-identical results after changes.
+
+    These golden values were captured from the current .308 Win simulation
+    before any 3-curve modifications. The tolerance of 0.1% (rel=1e-3)
+    guards against accidental regressions in the 2-curve code path.
+    """
+
+    @pytest.fixture(scope="class")
+    def result(self) -> SimResult:
+        powder, bullet, cartridge, rifle, load = make_308_params()
+        return simulate_with_primer(powder, bullet, cartridge, rifle, load)
+
+    def test_golden_output_2curve_peak_pressure(self, result: SimResult):
+        """Peak pressure must match the golden value within 0.1%."""
+        assert result.peak_pressure_psi == pytest.approx(96880.44677292932, rel=1e-3)
+
+    def test_golden_output_2curve_muzzle_velocity(self, result: SimResult):
+        """Muzzle velocity must match the golden value within 0.1%."""
+        assert result.muzzle_velocity_fps == pytest.approx(3258.1299761938285, rel=1e-3)
+
+    def test_golden_output_2curve_barrel_time(self, result: SimResult):
+        """Barrel time must match the golden value within 0.1%."""
+        assert result.barrel_time_ms == pytest.approx(0.9396475304600503, rel=1e-3)
+
+
+# ---------------------------------------------------------------------------
+# Tests: 3-curve has_3curve property on PowderParams
+# ---------------------------------------------------------------------------
+
+
+class TestPowderParams3Curve:
+    """Verify the has_3curve property on PowderParams."""
+
+    def test_3curve_has_3curve_property_true(self):
+        """PowderParams with all 3-curve fields populated should have has_3curve=True."""
+        powder = PowderParams(
+            force_j_kg=950_000,
+            covolume_m3_kg=0.001,
+            burn_rate_coeff=1.6e-8,
+            burn_rate_exp=0.86,
+            gamma=1.24,
+            density_kg_m3=920.0,
+            flame_temp_k=4050.0,
+            ba=0.5,
+            bp=0.1,
+            br=0.1,
+            brp=0.1,
+            z1=0.4,
+            z2=0.8,
+        )
+        assert powder.has_3curve is True
+
+    def test_3curve_has_3curve_property_false(self):
+        """PowderParams without 3-curve fields should have has_3curve=False."""
+        powder = PowderParams(
+            force_j_kg=950_000,
+            covolume_m3_kg=0.001,
+            burn_rate_coeff=1.6e-8,
+            burn_rate_exp=0.86,
+            gamma=1.24,
+            density_kg_m3=920.0,
+            flame_temp_k=4050.0,
+        )
+        assert powder.has_3curve is False
+
+    def test_3curve_has_3curve_partial_false(self):
+        """PowderParams with only some 3-curve fields populated should have has_3curve=False."""
+        powder = PowderParams(
+            force_j_kg=950_000,
+            covolume_m3_kg=0.001,
+            burn_rate_coeff=1.6e-8,
+            burn_rate_exp=0.86,
+            gamma=1.24,
+            density_kg_m3=920.0,
+            flame_temp_k=4050.0,
+            ba=0.5,
+            bp=0.1,
+            # br, brp, z1, z2 missing
+        )
+        assert powder.has_3curve is False
+
+
+# ---------------------------------------------------------------------------
+# Tests: 3-curve simulation
+# ---------------------------------------------------------------------------
+
+
+class TestSimulate3Curve:
+    """Verify that the solver can run a simulation using 3-curve parameters."""
+
+    @pytest.fixture(scope="class")
+    def result_3curve(self) -> SimResult:
+        """Run a 3-curve simulation with Hodgdon H380 #3 parameters."""
+        powder = PowderParams(
+            force_j_kg=950_000,
+            covolume_m3_kg=0.001,
+            burn_rate_coeff=1.6e-8,
+            burn_rate_exp=0.86,
+            gamma=1.24,
+            density_kg_m3=920.0,
+            flame_temp_k=4050.0,
+            web_thickness_m=0.0004,
+            theta=-0.2,
+            # 3-curve GRT parameters (Hodgdon H380 #3)
+            ba=0.496,
+            bp=0.1717,
+            br=0.1259,
+            brp=0.1506,
+            z1=0.3391,
+            z2=0.4215,
+        )
+        bullet = BulletParams(
+            mass_kg=168 * GRAINS_TO_KG,
+            diameter_m=7.82 * MM_TO_M,
+        )
+        cartridge = CartridgeParams(
+            saami_max_pressure_psi=62_000,
+            chamber_volume_m3=3.63e-6,
+            bore_diameter_m=7.62 * MM_TO_M,
+        )
+        rifle = RifleParams(
+            barrel_length_m=610 * MM_TO_M,
+            twist_rate_m=254 * MM_TO_M,
+        )
+        load = LoadParams(
+            charge_mass_kg=44 * GRAINS_TO_KG,
+        )
+        return simulate_with_primer(powder, bullet, cartridge, rifle, load)
+
+    def test_3curve_simulation_runs(self, result_3curve: SimResult):
+        """3-curve simulation must complete without integration failure."""
+        assert not any("Integration failed" in w for w in result_3curve.warnings)
+
+    def test_3curve_peak_pressure_positive(self, result_3curve: SimResult):
+        """3-curve simulation must produce positive peak pressure."""
+        assert result_3curve.peak_pressure_psi > 0
+
+    def test_3curve_muzzle_velocity_positive(self, result_3curve: SimResult):
+        """3-curve simulation must produce positive muzzle velocity."""
+        assert result_3curve.muzzle_velocity_fps > 0
+
+    def test_3curve_pressure_curve_nonempty(self, result_3curve: SimResult):
+        """3-curve simulation must produce a non-empty pressure curve."""
+        assert len(result_3curve.pressure_curve) > 0
