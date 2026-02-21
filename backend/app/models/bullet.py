@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Float, String
+from sqlalchemy import Column, Float, Integer, String
 
 from app.models.base import Base, UUIDMixin
 
@@ -15,3 +15,8 @@ class Bullet(UUIDMixin, Base):
     bc_g7 = Column(Float, nullable=True)
     sectional_density = Column(Float, nullable=False)
     material = Column(String(50), nullable=False, default="copper")
+
+    # Data provenance and quality scoring
+    data_source = Column(String(20), nullable=False, default="manual")
+    quality_score = Column(Integer, nullable=False, default=0)
+    caliber_family = Column(String(20), nullable=True)

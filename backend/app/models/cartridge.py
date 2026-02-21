@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Float, String
+from sqlalchemy import Column, Float, Integer, String
 
 from app.models.base import Base, UUIDMixin
 
@@ -14,3 +14,8 @@ class Cartridge(UUIDMixin, Base):
     overall_length_mm = Column(Float, nullable=False)
     bore_diameter_mm = Column(Float, nullable=False)
     groove_diameter_mm = Column(Float, nullable=False)
+
+    # Data provenance and quality scoring
+    data_source = Column(String(20), nullable=False, default="manual")
+    quality_score = Column(Integer, nullable=False, default=0)
+    caliber_family = Column(String(20), nullable=True)
