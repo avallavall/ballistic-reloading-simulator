@@ -331,6 +331,55 @@ async def test_direct_simulation(client):
 
 
 @pytest.mark.asyncio
+async def test_direct_simulation_extended_curves(client):
+    """POST /simulate/direct returns the new burn/energy/temperature/recoil curves."""
+    powder, bullet, cartridge, rifle = await _create_full_test_data(client)
+
+    sim_req = {
+        "powder_id": powder["id"],
+        "bullet_id": bullet["id"],
+        "rifle_id": rifle["id"],
+        "powder_charge_grains": 44.0,
+        "coal_mm": 71.0,
+        "seating_depth_mm": 5.0,
+    }
+    resp = await client.post("/api/v1/simulate/direct", json=sim_req)
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # Verify extended curves are present and have 200 points
+    assert len(data["burn_curve"]) == 200
+    assert len(data["energy_curve"]) == 200
+    assert len(data["temperature_curve"]) == 200
+    assert len(data["recoil_curve"]) == 200
+
+    # Verify burn curve keys
+    burn_pt = data["burn_curve"][10]
+    assert "t_ms" in burn_pt
+    assert "z" in burn_pt
+    assert "dz_dt" in burn_pt
+    assert "psi" in burn_pt
+
+    # Verify energy curve keys
+    energy_pt = data["energy_curve"][10]
+    assert "t_ms" in energy_pt
+    assert "ke_j" in energy_pt
+    assert "ke_ft_lbs" in energy_pt
+    assert "momentum_ns" in energy_pt
+
+    # Verify temperature curve keys
+    temp_pt = data["temperature_curve"][10]
+    assert "t_ms" in temp_pt
+    assert "t_gas_k" in temp_pt
+    assert "q_loss_j" in temp_pt
+
+    # Verify recoil curve keys
+    recoil_pt = data["recoil_curve"][10]
+    assert "t_ms" in recoil_pt
+    assert "impulse_ns" in recoil_pt
+
+
+@pytest.mark.asyncio
 async def test_direct_simulation_curve_format(client):
     """Pressure curve points have t_ms/p_psi, velocity curve has x_mm/v_fps."""
     powder, bullet, cartridge, rifle = await _create_full_test_data(client)
@@ -661,6 +710,113 @@ async def test_create_powder_with_3curve_fields(client):
     data2 = resp2.json()
     assert data2["has_3curve"] is True
     assert data2["ba"] == 1.5
+
+
+# ---------------------------------------------------------------------------
+# Tests: Sensitivity Endpoint (4 tests)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_sensitivity_endpoint_success(client):
+    """POST /simulate/sensitivity returns center, upper, lower simulations."""
+    powder, bullet, cartridge, rifle = await _create_full_test_data(client)
+
+    req = {
+        "powder_id": powder["id"],
+        "bullet_id": bullet["id"],
+        "rifle_id": rifle["id"],
+        "powder_charge_grains": 44.0,
+        "coal_mm": 71.0,
+        "seating_depth_mm": 5.0,
+        "charge_delta_grains": 0.5,
+    }
+    resp = await client.post("/api/v1/simulate/sensitivity", json=req)
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # Check structure
+    assert "center" in data
+    assert "upper" in data
+    assert "lower" in data
+    assert "charge_center_grains" in data
+    assert "charge_upper_grains" in data
+    assert "charge_lower_grains" in data
+
+    # Check charge values
+    assert data["charge_center_grains"] == 44.0
+    assert data["charge_upper_grains"] == 44.5
+    assert data["charge_lower_grains"] == 43.5
+
+    # Check each has curve data with 200 points
+    for key in ["center", "upper", "lower"]:
+        assert len(data[key]["pressure_curve"]) == 200
+        assert len(data[key]["velocity_curve"]) == 200
+        assert data[key]["peak_pressure_psi"] > 0
+        assert data[key]["muzzle_velocity_fps"] > 0
+
+
+@pytest.mark.asyncio
+async def test_sensitivity_upper_higher_pressure(client):
+    """More charge (upper) should produce higher pressure than center."""
+    powder, bullet, cartridge, rifle = await _create_full_test_data(client)
+
+    req = {
+        "powder_id": powder["id"],
+        "bullet_id": bullet["id"],
+        "rifle_id": rifle["id"],
+        "powder_charge_grains": 44.0,
+        "coal_mm": 71.0,
+        "seating_depth_mm": 5.0,
+        "charge_delta_grains": 0.5,
+    }
+    resp = await client.post("/api/v1/simulate/sensitivity", json=req)
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert data["upper"]["peak_pressure_psi"] >= data["center"]["peak_pressure_psi"]
+
+
+@pytest.mark.asyncio
+async def test_sensitivity_includes_extended_curves(client):
+    """Sensitivity response includes the new burn/energy/temperature/recoil curves."""
+    powder, bullet, cartridge, rifle = await _create_full_test_data(client)
+
+    req = {
+        "powder_id": powder["id"],
+        "bullet_id": bullet["id"],
+        "rifle_id": rifle["id"],
+        "powder_charge_grains": 44.0,
+        "coal_mm": 71.0,
+        "seating_depth_mm": 5.0,
+        "charge_delta_grains": 0.3,
+    }
+    resp = await client.post("/api/v1/simulate/sensitivity", json=req)
+    assert resp.status_code == 200
+    data = resp.json()
+
+    for key in ["center", "upper", "lower"]:
+        assert len(data[key]["burn_curve"]) == 200
+        assert len(data[key]["energy_curve"]) == 200
+        assert len(data[key]["temperature_curve"]) == 200
+        assert len(data[key]["recoil_curve"]) == 200
+
+
+@pytest.mark.asyncio
+async def test_sensitivity_missing_powder_404(client):
+    """Sensitivity with nonexistent powder returns 404."""
+    _, bullet, cartridge, rifle = await _create_full_test_data(client)
+
+    req = {
+        "powder_id": "00000000-0000-0000-0000-000000000099",
+        "bullet_id": bullet["id"],
+        "rifle_id": rifle["id"],
+        "powder_charge_grains": 44.0,
+        "coal_mm": 71.0,
+        "seating_depth_mm": 5.0,
+    }
+    resp = await client.post("/api/v1/simulate/sensitivity", json=req)
+    assert resp.status_code == 404
 
 
 @pytest.mark.asyncio

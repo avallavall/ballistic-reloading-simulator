@@ -36,6 +36,8 @@ from app.schemas.simulation import (
     ParametricSearchResponse,
     PowderChargeResult,
     PowderSearchResult,
+    SensitivityRequest,
+    SensitivityResponse,
     SimulationRequest,
     SimulationResultResponse,
     ValidationLoadResult,
@@ -215,6 +217,43 @@ async def run_direct_simulation(request: Request, req: DirectSimulationRequest, 
     result = simulate(powder, bullet, cart, rif, ld)
 
     return _sim_result_to_response(result)
+
+
+@router.post("/sensitivity", response_model=SensitivityResponse)
+@limiter.limit("10/minute")
+async def run_sensitivity(request: Request, req: SensitivityRequest, db: AsyncSession = Depends(get_db)):
+    """Run 3 simulations (center, +delta, -delta) for sensitivity/error band visualization."""
+    powder_row = await db.get(Powder, req.powder_id)
+    bullet_row = await db.get(Bullet, req.bullet_id)
+    rifle_row = await db.get(Rifle, req.rifle_id)
+    if not powder_row or not bullet_row or not rifle_row:
+        raise HTTPException(404, "Powder, bullet, or rifle not found")
+
+    cartridge_row = await db.get(Cartridge, rifle_row.cartridge_id)
+    if not cartridge_row:
+        raise HTTPException(404, "Cartridge not found for rifle")
+
+    charge_center = req.powder_charge_grains
+    charge_upper = charge_center + req.charge_delta_grains
+    charge_lower = max(0.1, charge_center - req.charge_delta_grains)
+
+    # Run 3 simulations: center, upper, lower
+    results = {}
+    for label, charge_gr in [("center", charge_center), ("upper", charge_upper), ("lower", charge_lower)]:
+        powder, bullet, cart, rif, ld = _make_params(
+            powder_row, bullet_row, cartridge_row, rifle_row, charge_gr
+        )
+        sim_result = simulate(powder, bullet, cart, rif, ld)
+        results[label] = _sim_result_to_response(sim_result)
+
+    return SensitivityResponse(
+        center=results["center"],
+        upper=results["upper"],
+        lower=results["lower"],
+        charge_center_grains=charge_center,
+        charge_upper_grains=charge_upper,
+        charge_lower_grains=charge_lower,
+    )
 
 
 @router.get("/export/{simulation_id}")

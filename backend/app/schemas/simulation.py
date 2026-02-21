@@ -79,6 +79,25 @@ class DirectSimulationResponse(BaseModel):
     recoil_curve: list[dict] = []
 
 
+class SensitivityRequest(BaseModel):
+    powder_id: uuid.UUID
+    bullet_id: uuid.UUID
+    rifle_id: uuid.UUID
+    powder_charge_grains: float = Field(gt=0, le=200, description="Center charge weight (grains)")
+    coal_mm: float = Field(gt=0, le=200, description="Cartridge overall length (mm)")
+    seating_depth_mm: float = Field(gt=0, le=50, description="Bullet seating depth (mm)")
+    charge_delta_grains: float = Field(default=0.3, gt=0, le=5.0, description="Charge variation +/- (grains)")
+
+
+class SensitivityResponse(BaseModel):
+    center: DirectSimulationResponse
+    upper: DirectSimulationResponse
+    lower: DirectSimulationResponse
+    charge_center_grains: float
+    charge_upper_grains: float
+    charge_lower_grains: float
+
+
 class LadderTestResponse(BaseModel):
     results: list[DirectSimulationResponse]
     charge_weights: list[float]
