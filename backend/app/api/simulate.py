@@ -38,6 +38,8 @@ from app.schemas.simulation import (
     PowderSearchResult,
     SimulationRequest,
     SimulationResultResponse,
+    ValidationLoadResult,
+    ValidationResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -395,4 +397,50 @@ async def run_parametric_search(request: Request, req: ParametricSearchRequest, 
         total_powders_tested=len(all_powders),
         viable_powders=len(viable),
         total_time_ms=round(total_time_ms, 1),
+    )
+
+
+@router.post("/validate", response_model=ValidationResponse)
+@limiter.limit("3/minute")
+async def run_validation(request: Request):
+    """Run all reference loads and return comparison results.
+
+    Uses the shared VALIDATION_LOADS fixture to simulate each load
+    and compare predicted vs published muzzle velocity.
+    """
+    from tests.fixtures.validation_loads import VALIDATION_LOADS, run_validation_load
+
+    results: list[ValidationLoadResult] = []
+    errors: list[float] = []
+
+    for load in VALIDATION_LOADS:
+        r = run_validation_load(load)
+        results.append(ValidationLoadResult(
+            load_id=r["load_id"],
+            caliber=r["caliber"],
+            bullet_desc=r["bullet_desc"],
+            powder_name=r["powder_name"],
+            charge_gr=r["charge_gr"],
+            barrel_length_mm=r["barrel_length_mm"],
+            published_velocity_fps=r["published_velocity_fps"],
+            predicted_velocity_fps=r["predicted_velocity_fps"],
+            error_pct=r["error_pct"],
+            is_pass=r["is_pass"],
+            source=r["source"],
+        ))
+        errors.append(r["error_pct"])
+
+    passing = sum(1 for r in results if r.is_pass)
+    max_error = max(errors) if errors else 0.0
+    worst_idx = errors.index(max_error) if errors else 0
+    worst_id = results[worst_idx].load_id if results else ""
+
+    return ValidationResponse(
+        results=results,
+        total_loads=len(results),
+        passing_loads=passing,
+        pass_rate_pct=round(passing / len(results) * 100.0, 1) if results else 0.0,
+        mean_error_pct=round(sum(errors) / len(errors), 2) if errors else 0.0,
+        max_error_pct=round(max_error, 2),
+        worst_load_id=worst_id,
     )

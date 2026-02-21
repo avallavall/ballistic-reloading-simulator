@@ -120,3 +120,31 @@ class ParametricSearchResponse(BaseModel):
     total_powders_tested: int
     viable_powders: int
     total_time_ms: float
+
+
+# ============================================================
+# Validation
+# ============================================================
+
+class ValidationLoadResult(BaseModel):
+    load_id: str
+    caliber: str
+    bullet_desc: str
+    powder_name: str
+    charge_gr: float
+    barrel_length_mm: float
+    published_velocity_fps: float
+    predicted_velocity_fps: float
+    error_pct: float
+    is_pass: bool
+    source: str
+
+
+class ValidationResponse(BaseModel):
+    results: list[ValidationLoadResult]
+    total_loads: int
+    passing_loads: int
+    pass_rate_pct: float
+    mean_error_pct: float
+    max_error_pct: float
+    worst_load_id: str
