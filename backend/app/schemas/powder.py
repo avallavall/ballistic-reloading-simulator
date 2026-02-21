@@ -136,6 +136,13 @@ class PowderResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class PaginatedPowderResponse(BaseModel):
+    items: list[PowderResponse]
+    total: int
+    page: int
+    size: int
+
+
 class GrtImportResult(BaseModel):
     created: list[PowderResponse] = Field(default_factory=list)
     skipped: list[str] = Field(default_factory=list, description="Names skipped (already exist)")

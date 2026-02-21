@@ -1,6 +1,6 @@
 import uuid
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 
 class CartridgeCreate(BaseModel):
@@ -13,6 +13,9 @@ class CartridgeCreate(BaseModel):
     bore_diameter_mm: float = Field(gt=0, le=20, description="Bore diameter (mm)")
     groove_diameter_mm: float = Field(gt=0, le=20, description="Groove diameter (mm)")
 
+    # Data provenance
+    data_source: str = Field(default="manual", description="Data source provenance")
+
 
 class CartridgeUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=100)
@@ -23,6 +26,9 @@ class CartridgeUpdate(BaseModel):
     overall_length_mm: float | None = Field(None, gt=0, le=200)
     bore_diameter_mm: float | None = Field(None, gt=0, le=20)
     groove_diameter_mm: float | None = Field(None, gt=0, le=20)
+
+    # Data provenance (optional on update)
+    data_source: str | None = None
 
 
 class CartridgeResponse(BaseModel):
@@ -36,4 +42,62 @@ class CartridgeResponse(BaseModel):
     bore_diameter_mm: float
     groove_diameter_mm: float
 
+    # Data provenance and quality
+    data_source: str = "manual"
+    quality_score: int = 0
+    caliber_family: str | None = None
+
+    @computed_field
+    @property
+    def quality_level(self) -> str:
+        """Map score to badge color: green/yellow/red."""
+        if self.quality_score >= 70:
+            return "success"
+        elif self.quality_score >= 40:
+            return "warning"
+        return "danger"
+
+    @computed_field
+    @property
+    def quality_tooltip(self) -> str:
+        """One-line summary for hover tooltip."""
+        from app.core.quality import (
+            compute_cartridge_quality_score,
+            CARTRIDGE_CRITICAL_FIELDS,
+            CARTRIDGE_BONUS_FIELDS,
+        )
+
+        # Build dict manually to avoid model_dump() recursion (computed fields call model_dump)
+        cartridge_dict = {f: getattr(self, f, None) for f in CARTRIDGE_CRITICAL_FIELDS + CARTRIDGE_BONUS_FIELDS}
+        breakdown = compute_cartridge_quality_score(cartridge_dict, self.data_source)
+
+        source_labels = {
+            "manufacturer": "Fabricante",
+            "grt_community": "GRT Community",
+            "grt_modified": "GRT Modificado",
+            "manual": "Manual",
+            "estimated": "Estimado",
+        }
+        source_label = source_labels.get(self.data_source, self.data_source)
+
+        missing_str = ", ".join(breakdown.missing_fields[:3])
+        if len(breakdown.missing_fields) > 3:
+            missing_str += f" (+{len(breakdown.missing_fields) - 3})"
+
+        parts = [
+            f"{breakdown.score}/100",
+            source_label,
+            f"{breakdown.filled_count}/{breakdown.total_count} campos",
+        ]
+        if breakdown.missing_fields:
+            parts.append(f"faltan: {missing_str}")
+        return " \u2014 ".join(parts)
+
     model_config = {"from_attributes": True}
+
+
+class PaginatedCartridgeResponse(BaseModel):
+    items: list[CartridgeResponse]
+    total: int
+    page: int
+    size: int
