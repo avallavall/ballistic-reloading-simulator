@@ -10,9 +10,9 @@ Requirements for v1.2 Component Databases + Search milestone. Each maps to roadm
 ### Powder Database
 
 - [ ] **PWD-01**: User can batch-import 200+ powders from GRT community database XML files with collision handling (skip/overwrite)
-- [ ] **PWD-02**: User sees red/yellow/green quality badges on each powder based on GRT Qlty field and data completeness
-- [ ] **PWD-03**: User can view computed quality score (0-100) with breakdown tooltip showing data completeness and source reliability
-- [ ] **PWD-04**: Powder records track data source provenance (grt_community, manufacturer, manual, estimated)
+- [x] **PWD-02**: User sees red/yellow/green quality badges on each powder based on GRT Qlty field and data completeness
+- [x] **PWD-03**: User can view computed quality score (0-100) with breakdown tooltip showing data completeness and source reliability
+- [x] **PWD-04**: Powder records track data source provenance (grt_community, manufacturer, manual, estimated)
 - [ ] **PWD-05**: Powder aliases are resolved so duplicate entries across markets are linked (e.g., ADI AR2208 = Hodgdon Varget)
 
 ### Bullet Database
@@ -31,8 +31,8 @@ Requirements for v1.2 Component Databases + Search milestone. Each maps to roadm
 ### Quality System
 
 - [ ] **QLT-01**: All component records display quality/completeness badges (green = well-validated, yellow = estimated, red = sparse data)
-- [ ] **QLT-02**: Quality scores are automatically recomputed when records are updated via PUT endpoints
-- [ ] **QLT-03**: Quality scoring uses deterministic formula: data completeness (fields filled) + source reliability tier (manufacturer > GRT community > manual > estimated)
+- [x] **QLT-02**: Quality scores are automatically recomputed when records are updated via PUT endpoints
+- [x] **QLT-03**: Quality scoring uses deterministic formula: data completeness (fields filled) + source reliability tier (manufacturer > GRT community > manual > estimated)
 
 ### Search & Filtering
 
@@ -44,7 +44,7 @@ Requirements for v1.2 Component Databases + Search milestone. Each maps to roadm
 
 ### Solver Fix
 
-- [ ] **SOL-01**: Solver reads web_thickness per powder from DB instead of hardcoded 0.0004m default, with fallback for legacy records
+- [x] **SOL-01**: Solver reads web_thickness per powder from DB instead of hardcoded 0.0004m default, with fallback for legacy records
 
 ## v1.3 Requirements
 
@@ -81,9 +81,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | PWD-01 | Phase 5 | Pending |
-| PWD-02 | Phase 3 | Pending |
-| PWD-03 | Phase 3 | Pending |
-| PWD-04 | Phase 3 | Pending |
+| PWD-02 | Phase 3 | Complete |
+| PWD-03 | Phase 3 | Complete |
+| PWD-04 | Phase 3 | Complete |
 | PWD-05 | Phase 5 | Pending |
 | BUL-01 | Phase 5 | Pending |
 | BUL-02 | Phase 5 | Pending |
@@ -93,14 +93,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CRT-02 | Phase 5 | Pending |
 | CRT-03 | Phase 5 | Pending |
 | QLT-01 | Phase 6 | Pending |
-| QLT-02 | Phase 3 | Pending |
-| QLT-03 | Phase 3 | Pending |
+| QLT-02 | Phase 3 | Complete |
+| QLT-03 | Phase 3 | Complete |
 | SRC-01 | Phase 4 | Pending |
 | SRC-02 | Phase 4 | Pending |
 | SRC-03 | Phase 4 | Pending |
 | SRC-04 | Phase 6 | Pending |
 | SRC-05 | Phase 6 | Pending |
-| SOL-01 | Phase 3 | Pending |
+| SOL-01 | Phase 3 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 21 total

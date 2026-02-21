@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 3 of 6 (Schema and Quality System)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-02-21 — Roadmap created for v1.2
+Plan: 1 of 2 in current phase
+Status: Executing
+Last activity: 2026-02-21 — Completed 03-01-PLAN.md (backend quality system)
 
-Progress: [=====-----] 54% (7 plans complete across all milestones)
+Progress: [======----] 62% (8 plans complete across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 5.6min
-- Total execution time: 0.65 hours
+- Total plans completed: 8
+- Average duration: 5.7min
+- Total execution time: 0.77 hours
 
 **By Phase:**
 
@@ -29,11 +29,11 @@ Progress: [=====-----] 54% (7 plans complete across all milestones)
 |-------|-------|-------|----------|
 | 1 - 3-Curve Burn Model | 3/3 | 20min | 6.7min |
 | 2 - Extended Simulation Charts | 4/4 | 19min | 4.8min |
-| 3 - Schema and Quality System | 0/? | - | - |
+| 3 - Schema and Quality System | 1/2 | 7min | 7min |
 
 **Recent Trend:**
-- Last 5 plans: 7.5, 6.5, 6, 5, 4, 5, 4.5 min
-- Trend: Improving
+- Last 5 plans: 6, 5, 4, 5, 4.5, 7 min
+- Trend: Stable
 
 ## Accumulated Context
 
@@ -45,6 +45,8 @@ Recent decisions affecting current work:
 - [v1.2 scope]: Ship 100-200 bullets in v1.2, expand to 500+ in v1.3
 - [v1.2 scope]: pg_trgm for fuzzy search (no Elasticsearch); server-side pagination (no client-side virtualization)
 - [v1.2 scope]: Per-entity paginated response models (not Generic[T]) for FastAPI compatibility
+- [03-01]: Quality tooltip computed_field uses manual dict construction to avoid model_dump() recursion
+- [03-01]: _make_params returns extra_warnings tuple for per-powder parameter warnings
 
 ### Pending Todos
 
@@ -60,5 +62,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Roadmap created for v1.2 milestone
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None
