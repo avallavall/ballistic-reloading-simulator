@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A web-based internal ballistics simulator for precision ammunition reloading that aims to surpass Gordon's Reloading Tool (GRT) and QuickLoad in simulation accuracy, data completeness, and user experience. Built as a modern web app (Next.js + FastAPI + PostgreSQL) with cloud storage, cross-platform access, and a clean responsive UI — everything desktop-only tools like GRT aren't.
+A web-based internal ballistics simulator for precision ammunition reloading with a GRT-style 3-curve burn model achieving 1.45% mean velocity error, comprehensive chart dashboard with interactive sensitivity explorer, and validated accuracy across 4 calibers. Built as a modern web app (Next.js + FastAPI + PostgreSQL) with cloud storage, cross-platform access, and responsive dark-mode UI.
 
 ## Core Value
 
@@ -12,107 +12,109 @@ The most accurate internal ballistics simulation available, validated against pu
 
 ### Validated
 
-- [x] Internal ballistics simulation with ODE solver (4-variable: Z, x, v, Q_loss) — existing
-- [x] Thornhill convective heat loss model (h=2000 W/m2K) — existing
-- [x] SAAMI/CIP pressure safety validation with warnings — existing
-- [x] Recoil and impulse calculation — existing
-- [x] Structural analysis (Lame hoop stress, case expansion, Lawton erosion) — existing
-- [x] Barrel harmonics and OBT node calculation — existing
-- [x] CRUD for powders, bullets, cartridges, rifles, loads — existing
-- [x] Parametric powder search (iterate all powders, rank by velocity) — existing
-- [x] Powder comparison table — existing
-- [x] Ladder test with interactive velocity/pressure vs charge charts — existing
-- [x] Chronograph CSV import (LabRadar, MagnetoSpeed) — existing
-- [x] Client-side CSV export of simulation results — existing
-- [x] Unit toggle (PSI/MPa, FPS/m/s) — existing
-- [x] Simple/Advanced mode toggle — existing
-- [x] Tooltips on all simulation input fields — existing
-- [x] Rate limiting on simulation endpoints — existing
-- [x] Alembic async migrations — existing
-- [x] 200+ passing tests (solver, structural, harmonics, schema, API) — existing
-- [x] Docker Compose deployment (db, backend, frontend, pgadmin) — existing
-- [x] Seed data (22 powders, bullets, cartridges, 5 rifles) — existing
+- ✓ Internal ballistics simulation with ODE solver (4-variable: Z, x, v, Q_loss) — v1.0
+- ✓ Thornhill convective heat loss model (h=2000 W/m2K) — v1.0
+- ✓ SAAMI/CIP pressure safety validation with warnings — v1.0
+- ✓ Recoil and impulse calculation — v1.0
+- ✓ Structural analysis (Lame hoop stress, case expansion, Lawton erosion) — v1.0
+- ✓ Barrel harmonics and OBT node calculation — v1.0
+- ✓ CRUD for powders, bullets, cartridges, rifles, loads — v1.0
+- ✓ Parametric powder search (iterate all powders, rank by velocity) — v1.0
+- ✓ Powder comparison table — v1.0
+- ✓ Ladder test with interactive velocity/pressure vs charge charts — v1.0
+- ✓ Chronograph CSV import (LabRadar, MagnetoSpeed) — v1.0
+- ✓ Client-side CSV export of simulation results — v1.0
+- ✓ Unit toggle (PSI/MPa, FPS/m/s) — v1.0
+- ✓ Simple/Advanced mode toggle — v1.0
+- ✓ Tooltips on all simulation input fields — v1.0
+- ✓ Rate limiting on simulation endpoints — v1.0
+- ✓ Alembic async migrations — v1.0
+- ✓ 200+ passing tests (solver, structural, harmonics, schema, API) — v1.0
+- ✓ Docker Compose deployment (db, backend, frontend, pgadmin) — v1.0
+- ✓ Seed data (22 powders, bullets, cartridges, 5 rifles) — v1.0
+- ✓ 3-curve powder burn model (initial/main/tail-off phases with z1/z2 transitions) — v1.1
+- ✓ GRT-native parameters (Ba, k, z1, z2, Bp, Br, Brp) as first-class DB fields — v1.1
+- ✓ Validation suite: 21 loads, 4 calibers, 1.45% mean velocity error — v1.1
+- ✓ Energy and momentum curves (KE vs distance, recoil impulse over time) — v1.1
+- ✓ Burn progress chart (Z vs time, dZ/dt gas generation rate) — v1.1
+- ✓ Temperature and heat curves (gas temp, barrel wall temp, heat loss) — v1.1
+- ✓ Sensitivity analysis with error bands (+/- charge variation) — v1.1
+- ✓ Interactive sensitivity explorer (3 sliders: charge, seating, barrel length) — v1.1
 
 ### Active
 
-**Simulation Engine**
-- [ ] 3-curve powder burn model (initial, main, tail-off phases) to match/exceed GRT accuracy
-- [ ] Validation test suite against published load data from reloading manuals (Hodgdon, Sierra, Hornady, Nosler)
+**Pre-loaded Component Databases**
+- [ ] Import GRT community powder database (200+ powders with burn models)
+- [ ] Comprehensive bullet database from manufacturer specs (500+ bullets)
+- [ ] Comprehensive cartridge database with CIP/SAAMI specs (50+ cartridges)
+- [ ] Powder model quality indicators (red/yellow/green confidence levels)
+
+**Advanced Simulation Models**
 - [ ] Temperature sensitivity coefficient for powder models
 - [ ] Bullet jump / freebore engraving resistance modeling
 - [ ] Semi-auto gas port pressure loss modeling
 
-**Simulation Output & Charts**
-- [ ] Energy and momentum curves (kinetic energy vs distance, recoil impulse over time)
-- [ ] Powder burn progress chart (burn fraction Z vs time, gas generation rate)
-- [ ] Temperature and heat curves (gas temp, barrel wall temp, heat flux over time)
-- [ ] Sensitivity analysis with error bands (+/- charge variation on pressure/velocity)
-
-**Pre-loaded Component Databases**
-- [ ] Import GRT community powder database (from github.com/zen/grt_databases) — 200+ powders with burn models
-- [ ] Comprehensive bullet database from manufacturer specs (Sierra, Hornady, Nosler, Berger, Lapua) — 500+ bullets
-- [ ] Comprehensive cartridge database with CIP/SAAMI specs — 50+ cartridges
-- [ ] Pre-loaded rifle configurations for common platforms
-- [ ] Powder model quality indicators (red/yellow/green confidence levels)
+**Analysis & UX Tools**
+- [ ] Shot group analysis tool (click-to-place shots, MOA, ES, SD)
+- [ ] Input validation inspector (cross-check inconsistencies)
+- [ ] Printable load data sheets (formatted HTML/PDF)
 
 **2D/3D Viewers**
-- [ ] 2D technical cutaway drawing of rifles (cross-section showing chamber, bore, barrel) on rifle page
-- [ ] 3D interactive rotatable rifle model (Three.js or similar) on rifle page
-- [ ] 2D technical drawing of cartridges with all dimensions annotated on cartridge page
-- [ ] 3D interactive rotatable cartridge model on cartridge page
+- [ ] 2D technical drawings for cartridges and rifles (SVG with dimensions)
+- [ ] 3D interactive rotatable models (React Three Fiber)
 
 **Community Features**
-- [ ] Community powder model database — users submit chronograph data to improve models
-- [ ] Reverse-engineering algorithm: chrono data -> auto-derive powder burn parameters
-- [ ] Shared loads — users can publish and browse community load recipes
-- [ ] Powder model quality rating system based on community data volume
-
-**Analysis & UX Tools**
-- [ ] Shot group analysis tool (click-to-place shots on target, calculate MOA, ES, SD)
-- [ ] Input validation inspector (cross-check inputs for inconsistencies, suggest corrections)
-- [ ] PressureTrace II data overlay on simulated curves
-- [ ] Report generation / printable load data sheets
-- [ ] User calibration flow (import chrono data -> auto-tune solver parameters to specific rifle)
+- [ ] Community powder model database (chrono data submissions)
+- [ ] Reverse-engineering algorithm (chrono data -> burn parameters)
+- [ ] Shared load recipes (publish, browse, filter, rate)
+- [ ] PressureTrace II data overlay
 
 ### Out of Scope
 
-- Black powder calculator — niche use case, not relevant to precision reloading
-- Revolver cylinder gap gas loss modeling — very niche, low demand
-- Cartridge designer / wildcat designer — extremely complex, deferred to future
-- QuickLoad file import — low demand, GRT is the primary competitor
-- Mobile native app — web-first approach with responsive design covers mobile
-- Real-time collaboration / shared workspaces — community features cover sharing needs
-- Authentication / user accounts — defer until community features require it (can use anonymous/device-based initially)
+- Black powder calculator — different combustion physics, not precision reloading
+- Cartridge wildcat designer — complex liability, deferred
+- QuickLoad file import — low demand, GRT is primary competitor
+- Mobile native app — responsive web covers mobile
+- Real-time collaboration — community features cover sharing
+- External ballistics solver — different domain, provide muzzle velocity/BC for external tools
+- Authentication before community features — defer until community phase
 
 ## Context
 
-**Existing codebase**: Fully functional v1 with 2-parameter Vieille burn model, Thornhill heat loss, structural and harmonics analysis, 5 CRUD pages with inline editing, parametric search, ladder test, 200+ tests. The solver currently overpredicts pressure by ~30-50% after heat loss correction (down from ~2x without Thornhill). The 3-curve model is the next major accuracy improvement.
+Shipped v1.1 with 18,629 LOC (8,106 Python + 10,523 TypeScript).
+Tech stack: Next.js 14, FastAPI, PostgreSQL 16, Docker Compose, Recharts, TanStack Query.
+255 passing tests (solver, structural, harmonics, schema, API, validation).
 
-**GRT as benchmark**: GRT reports 99.3% accuracy without tuning. Their 3-curve burn model and community-driven calibration loop are the key technical advantages. Their community powder database (crowdsourced from real firing data) is the killer feature.
+3-curve burn model achieves 1.45% mean velocity error across 21 reference loads (4 calibers: .308 Win, 6.5 Creedmoor, .223 Rem, .300 Win Mag). This surpasses the 5% target and approaches GRT's claimed 99.3% accuracy.
 
-**Data sources**: GRT community databases available on GitHub (zen/grt_databases) for powder models. Manufacturer websites and reloading manuals for bullet, cartridge, and rifle specifications.
+Chart dashboard provides 6 interactive tiles (pressure, velocity, burn, energy, temperature, harmonics) with PNG/CSV export and expand-to-modal. Sensitivity explorer with 3 live sliders enables real-time what-if analysis.
 
-**Technical debt**: Z_PRIMER=0.01 bootstrapping hack for combustion start. Heat loss coefficient h=2000 needs per-calibre tuning. No E2E frontend tests.
+Known technical debt: Z_PRIMER=0.01 bootstrapping hack, h=2000 heat loss coefficient needs per-calibre tuning, 3-curve form function reconstructed (not verified against closed-source GRT).
 
 ## Constraints
 
-- **Tech stack**: FastAPI + Next.js 14 + PostgreSQL 16 + Docker Compose — already established, no migration
+- **Tech stack**: FastAPI + Next.js 14 + PostgreSQL 16 + Docker Compose — established, no migration
 - **Solver foundation**: SciPy solve_ivp (RK45) for ODE integration — proven, extend don't replace
 - **Units convention**: SI internally in solver, PSI/FPS at API boundary, user-selectable in frontend
-- **Data licensing**: GRT community DB is open/crowdsourced; manufacturer bullet data must be sourced from public specs
-- **3D rendering**: Must work in browser without plugins — Three.js / React Three Fiber is the practical choice
-- **Backward compatibility**: Existing seed data and API contracts must be preserved; new features extend, not break
+- **Data licensing**: GRT community DB is open/crowdsourced; manufacturer bullet data from public specs
+- **3D rendering**: Three.js / React Three Fiber for browser-native 3D
+- **Backward compatibility**: Existing seed data and API contracts preserved; new features extend, not break
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| 3-curve burn model over calibrating 2-curve | GRT's accuracy advantage comes from the 3rd curve capturing tail-off; tuning 2 params has a ceiling | -- Pending |
-| GRT community DB as primary powder data source | Largest open dataset, already calibrated by community, GitHub accessible | -- Pending |
-| Three.js for 3D viewers | Only viable browser-native 3D library, React Three Fiber for integration | -- Pending |
-| One big milestone vs phased releases | User wants full feature set planned together, ship when complete | -- Pending |
-| Community features included | GRT's killer feature is crowdsourced data; we need this to compete | -- Pending |
-| Calibration flow as nice-to-have | Important but not blocking; can ship without auto-tune initially | -- Pending |
+| 3-curve burn model over calibrating 2-curve | GRT's accuracy advantage comes from the 3rd curve capturing tail-off; tuning 2 params has a ceiling | ✓ Good — 1.45% mean error achieved |
+| Vieille burn rate for both 2C/3C modes | 3-curve only changes form function (psi), not burn rate law; simpler, accurate enough | ✓ Good — backward compat preserved |
+| Per-powder-type parameter profiles | 7 distinct burn-speed classes vs single set; slow powders need larger web_thickness | ✓ Good — critical for .300 WM accuracy |
+| GRT import with overwrite query param | Simpler than separate endpoint, RESTful, batch collision dialog | ✓ Good — clean UX |
+| html2canvas for chart PNG export | Dark theme matching, 2x scale quality, no server dependency | ✓ Good — works well |
+| Domain color system for charts | Blue (P/V/harmonics), orange (burn), red (temperature), green (energy/recoil) | ✓ Good — clear visual grouping |
+| Sensitivity endpoint: 3 full simulations | Center + upper + lower, returns complete responses, 10/min rate limit | ✓ Good — enables live sliders |
+| Barrel length override as transient field | Optional nullable field, no DB writes, slider doesn't modify rifle record | ✓ Good — clean separation |
+| GRT community DB as primary powder data source | Largest open dataset, already calibrated by community, GitHub accessible | — Pending |
+| Three.js for 3D viewers | Only viable browser-native 3D library, React Three Fiber for integration | — Pending |
+| Community features included | GRT's killer feature is crowdsourced data; we need this to compete | — Pending |
 
 ---
-*Last updated: 2026-02-20 after project initialization (v2 milestone)*
+*Last updated: 2026-02-21 after v1.1 milestone*
