@@ -849,3 +849,83 @@ async def test_direct_simulation_with_3curve_powder(client):
     assert data["muzzle_velocity_fps"] > 0
     assert data["barrel_time_ms"] > 0
     assert isinstance(data["is_safe"], bool)
+
+
+# ---------------------------------------------------------------------------
+# Tests: Quality Scoring API (5 tests)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_create_powder_sets_quality_score(client):
+    """POST /powders computes quality_score, data_source, quality_level, quality_tooltip."""
+    data = await _create_powder(client)
+    assert data["quality_score"] > 0
+    assert data["data_source"] == "manual"
+    assert data["quality_level"] in ("success", "warning", "danger")
+    assert "/100" in data["quality_tooltip"]
+
+
+@pytest.mark.asyncio
+async def test_update_powder_recomputes_quality(client):
+    """PUT /powders/{id} recomputes quality_score after field changes."""
+    created = await _create_powder(client)
+    original_score = created["quality_score"]
+
+    # Add a bonus field (web_thickness_mm) to increase completeness
+    resp = await client.put(
+        f"/api/v1/powders/{created['id']}",
+        json={"web_thickness_mm": 0.4},
+    )
+    assert resp.status_code == 200
+    updated = resp.json()
+    # Score should change (increase since we filled a bonus field)
+    assert updated["quality_score"] != original_score
+
+
+@pytest.mark.asyncio
+async def test_update_grt_powder_changes_source(client):
+    """Editing a grt_community powder changes data_source to grt_modified."""
+    # Create a powder with data_source=grt_community
+    grt_data = {**POWDER_DATA, "name": "GRT Test Powder", "data_source": "grt_community"}
+    resp = await client.post("/api/v1/powders", json=grt_data)
+    assert resp.status_code == 201
+    created = resp.json()
+    assert created["data_source"] == "grt_community"
+
+    # Edit any field
+    resp2 = await client.put(
+        f"/api/v1/powders/{created['id']}",
+        json={"name": "GRT Test Modified"},
+    )
+    assert resp2.status_code == 200
+    updated = resp2.json()
+    assert updated["data_source"] == "grt_modified"
+
+
+@pytest.mark.asyncio
+async def test_powder_response_has_quality_tooltip(client):
+    """GET /powders/{id} response includes quality_tooltip with expected format."""
+    created = await _create_powder(client)
+    resp = await client.get(f"/api/v1/powders/{created['id']}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data["quality_tooltip"], str)
+    assert len(data["quality_tooltip"]) > 0
+    assert "/100" in data["quality_tooltip"]
+    assert "campos" in data["quality_tooltip"]
+
+
+@pytest.mark.asyncio
+async def test_web_thickness_mm_validation_bounds(client):
+    """web_thickness_mm must be between 0.1 and 2.0 if provided."""
+    # Below minimum (0.05 < 0.1) -> 422
+    bad_data = {**POWDER_DATA, "name": "Bad WT Powder", "web_thickness_mm": 0.05}
+    resp = await client.post("/api/v1/powders", json=bad_data)
+    assert resp.status_code == 422
+
+    # Valid value -> 201
+    good_data = {**POWDER_DATA, "name": "Good WT Powder", "web_thickness_mm": 0.4}
+    resp2 = await client.post("/api/v1/powders", json=good_data)
+    assert resp2.status_code == 201
+    assert resp2.json()["web_thickness_mm"] == 0.4
