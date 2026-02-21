@@ -36,11 +36,27 @@ export function formatNum(value: number | null | undefined, decimals: number = 1
   return value.toFixed(decimals);
 }
 
-/** Get pressure safety level */
+/** Get pressure safety level — checks both pressure ratio AND critical warnings */
 export function getPressureSafetyLevel(
   peakPressurePsi: number,
-  saamiMaxPsi: number
+  saamiMaxPsi: number,
+  warnings?: string[],
+  isSafe?: boolean,
 ): 'safe' | 'warning' | 'danger' {
+  // Backend explicitly marks load as unsafe (charge density, integration failure, etc.)
+  if (isSafe === false) return 'danger';
+
+  // Check for critical warnings that indicate unreliable simulation results
+  if (warnings?.some(w =>
+    w.includes('DANGER:') ||
+    w.includes('Charge density too high') ||
+    w.includes('physically impossible') ||
+    w.includes('fisicamente imposible') ||
+    w.includes('volumen de gas se aproxima a cero')
+  )) {
+    return 'danger';
+  }
+
   const ratio = peakPressurePsi / saamiMaxPsi;
   if (ratio <= 0.9) return 'safe';
   if (ratio <= 1.0) return 'warning';

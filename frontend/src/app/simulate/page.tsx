@@ -53,7 +53,7 @@ function SafetyIndicator({
   saamiMaxPsi: number;
 }) {
   const { formatPressure } = useUnits();
-  const level = getPressureSafetyLevel(result.peak_pressure_psi, saamiMaxPsi);
+  const level = getPressureSafetyLevel(result.peak_pressure_psi, saamiMaxPsi, result.warnings, result.is_safe);
   const ratio = (result.peak_pressure_psi / saamiMaxPsi) * 100;
   const saami = formatPressure(saamiMaxPsi);
 
@@ -63,10 +63,15 @@ function SafetyIndicator({
     danger: <XCircle size={20} />,
   };
 
+  const hasDangerousCharge = result.warnings?.some(w =>
+    w.includes('DANGER:') || w.includes('Charge density too high') ||
+    w.includes('physically impossible') || w.includes('fisicamente imposible') ||
+    w.includes('volumen de gas se aproxima a cero')
+  );
   const labels = {
     safe: 'SEGURO',
     warning: 'PRECAUCION',
-    danger: 'PELIGRO - EXCEDE SAAMI',
+    danger: hasDangerousCharge ? 'PELIGRO - CARGA FISICAMENTE IMPOSIBLE' : 'PELIGRO - EXCEDE SAAMI',
   };
 
   return (

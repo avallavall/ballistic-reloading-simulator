@@ -249,9 +249,34 @@ def simulate(
     m = bullet.mass_kg
     bore_area = np.pi * (cartridge.bore_diameter_m / 2.0) ** 2
 
+    # --- Charge density safety checks ---
     charge_density = omega / cartridge.chamber_volume_m3
+    charge_unsafe = False
+
+    # Check 1: Bulk fill ratio — can the powder physically fit in the case?
+    # Solid grain density is ~1600 kg/m3, but bulk (packing) density is ~60% of that.
+    # Use 0.60 packing factor (typical for extruded/ball powder granules).
+    PACKING_FACTOR = 0.60
+    bulk_density = powder.density_kg_m3 * PACKING_FACTOR
+    powder_bulk_volume = omega / bulk_density
+    fill_ratio = powder_bulk_volume / cartridge.chamber_volume_m3
+
+    if fill_ratio > 1.05:
+        warnings.append(
+            f"DANGER: Carga fisicamente imposible — el volumen de polvora ({fill_ratio*100:.0f}% de la capacidad de la vaina) "
+            f"excede el espacio disponible. Esta carga NO puede ensamblarse de forma segura."
+        )
+        charge_unsafe = True
+    elif fill_ratio > 0.90:
+        warnings.append(
+            f"ATENCION: Densidad de carga muy alta ({fill_ratio*100:.0f}% de llenado). "
+            f"Las cargas comprimidas requieren extrema precaucion."
+        )
+
+    # Check 2: Covolume check — does the gas have room to expand?
     if charge_density * powder.covolume_m3_kg > 0.95:
-        warnings.append("Charge density too high: gas volume approaches zero")
+        warnings.append("Densidad de carga demasiado alta: el volumen de gas se aproxima a cero")
+        charge_unsafe = True
 
     rhs, _, m_eff = _build_ode_system(powder, bullet, cartridge, load, h_coeff)
 
@@ -411,6 +436,13 @@ def simulate(
         warnings.append(
             f"WARNING: Peak pressure at {ratio*100:.1f}% of SAAMI max"
         )
+
+    # Override safety for physically impossible or dangerous charge densities.
+    # The volume clamp (denom = 1e-12) produces artificially LOW pressure for
+    # overcharged loads, making them appear safe when they are catastrophically
+    # dangerous. Force is_safe=False regardless of computed pressure.
+    if charge_unsafe:
+        is_safe = False
 
     # --- Structural calculations ---
     inner_radius = cartridge.bore_diameter_m / 2.0

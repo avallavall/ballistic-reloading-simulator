@@ -79,11 +79,11 @@ export default function SensitivityPanel({
     return (
       <button
         onClick={onToggle}
-        className="fixed right-0 top-1/2 z-30 -translate-y-1/2 rounded-l-lg border border-r-0 border-slate-600 bg-slate-800 px-2 py-4 text-xs text-slate-300 shadow-lg transition-colors hover:bg-slate-700 hover:text-white"
+        className="fixed right-0 top-1/2 z-30 -translate-y-1/2 rounded-l-xl border-2 border-r-0 border-blue-500/50 bg-gradient-to-l from-blue-600 to-blue-700 px-3 py-5 text-sm font-medium text-white shadow-xl shadow-blue-900/30 transition-all hover:from-blue-500 hover:to-blue-600 hover:shadow-blue-800/40 hover:pr-4"
         title="Abrir explorador de sensibilidad"
       >
-        <ChevronLeft size={14} className="mb-1" />
-        <span className="writing-mode-vertical whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
+        <ChevronLeft size={16} className="mb-1.5" />
+        <span className="whitespace-nowrap" style={{ writingMode: 'vertical-rl' }}>
           Explorador
         </span>
       </button>
