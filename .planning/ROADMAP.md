@@ -12,7 +12,7 @@ This milestone transforms the simulator from a functional prototype with a 2-cur
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: 3-Curve Burn Model** - Upgrade solver to GRT-style 3-phase combustion model with validation against published load data
+- [x] **Phase 1: 3-Curve Burn Model** - Upgrade solver to GRT-style 3-phase combustion model with validation against published load data
 - [ ] **Phase 2: Extended Simulation Charts** - Expose solver-computed data as new chart types (burn progress, energy, temperature, sensitivity)
 - [ ] **Phase 3: Data Import Pipeline** - Populate databases with 200+ powders, 500+ bullets, 50+ cartridges from GRT and manufacturer sources
 - [ ] **Phase 4: Advanced Simulation Models** - Add temperature sensitivity, bullet jump resistance, and gas port pressure modeling
@@ -35,8 +35,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — TDD: 3-curve piecewise form function + dual-mode solver with backward compat (Wave 1)
-- [ ] 01-02-PLAN.md — DB migration, GRT converter, API wiring, frontend 3C/2C badges + collapsible params (Wave 2)
-- [ ] 01-03-PLAN.md — Validation fixture (21+ loads), pytest quality gate, /validation page with charts (Wave 3)
+- [x] 01-02-PLAN.md — DB migration, GRT converter, API wiring, frontend 3C/2C badges + collapsible params (Wave 2)
+- [x] 01-03-PLAN.md — Validation fixture (21+ loads), pytest quality gate, /validation page with charts (Wave 3)
 
 ### Phase 2: Extended Simulation Charts
 **Goal**: Users can visualize all physics computed by the solver, not just pressure and velocity
@@ -147,7 +147,7 @@ Note: Phases 2, 4, and 5 have minimal interdependency and could overlap. Phase 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. 3-Curve Burn Model | 1/3 | In Progress | - |
+| 1. 3-Curve Burn Model | 3/3 | Complete | 2026-02-21 |
 | 2. Extended Simulation Charts | 0/3 | Not started | - |
 | 3. Data Import Pipeline | 0/4 | Not started | - |
 | 4. Advanced Simulation Models | 0/3 | Not started | - |
