@@ -48,12 +48,13 @@ Plans:
   3. User can view gas temperature, barrel wall temperature estimate, and cumulative heat loss charts over time
   4. User can see error bands on pressure/velocity charts showing the effect of +/- charge weight variation
   5. User can drag sliders for charge weight, seating depth, and barrel length and see pressure/velocity update in near-real-time
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [x] 02-01-PLAN.md — Extend solver SimResult with burn/energy/temperature/recoil curves + sensitivity endpoint (Wave 1)
 - [x] 02-02-PLAN.md — Frontend chart infrastructure, new chart components, dashboard grid layout (Wave 2)
-- [ ] 02-03-PLAN.md — Error bands on P/V charts + sensitivity explorer with interactive sliders (Wave 3)
+- [x] 02-03-PLAN.md — Error bands on P/V charts + sensitivity explorer with interactive sliders (Wave 3)
+- [ ] 02-04-PLAN.md — Gap closure: enable barrel length slider (backend override + frontend wiring) (Wave 4)
 
 ### Phase 3: Data Import Pipeline
 **Goal**: Users can simulate with any common powder, bullet, or cartridge without manual data entry
@@ -148,7 +149,7 @@ Note: Phases 2, 4, and 5 have minimal interdependency and could overlap. Phase 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. 3-Curve Burn Model | 3/3 | Complete | 2026-02-21 |
-| 2. Extended Simulation Charts | 2/3 | In progress | - |
+| 2. Extended Simulation Charts | 3/4 | In progress | - |
 | 3. Data Import Pipeline | 0/4 | Not started | - |
 | 4. Advanced Simulation Models | 0/3 | Not started | - |
 | 5. Analysis & UX Tools | 0/3 | Not started | - |
