@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-20)
 ## Current Position
 
 Phase: 1 of 7 (3-Curve Burn Model)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: Executing
-Last activity: 2026-02-21 -- Completed 01-01-PLAN.md (3-curve form function + dual-mode solver)
+Last activity: 2026-02-21 -- Completed 01-02-PLAN.md (3-curve DB columns, API wiring, frontend UI)
 
-Progress: [█░░░░░░░░░] 4%
+Progress: [██░░░░░░░░] 7%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
-- Average duration: 4min
-- Total execution time: 0.07 hours
+- Total plans completed: 2
+- Average duration: 5min
+- Total execution time: 0.17 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 1 - 3-Curve Burn Model | 1 | 4min | 4min |
+| 1 - 3-Curve Burn Model | 2 | 10min | 5min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (4min)
-- Trend: First plan completed
+- Last 5 plans: 01-01 (4min), 01-02 (6min)
+- Trend: Consistent pace
 
 *Updated after each plan completion*
 
@@ -48,6 +48,9 @@ Recent decisions affecting current work:
 - [01-01]: 3-curve form function only changes psi, not burn rate law. Vieille burn rate used for both 2-curve and 3-curve modes. Direct Ba-based burn rate deferred.
 - [01-01]: has_3curve requires ALL 6 GRT params (ba, bp, br, brp, z1, z2) to be non-None. Partial data falls back to 2-curve.
 - [01-01]: Golden output test captures exact 2-curve simulation values (peak_pressure=96880 psi, muzzle_velocity=3258 fps) with 0.1% tolerance guard.
+- [01-02]: Used Pydantic computed_field for has_3curve (requires all 6 core params non-None).
+- [01-02]: GRT import overwrite via ?overwrite=true query parameter, not separate endpoint.
+- [01-02]: a0 stored in DB but not required for has_3curve activation (consistent with solver's 6-param requirement).
 
 ### Pending Todos
 
@@ -62,5 +65,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-21
-Stopped at: Completed 01-01-PLAN.md
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
