@@ -6,6 +6,7 @@ export function useBullets() {
   return useQuery({
     queryKey: ['bullets'],
     queryFn: getBullets,
+    select: (data) => data.items,
   });
 }
 

@@ -6,6 +6,7 @@ export function usePowders() {
   return useQuery({
     queryKey: ['powders'],
     queryFn: getPowders,
+    select: (data) => data.items,
   });
 }
 

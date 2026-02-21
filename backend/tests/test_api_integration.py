@@ -192,7 +192,11 @@ async def test_list_powders(client):
     await _create_powder(client)
     resp = await client.get("/api/v1/powders")
     assert resp.status_code == 200
-    items = resp.json()
+    body = resp.json()
+    # Paginated envelope
+    assert "items" in body
+    assert "total" in body
+    items = body["items"]
     assert isinstance(items, list)
     assert len(items) >= 1
     assert items[0]["name"] == POWDER_DATA["name"]
@@ -246,7 +250,9 @@ async def test_list_bullets(client):
     await _create_bullet(client)
     resp = await client.get("/api/v1/bullets")
     assert resp.status_code == 200
-    items = resp.json()
+    body = resp.json()
+    assert "items" in body
+    items = body["items"]
     assert len(items) >= 1
 
 
@@ -275,7 +281,9 @@ async def test_list_cartridges(client):
     await _create_cartridge(client)
     resp = await client.get("/api/v1/cartridges")
     assert resp.status_code == 200
-    items = resp.json()
+    body = resp.json()
+    assert "items" in body
+    items = body["items"]
     assert len(items) >= 1
 
 

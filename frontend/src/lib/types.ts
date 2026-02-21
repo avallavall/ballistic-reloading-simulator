@@ -97,6 +97,11 @@ export interface Bullet {
   bc_g7: number;
   sectional_density: number;
   material: string;
+  data_source?: string;
+  quality_score?: number;
+  caliber_family?: string | null;
+  quality_level?: string;
+  quality_tooltip?: string;
 }
 
 export interface BulletCreate {
@@ -125,6 +130,11 @@ export interface Cartridge {
   overall_length_mm: number;
   bore_diameter_mm: number;
   groove_diameter_mm: number;
+  data_source?: string;
+  quality_score?: number;
+  caliber_family?: string | null;
+  quality_level?: string;
+  quality_tooltip?: string;
 }
 
 export interface CartridgeCreate {

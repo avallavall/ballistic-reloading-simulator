@@ -6,6 +6,7 @@ export function useCartridges() {
   return useQuery({
     queryKey: ['cartridges'],
     queryFn: getCartridges,
+    select: (data) => data.items,
   });
 }
 

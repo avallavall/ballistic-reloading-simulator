@@ -18,6 +18,7 @@ import type {
   SensitivityInput,
   SensitivityResponse,
   ValidationResponse,
+  PaginatedResponse,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -72,8 +73,8 @@ async function request<T>(
 // Powders
 // ============================================================
 
-export async function getPowders(): Promise<Powder[]> {
-  return request<Powder[]>('/powders');
+export async function getPowders(): Promise<PaginatedResponse<Powder>> {
+  return request<PaginatedResponse<Powder>>('/powders');
 }
 
 export async function getPowder(id: string): Promise<Powder> {
@@ -129,8 +130,8 @@ export async function importGrtPowders(file: File, overwrite: boolean = false): 
 // Bullets
 // ============================================================
 
-export async function getBullets(): Promise<Bullet[]> {
-  return request<Bullet[]>('/bullets');
+export async function getBullets(): Promise<PaginatedResponse<Bullet>> {
+  return request<PaginatedResponse<Bullet>>('/bullets');
 }
 
 export async function getBullet(id: string): Promise<Bullet> {
@@ -162,8 +163,8 @@ export async function deleteBullet(id: string): Promise<void> {
 // Cartridges
 // ============================================================
 
-export async function getCartridges(): Promise<Cartridge[]> {
-  return request<Cartridge[]>('/cartridges');
+export async function getCartridges(): Promise<PaginatedResponse<Cartridge>> {
+  return request<PaginatedResponse<Cartridge>>('/cartridges');
 }
 
 export async function getCartridge(id: string): Promise<Cartridge> {

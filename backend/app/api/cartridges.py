@@ -90,7 +90,7 @@ async def create_cartridge(data: CartridgeCreate, db: AsyncSession = Depends(get
     cartridge = Cartridge(**data.model_dump())
 
     # Auto-derive caliber family from bore diameter
-    cartridge.caliber_family = derive_caliber_family(cartridge.bore_diameter_mm)
+    cartridge.caliber_family = derive_caliber_family(cartridge.groove_diameter_mm)
 
     # Compute initial quality score
     cartridge_dict = data.model_dump()
@@ -120,7 +120,7 @@ async def update_cartridge(cartridge_id: uuid.UUID, data: CartridgeUpdate, db: A
         setattr(cartridge, key, value)
 
     # Re-derive caliber family if bore diameter changed
-    cartridge.caliber_family = derive_caliber_family(cartridge.bore_diameter_mm)
+    cartridge.caliber_family = derive_caliber_family(cartridge.groove_diameter_mm)
 
     # Recompute quality score
     cartridge_dict = {c.key: getattr(cartridge, c.key) for c in Cartridge.__table__.columns}
