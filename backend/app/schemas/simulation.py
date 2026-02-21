@@ -54,6 +54,7 @@ class DirectSimulationRequest(BaseModel):
     powder_charge_grains: float = Field(gt=0, le=200, description="Powder charge (grains)")
     coal_mm: float = Field(gt=0, le=200, description="Cartridge overall length (mm)")
     seating_depth_mm: float = Field(gt=0, le=50, description="Bullet seating depth (mm)")
+    barrel_length_mm_override: float | None = Field(default=None, gt=100, le=1500, description="Optional barrel length override (mm). If provided, overrides the rifle's barrel length for this simulation only.")
 
 
 class DirectSimulationResponse(BaseModel):
@@ -87,6 +88,7 @@ class SensitivityRequest(BaseModel):
     coal_mm: float = Field(gt=0, le=200, description="Cartridge overall length (mm)")
     seating_depth_mm: float = Field(gt=0, le=50, description="Bullet seating depth (mm)")
     charge_delta_grains: float = Field(default=0.3, gt=0, le=5.0, description="Charge variation +/- (grains)")
+    barrel_length_mm_override: float | None = Field(default=None, gt=100, le=1500, description="Optional barrel length override (mm)")
 
 
 class SensitivityResponse(BaseModel):

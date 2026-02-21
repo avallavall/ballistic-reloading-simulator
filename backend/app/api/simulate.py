@@ -62,7 +62,7 @@ async def _load_simulation_data(db: AsyncSession, load: Load):
     return powder, bullet, cartridge, rifle
 
 
-def _make_params(powder_row, bullet_row, cartridge_row, rifle_row, charge_grains: float):
+def _make_params(powder_row, bullet_row, cartridge_row, rifle_row, charge_grains: float, barrel_length_mm_override: float | None = None):
     """Convert DB rows to simulation parameter dataclasses."""
     case_capacity_m3 = cartridge_row.case_capacity_grains_h2o * GRAINS_TO_KG / 1000.0
     chamber_vol = rifle_row.chamber_volume_mm3 * MM3_TO_M3 if rifle_row.chamber_volume_mm3 > 0 else case_capacity_m3
@@ -92,8 +92,9 @@ def _make_params(powder_row, bullet_row, cartridge_row, rifle_row, charge_grains
         chamber_volume_m3=chamber_vol,
         bore_diameter_m=cartridge_row.bore_diameter_mm * MM_TO_M,
     )
+    barrel_length_m = (barrel_length_mm_override * MM_TO_M) if barrel_length_mm_override else (rifle_row.barrel_length_mm * MM_TO_M)
     rif = RifleParams(
-        barrel_length_m=rifle_row.barrel_length_mm * MM_TO_M,
+        barrel_length_m=barrel_length_m,
         twist_rate_m=rifle_row.twist_rate_mm * MM_TO_M,
         rifle_mass_kg=rifle_row.weight_kg if rifle_row.weight_kg else 3.5,
     )
@@ -211,7 +212,8 @@ async def run_direct_simulation(request: Request, req: DirectSimulationRequest, 
         raise HTTPException(404, "Cartridge not found for rifle")
 
     powder, bullet, cart, rif, ld = _make_params(
-        powder_row, bullet_row, cartridge_row, rifle_row, req.powder_charge_grains
+        powder_row, bullet_row, cartridge_row, rifle_row, req.powder_charge_grains,
+        barrel_length_mm_override=req.barrel_length_mm_override,
     )
 
     result = simulate(powder, bullet, cart, rif, ld)
@@ -241,7 +243,8 @@ async def run_sensitivity(request: Request, req: SensitivityRequest, db: AsyncSe
     results = {}
     for label, charge_gr in [("center", charge_center), ("upper", charge_upper), ("lower", charge_lower)]:
         powder, bullet, cart, rif, ld = _make_params(
-            powder_row, bullet_row, cartridge_row, rifle_row, charge_gr
+            powder_row, bullet_row, cartridge_row, rifle_row, charge_gr,
+            barrel_length_mm_override=req.barrel_length_mm_override,
         )
         sim_result = simulate(powder, bullet, cart, rif, ld)
         results[label] = _sim_result_to_response(sim_result)
