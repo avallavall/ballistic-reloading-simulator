@@ -16,10 +16,14 @@ import { useUnits } from '@/lib/unit-context';
 
 interface VelocityDistanceChartProps {
   data: DistanceCurvePoint[];
+  syncId?: string;
+  expanded?: boolean;
 }
 
 export default function VelocityDistanceChart({
   data,
+  syncId,
+  expanded = false,
 }: VelocityDistanceChartProps) {
   const { formatVelocity } = useUnits();
 
@@ -31,11 +35,14 @@ export default function VelocityDistanceChart({
 
   const velocityUnit = formatVelocity(0).unit;
 
+  const height = expanded ? 'h-[30rem]' : 'h-80';
+
   return (
-    <div className="h-80 w-full">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className={`${height} w-full`}>
+      <ResponsiveContainer width="100%" height="100%" key={expanded ? 'expanded' : 'tile'}>
         <LineChart
           data={chartData}
+          syncId={syncId}
           margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" />

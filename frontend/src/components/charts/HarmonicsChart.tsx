@@ -19,6 +19,8 @@ interface HarmonicsChartProps {
   barrelTimeMs: number;
   optimalBarrelTimes: number[];
   obtMatch: boolean;
+  syncId?: string;
+  expanded?: boolean;
 }
 
 function CustomTooltip({ active, payload }: TooltipProps<number, string>) {
@@ -41,6 +43,8 @@ export default function HarmonicsChart({
   barrelTimeMs,
   optimalBarrelTimes,
   obtMatch,
+  syncId,
+  expanded = false,
 }: HarmonicsChartProps) {
   const chartData = data.map((p) => ({
     t: p.t_ms,
@@ -52,11 +56,14 @@ export default function HarmonicsChart({
   const maxTime = chartData.length > 0 ? chartData[chartData.length - 1].t : 0;
   const visibleObts = optimalBarrelTimes.filter((t) => t <= maxTime * 1.1);
 
+  const height = expanded ? 'h-[30rem]' : 'h-64';
+
   return (
-    <div className="h-80 w-full">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className={`${height} w-full`}>
+      <ResponsiveContainer width="100%" height="100%" key={expanded ? 'expanded' : 'tile'}>
         <LineChart
           data={chartData}
+          syncId={syncId}
           margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" />

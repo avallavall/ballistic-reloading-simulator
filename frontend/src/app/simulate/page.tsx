@@ -7,9 +7,14 @@ import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import SimulationForm from '@/components/forms/SimulationForm';
+import ChartTile from '@/components/charts/ChartTile';
+import ChartModal from '@/components/charts/ChartModal';
 import PressureTimeChart from '@/components/charts/PressureTimeChart';
 import VelocityDistanceChart from '@/components/charts/VelocityDistanceChart';
 import HarmonicsChart from '@/components/charts/HarmonicsChart';
+import BurnProgressChart from '@/components/charts/BurnProgressChart';
+import EnergyRecoilChart from '@/components/charts/EnergyRecoilChart';
+import TemperatureChart from '@/components/charts/TemperatureChart';
 import { useRifles } from '@/hooks/useRifles';
 import { useBullets } from '@/hooks/useBullets';
 import { usePowders } from '@/hooks/usePowders';
@@ -26,6 +31,17 @@ import {
   getSafetyBgColor,
 } from '@/lib/utils';
 import { useUnits } from '@/lib/unit-context';
+
+type ExpandedChart = 'pressure' | 'velocity' | 'burn' | 'energy' | 'temperature' | 'harmonics' | null;
+
+const chartTitles: Record<string, string> = {
+  pressure: 'Presion vs Tiempo',
+  velocity: 'Velocidad vs Distancia',
+  burn: 'Progreso de Combustion',
+  energy: 'Energia y Retroceso',
+  temperature: 'Temperatura y Calor',
+  harmonics: 'Armonicos del Canon (OBT)',
+};
 
 function SafetyIndicator({
   result,
@@ -73,7 +89,6 @@ function ResultCards({ result }: { result: SimulationResult }) {
   const pressure = formatPressure(result.peak_pressure_psi);
   const velocity = formatVelocity(result.muzzle_velocity_fps);
 
-  // Secondary values in the alternate system
   const pressureAlt = unitSystem === 'metric'
     ? `${formatNum(result.peak_pressure_psi, 0)} PSI`
     : `${formatNum(psiToMpa(result.peak_pressure_psi), 1)} MPa`;
@@ -125,7 +140,6 @@ function ResultCards({ result }: { result: SimulationResult }) {
 function StructuralCards({ result }: { result: SimulationResult }) {
   const { unitSystem } = useUnits();
 
-  // hoop_stress_mpa comes from API in MPa; convert to PSI for imperial
   const hoopValue = unitSystem === 'imperial'
     ? formatNum(result.hoop_stress_mpa / 0.00689476, 0)
     : formatNum(result.hoop_stress_mpa, 1);
@@ -274,7 +288,6 @@ function RecoilCards({ result }: { result: SimulationResult }) {
 }
 
 function exportCsv(result: SimulationResult) {
-  // CSV always exports both unit systems for maximum utility
   const lines: string[] = [];
 
   // Pressure curve
@@ -294,6 +307,46 @@ function exportCsv(result: SimulationResult) {
   }
 
   lines.push('');
+
+  // Burn curve
+  if (result.burn_curve && result.burn_curve.length > 0) {
+    lines.push('# Burn Curve');
+    lines.push('time_ms,z,dz_dt,psi');
+    for (const b of result.burn_curve) {
+      lines.push(`${b.t_ms},${b.z},${b.dz_dt},${b.psi}`);
+    }
+    lines.push('');
+  }
+
+  // Energy curve
+  if (result.energy_curve && result.energy_curve.length > 0) {
+    lines.push('# Energy Curve');
+    lines.push('time_ms,x_mm,ke_j,ke_ft_lbs,momentum_ns');
+    for (const e of result.energy_curve) {
+      lines.push(`${e.t_ms},${e.x_mm},${e.ke_j},${e.ke_ft_lbs},${e.momentum_ns}`);
+    }
+    lines.push('');
+  }
+
+  // Temperature curve
+  if (result.temperature_curve && result.temperature_curve.length > 0) {
+    lines.push('# Temperature Curve');
+    lines.push('time_ms,t_gas_k,q_loss_j');
+    for (const t of result.temperature_curve) {
+      lines.push(`${t.t_ms},${t.t_gas_k},${t.q_loss_j}`);
+    }
+    lines.push('');
+  }
+
+  // Recoil curve
+  if (result.recoil_curve && result.recoil_curve.length > 0) {
+    lines.push('# Recoil Curve');
+    lines.push('time_ms,impulse_ns');
+    for (const r of result.recoil_curve) {
+      lines.push(`${r.t_ms},${r.impulse_ns}`);
+    }
+    lines.push('');
+  }
 
   // Summary
   lines.push('# Summary');
@@ -328,6 +381,7 @@ export default function SimulatePage() {
   const { data: powders, isLoading: loadingPowders } = usePowders();
   const simulation = useSimulation();
   const [result, setResult] = useState<SimulationResult | null>(null);
+  const [expandedChart, setExpandedChart] = useState<ExpandedChart>(null);
 
   const isLoadingData = loadingRifles || loadingBullets || loadingPowders;
 
@@ -341,6 +395,10 @@ export default function SimulatePage() {
   const selectedRifle = result?.load?.rifle;
   const saamiMaxPsi =
     selectedRifle?.cartridge?.saami_max_pressure_psi || 62000;
+
+  // Check if extended curves are available
+  const hasExtendedCurves = result &&
+    result.burn_curve && result.burn_curve.length > 0;
 
   return (
     <div className="space-y-8">
@@ -462,61 +520,180 @@ export default function SimulatePage() {
                 </Card>
               )}
 
-              {/* Pressure chart */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Presion vs Tiempo</CardTitle>
-                  <Badge variant="danger">P(t)</Badge>
-                </CardHeader>
-                <CardContent>
+              {/* ====== CHART DASHBOARD GRID ====== */}
+
+              {/* Hero row: Pressure + Velocity (2-column) */}
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <ChartTile
+                  title="Presion vs Tiempo"
+                  domainColor="blue"
+                  data={result.pressure_curve as unknown as Record<string, unknown>[]}
+                  csvHeaders={['t_ms', 'p_psi']}
+                  csvFilename="presion_tiempo"
+                  onExpand={() => setExpandedChart('pressure')}
+                  badge="P(t)"
+                >
                   <PressureTimeChart
                     data={result.pressure_curve}
                     saamiMaxPsi={saamiMaxPsi}
+                    syncId="sim-time"
                   />
-                </CardContent>
-              </Card>
+                </ChartTile>
 
-              {/* Velocity chart */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Velocidad vs Distancia en Canon</CardTitle>
-                  <Badge>V(x)</Badge>
-                </CardHeader>
-                <CardContent>
-                  <VelocityDistanceChart data={result.velocity_curve} />
-                </CardContent>
-              </Card>
+                <ChartTile
+                  title="Velocidad vs Distancia"
+                  domainColor="blue"
+                  data={result.velocity_curve as unknown as Record<string, unknown>[]}
+                  csvHeaders={['x_mm', 'v_fps']}
+                  csvFilename="velocidad_distancia"
+                  onExpand={() => setExpandedChart('velocity')}
+                  badge="V(x)"
+                >
+                  <VelocityDistanceChart
+                    data={result.velocity_curve}
+                    syncId="sim-distance"
+                  />
+                </ChartTile>
+              </div>
 
-              {/* Harmonics chart */}
-              {result.optimal_barrel_times && result.optimal_barrel_times.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Armonicos del Canon (OBT)</CardTitle>
-                    <Badge variant={result.obt_match ? 'success' : 'warning'}>
-                      {result.obt_match ? 'En nodo' : 'Fuera de nodo'}
-                    </Badge>
-                  </CardHeader>
-                  <CardContent>
-                    <HarmonicsChart
-                      data={result.pressure_curve}
-                      barrelTimeMs={result.barrel_time_ms}
-                      optimalBarrelTimes={result.optimal_barrel_times}
-                      obtMatch={result.obt_match}
+              {/* Secondary chart grid (2-column responsive) */}
+              {hasExtendedCurves && (
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <ChartTile
+                    title="Progreso de Combustion"
+                    domainColor="orange"
+                    data={result.burn_curve as unknown as Record<string, unknown>[]}
+                    csvHeaders={['t_ms', 'z', 'dz_dt', 'psi']}
+                    csvFilename="combustion"
+                    onExpand={() => setExpandedChart('burn')}
+                    badge="Z(t)"
+                  >
+                    <BurnProgressChart data={result.burn_curve} syncId="sim-time" />
+                  </ChartTile>
+
+                  <ChartTile
+                    title="Energia y Retroceso"
+                    domainColor="green"
+                    data={result.energy_curve as unknown as Record<string, unknown>[]}
+                    csvHeaders={['t_ms', 'x_mm', 'ke_j', 'ke_ft_lbs', 'momentum_ns']}
+                    csvFilename="energia_retroceso"
+                    onExpand={() => setExpandedChart('energy')}
+                    badge="KE(x)"
+                  >
+                    <EnergyRecoilChart
+                      energyData={result.energy_curve}
+                      recoilData={result.recoil_curve}
                     />
-                    <div className="mt-3 text-xs text-slate-500">
-                      <p>
-                        Lineas verdes punteadas = tiempos optimos de salida (OBT).
-                        Linea solida = tiempo de salida real del proyectil.
-                      </p>
-                      <p className="mt-1">
-                        Frecuencia dominante (modo 2): {formatNum(result.barrel_frequency_hz, 0)} Hz
-                        {' | '}OBTs:{' '}
-                        {result.optimal_barrel_times.map((t) => formatNum(t, 3)).join(', ')} ms
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </ChartTile>
+
+                  <ChartTile
+                    title="Temperatura y Calor"
+                    domainColor="red"
+                    data={result.temperature_curve as unknown as Record<string, unknown>[]}
+                    csvHeaders={['t_ms', 't_gas_k', 'q_loss_j']}
+                    csvFilename="temperatura"
+                    onExpand={() => setExpandedChart('temperature')}
+                    badge="T(t)"
+                  >
+                    <TemperatureChart data={result.temperature_curve} syncId="sim-time" />
+                  </ChartTile>
+
+                  {result.optimal_barrel_times && result.optimal_barrel_times.length > 0 && (
+                    <ChartTile
+                      title="Armonicos del Canon"
+                      domainColor="blue"
+                      data={result.pressure_curve as unknown as Record<string, unknown>[]}
+                      csvHeaders={['t_ms', 'p_psi']}
+                      csvFilename="armonicos"
+                      onExpand={() => setExpandedChart('harmonics')}
+                      badge={result.obt_match ? 'En nodo' : 'Fuera de nodo'}
+                    >
+                      <HarmonicsChart
+                        data={result.pressure_curve}
+                        barrelTimeMs={result.barrel_time_ms}
+                        optimalBarrelTimes={result.optimal_barrel_times}
+                        obtMatch={result.obt_match}
+                        syncId="sim-time"
+                      />
+                    </ChartTile>
+                  )}
+                </div>
               )}
+
+              {/* Fallback: show hero charts without tile wrapper if no extended curves */}
+              {!hasExtendedCurves && result.optimal_barrel_times && result.optimal_barrel_times.length > 0 && (
+                <ChartTile
+                  title="Armonicos del Canon"
+                  domainColor="blue"
+                  data={result.pressure_curve as unknown as Record<string, unknown>[]}
+                  csvHeaders={['t_ms', 'p_psi']}
+                  csvFilename="armonicos"
+                  onExpand={() => setExpandedChart('harmonics')}
+                  badge={result.obt_match ? 'En nodo' : 'Fuera de nodo'}
+                >
+                  <HarmonicsChart
+                    data={result.pressure_curve}
+                    barrelTimeMs={result.barrel_time_ms}
+                    optimalBarrelTimes={result.optimal_barrel_times}
+                    obtMatch={result.obt_match}
+                    syncId="sim-time"
+                  />
+                </ChartTile>
+              )}
+
+              {/* ====== CHART MODAL (single instance) ====== */}
+              <ChartModal
+                isOpen={expandedChart !== null}
+                onClose={() => setExpandedChart(null)}
+                title={expandedChart ? chartTitles[expandedChart] || '' : ''}
+              >
+                {expandedChart === 'pressure' && (
+                  <PressureTimeChart
+                    data={result.pressure_curve}
+                    saamiMaxPsi={saamiMaxPsi}
+                    syncId="sim-time"
+                    expanded
+                  />
+                )}
+                {expandedChart === 'velocity' && (
+                  <VelocityDistanceChart
+                    data={result.velocity_curve}
+                    syncId="sim-distance"
+                    expanded
+                  />
+                )}
+                {expandedChart === 'burn' && result.burn_curve && (
+                  <BurnProgressChart
+                    data={result.burn_curve}
+                    syncId="sim-time"
+                    expanded
+                  />
+                )}
+                {expandedChart === 'energy' && result.energy_curve && (
+                  <EnergyRecoilChart
+                    energyData={result.energy_curve}
+                    recoilData={result.recoil_curve}
+                    expanded
+                  />
+                )}
+                {expandedChart === 'temperature' && result.temperature_curve && (
+                  <TemperatureChart
+                    data={result.temperature_curve}
+                    syncId="sim-time"
+                    expanded
+                  />
+                )}
+                {expandedChart === 'harmonics' && result.optimal_barrel_times && (
+                  <HarmonicsChart
+                    data={result.pressure_curve}
+                    barrelTimeMs={result.barrel_time_ms}
+                    optimalBarrelTimes={result.optimal_barrel_times}
+                    obtMatch={result.obt_match}
+                    syncId="sim-time"
+                    expanded
+                  />
+                )}
+              </ChartModal>
             </>
           )}
 

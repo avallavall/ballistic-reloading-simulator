@@ -18,11 +18,15 @@ import { useUnits } from '@/lib/unit-context';
 interface PressureTimeChartProps {
   data: CurvePoint[];
   saamiMaxPsi?: number;
+  syncId?: string;
+  expanded?: boolean;
 }
 
 export default function PressureTimeChart({
   data,
   saamiMaxPsi,
+  syncId,
+  expanded = false,
 }: PressureTimeChartProps) {
   const { formatPressure } = useUnits();
 
@@ -35,11 +39,14 @@ export default function PressureTimeChart({
   const pressureUnit = formatPressure(0).unit;
   const saamiDisplay = saamiMaxPsi ? formatPressure(saamiMaxPsi) : undefined;
 
+  const height = expanded ? 'h-[30rem]' : 'h-80';
+
   return (
-    <div className="h-80 w-full">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className={`${height} w-full`}>
+      <ResponsiveContainer width="100%" height="100%" key={expanded ? 'expanded' : 'tile'}>
         <LineChart
           data={chartData}
+          syncId={syncId}
           margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
