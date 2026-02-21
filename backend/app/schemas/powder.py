@@ -26,6 +26,10 @@ class PowderCreate(BaseModel):
     z2: float | None = Field(None, ge=0.02, le=0.99, description="Phase 2/3 burn-up limit")
     a0: float | None = Field(None, ge=0.0, le=20.0, description="Ba(phi) coefficient 0")
 
+    # Data provenance
+    data_source: str = Field(default="manual", description="Data source provenance")
+    web_thickness_mm: float | None = Field(default=None, ge=0.1, le=2.0, description="Propellant grain web thickness (mm)")
+
 
 class PowderUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=100)
@@ -47,6 +51,10 @@ class PowderUpdate(BaseModel):
     z1: float | None = Field(None, ge=0.01, le=0.99, description="Phase 1/2 burn-up limit")
     z2: float | None = Field(None, ge=0.02, le=0.99, description="Phase 2/3 burn-up limit")
     a0: float | None = Field(None, ge=0.0, le=20.0, description="Ba(phi) coefficient 0")
+
+    # Data provenance (optional on update)
+    data_source: str | None = None
+    web_thickness_mm: float | None = Field(None, ge=0.1, le=2.0, description="Propellant grain web thickness (mm)")
 
 
 class PowderResponse(BaseModel):
@@ -72,11 +80,58 @@ class PowderResponse(BaseModel):
     z2: float | None = None
     a0: float | None = None
 
+    # Data provenance and quality
+    data_source: str = "manual"
+    quality_score: int = 0
+    web_thickness_mm: float | None = None
+
     @computed_field
     @property
     def has_3curve(self) -> bool:
         """True if all 6 core 3-curve parameters are present."""
         return all(v is not None for v in [self.ba, self.bp, self.br, self.brp, self.z1, self.z2])
+
+    @computed_field
+    @property
+    def quality_level(self) -> str:
+        """Map score to badge color: green/yellow/red."""
+        if self.quality_score >= 70:
+            return "success"
+        elif self.quality_score >= 40:
+            return "warning"
+        return "danger"
+
+    @computed_field
+    @property
+    def quality_tooltip(self) -> str:
+        """One-line summary for hover tooltip."""
+        from app.core.quality import compute_quality_score, CRITICAL_FIELDS, BONUS_FIELDS
+
+        # Build dict manually to avoid model_dump() recursion (computed fields call model_dump)
+        powder_dict = {f: getattr(self, f) for f in CRITICAL_FIELDS + BONUS_FIELDS}
+        breakdown = compute_quality_score(powder_dict, self.data_source)
+
+        source_labels = {
+            "manufacturer": "Fabricante",
+            "grt_community": "GRT Community",
+            "grt_modified": "GRT Modificado",
+            "manual": "Manual",
+            "estimated": "Estimado",
+        }
+        source_label = source_labels.get(self.data_source, self.data_source)
+
+        missing_str = ", ".join(breakdown.missing_fields[:3])
+        if len(breakdown.missing_fields) > 3:
+            missing_str += f" (+{len(breakdown.missing_fields) - 3})"
+
+        parts = [
+            f"{breakdown.score}/100",
+            source_label,
+            f"{breakdown.filled_count}/{breakdown.total_count} campos",
+        ]
+        if breakdown.missing_fields:
+            parts.append(f"faltan: {missing_str}")
+        return " \u2014 ".join(parts)
 
     model_config = {"from_attributes": True}
 

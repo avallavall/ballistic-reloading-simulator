@@ -63,9 +63,25 @@ async def _load_simulation_data(db: AsyncSession, load: Load):
 
 
 def _make_params(powder_row, bullet_row, cartridge_row, rifle_row, charge_grains: float, barrel_length_mm_override: float | None = None):
-    """Convert DB rows to simulation parameter dataclasses."""
+    """Convert DB rows to simulation parameter dataclasses.
+
+    Returns:
+        Tuple of (powder, bullet, cartridge, rifle, load, extra_warnings).
+        extra_warnings is a list of warning strings to append to simulation results.
+    """
+    extra_warnings: list[str] = []
     case_capacity_m3 = cartridge_row.case_capacity_grains_h2o * GRAINS_TO_KG / 1000.0
     chamber_vol = rifle_row.chamber_volume_mm3 * MM3_TO_M3 if rifle_row.chamber_volume_mm3 > 0 else case_capacity_m3
+
+    # Read per-powder web_thickness from DB, with fallback to legacy default
+    if powder_row.web_thickness_mm is not None:
+        web_thickness_m = powder_row.web_thickness_mm * 0.001
+    else:
+        web_thickness_m = 0.0004  # legacy default
+        extra_warnings.append(
+            "Usando espesor de alma predeterminado (0.4 mm). "
+            "Para mayor precision, configure web_thickness en la polvora."
+        )
 
     powder = PowderParams(
         force_j_kg=powder_row.force_constant_j_kg,
@@ -75,6 +91,7 @@ def _make_params(powder_row, bullet_row, cartridge_row, rifle_row, charge_grains
         gamma=powder_row.gamma,
         density_kg_m3=powder_row.density_g_cm3 * GCM3_TO_KGM3,
         flame_temp_k=powder_row.flame_temp_k,
+        web_thickness_m=web_thickness_m,
         # 3-curve fields (None if not present -> 2-curve fallback)
         ba=powder_row.ba,
         bp=powder_row.bp,
@@ -99,7 +116,7 @@ def _make_params(powder_row, bullet_row, cartridge_row, rifle_row, charge_grains
         rifle_mass_kg=rifle_row.weight_kg if rifle_row.weight_kg else 3.5,
     )
     ld = LoadParams(charge_mass_kg=charge_grains * GRAINS_TO_KG)
-    return powder, bullet, cart, rif, ld
+    return powder, bullet, cart, rif, ld, extra_warnings
 
 
 def _sim_result_to_response(result) -> DirectSimulationResponse:
@@ -136,11 +153,12 @@ async def run_simulation(request: Request, req: SimulationRequest, db: AsyncSess
         raise HTTPException(404, "Load not found")
 
     powder_row, bullet_row, cartridge_row, rifle_row = await _load_simulation_data(db, load)
-    powder, bullet, cart, rif, ld = _make_params(
+    powder, bullet, cart, rif, ld, extra_warnings = _make_params(
         powder_row, bullet_row, cartridge_row, rifle_row, load.powder_charge_grains
     )
 
     result = simulate(powder, bullet, cart, rif, ld)
+    result.warnings.extend(extra_warnings)
 
     sim_record = SimulationResult(
         load_id=load.id,
@@ -186,10 +204,11 @@ async def run_ladder_test(request: Request, req: LadderTestRequest, db: AsyncSes
 
     for charge_gr in charges:
         charge_gr = float(charge_gr)
-        powder, bullet, cart, rif, ld = _make_params(
+        powder, bullet, cart, rif, ld, extra_warnings = _make_params(
             powder_row, bullet_row, cartridge_row, rifle_row, charge_gr
         )
         sim_result = simulate(powder, bullet, cart, rif, ld)
+        sim_result.warnings.extend(extra_warnings)
 
         results.append(_sim_result_to_response(sim_result))
         charge_weights.append(charge_gr)
@@ -211,12 +230,13 @@ async def run_direct_simulation(request: Request, req: DirectSimulationRequest, 
     if not cartridge_row:
         raise HTTPException(404, "Cartridge not found for rifle")
 
-    powder, bullet, cart, rif, ld = _make_params(
+    powder, bullet, cart, rif, ld, extra_warnings = _make_params(
         powder_row, bullet_row, cartridge_row, rifle_row, req.powder_charge_grains,
         barrel_length_mm_override=req.barrel_length_mm_override,
     )
 
     result = simulate(powder, bullet, cart, rif, ld)
+    result.warnings.extend(extra_warnings)
 
     return _sim_result_to_response(result)
 
@@ -242,11 +262,12 @@ async def run_sensitivity(request: Request, req: SensitivityRequest, db: AsyncSe
     # Run 3 simulations: center, upper, lower
     results = {}
     for label, charge_gr in [("center", charge_center), ("upper", charge_upper), ("lower", charge_lower)]:
-        powder, bullet, cart, rif, ld = _make_params(
+        powder, bullet, cart, rif, ld, extra_warnings = _make_params(
             powder_row, bullet_row, cartridge_row, rifle_row, charge_gr,
             barrel_length_mm_override=req.barrel_length_mm_override,
         )
         sim_result = simulate(powder, bullet, cart, rif, ld)
+        sim_result.warnings.extend(extra_warnings)
         results[label] = _sim_result_to_response(sim_result)
 
     return SensitivityResponse(
@@ -350,7 +371,7 @@ async def run_parametric_search(request: Request, req: ParametricSearchRequest, 
 
             for charge_gr in charges:
                 charge_gr = float(charge_gr)
-                powder, bullet, cart, rif, ld = _make_params(
+                powder, bullet, cart, rif, ld, _extra_warnings = _make_params(
                     powder_row, bullet_row, cartridge_row, rifle_row, charge_gr
                 )
                 sim_result = simulate(powder, bullet, cart, rif, ld)

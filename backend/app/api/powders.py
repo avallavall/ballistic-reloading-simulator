@@ -24,7 +24,13 @@ async def list_powders(db: AsyncSession = Depends(get_db)):
 
 @router.post("", response_model=PowderResponse, status_code=201)
 async def create_powder(data: PowderCreate, db: AsyncSession = Depends(get_db)):
+    from app.core.quality import compute_quality_score
+
     powder = Powder(**data.model_dump())
+    # Compute initial quality score
+    powder_dict = data.model_dump()
+    breakdown = compute_quality_score(powder_dict, powder.data_source)
+    powder.quality_score = breakdown.score
     db.add(powder)
     await db.commit()
     await db.refresh(powder)
@@ -97,11 +103,19 @@ async def import_grt(file: UploadFile, overwrite: bool = False, db: AsyncSession
             continue
 
         powder = Powder(**powder_data)
+        powder.data_source = "grt_community"
         db.add(powder)
         existing_powders[name.lower()] = powder
         created.append(powder)
 
+    # Compute quality scores for all created/updated powders
     if created:
+        from app.core.quality import compute_quality_score
+
+        for p in created:
+            powder_dict = {c.key: getattr(p, c.key) for c in Powder.__table__.columns}
+            breakdown = compute_quality_score(powder_dict, p.data_source)
+            p.quality_score = breakdown.score
         await db.commit()
         for p in created:
             await db.refresh(p)
@@ -126,11 +140,23 @@ async def get_powder(powder_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
 
 @router.put("/{powder_id}", response_model=PowderResponse)
 async def update_powder(powder_id: uuid.UUID, data: PowderUpdate, db: AsyncSession = Depends(get_db)):
+    from app.core.quality import compute_quality_score
+
     powder = await db.get(Powder, powder_id)
     if not powder:
         raise HTTPException(404, "Powder not found")
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(powder, key, value)
+
+    # Track source modification: GRT -> grt_modified on edit
+    if powder.data_source == "grt_community":
+        powder.data_source = "grt_modified"
+
+    # Recompute quality score
+    powder_dict = {c.key: getattr(powder, c.key) for c in Powder.__table__.columns}
+    breakdown = compute_quality_score(powder_dict, powder.data_source)
+    powder.quality_score = breakdown.score
+
     await db.commit()
     await db.refresh(powder)
     return powder

@@ -365,8 +365,14 @@ async def seed_initial_data(db: AsyncSession):
 
     logger.info("Seeding initial data...")
 
+    from app.core.quality import compute_quality_score
+
+    created_powders = []
     for data in POWDERS:
-        db.add(Powder(**data))
+        data["data_source"] = "manual"
+        powder = Powder(**data)
+        db.add(powder)
+        created_powders.append(powder)
     for data in BULLETS:
         db.add(Bullet(**data))
 
@@ -394,6 +400,12 @@ async def seed_initial_data(db: AsyncSession):
             weight_kg=data.get("weight_kg", 3.5),
         )
         db.add(rifle)
+
+    # Compute quality scores for seed powders
+    for powder in created_powders:
+        powder_dict = {c.key: getattr(powder, c.key) for c in Powder.__table__.columns}
+        breakdown = compute_quality_score(powder_dict, powder.data_source)
+        powder.quality_score = breakdown.score
 
     await db.commit()
     logger.info("Seed data inserted: %d powders, %d bullets, %d cartridges, %d rifles",
