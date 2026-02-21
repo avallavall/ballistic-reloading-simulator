@@ -50,10 +50,11 @@ Plans:
   1. All component list endpoints (GET /powders, /bullets, /cartridges) return paginated responses with items, total, page, and size fields
   2. User can search by name with typo tolerance (e.g., "hodgon" finds "Hodgdon") and results appear within 100ms
   3. User can filter components by manufacturer, caliber family, and quality level, and filters combine correctly (AND logic)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md — Foundation: Alembic migration (pg_trgm, GIN indexes, bullet/cartridge quality+caliber columns), ORM models, quality scorers, paginated response schemas, reusable pagination/search service helpers
+- [ ] 04-02-PLAN.md — Endpoints: modify powders/bullets/cartridges list endpoints with pagination+search+filtering, dynamic manufacturer/caliber-family routes, frontend backward compat (hooks unwrap .items), comprehensive tests
 
 ### Phase 5: Import Pipelines and Fixture Data
 **Goal**: Simulator ships with 200+ powders, 100-200 bullets, and 50+ cartridges pre-loaded from authoritative sources, with batch import capability for future expansion
@@ -98,6 +99,6 @@ Note: Phase 5 (fixture data compilation) can begin in parallel with Phase 6 (fro
 | 1. 3-Curve Burn Model | v1.1 | 3/3 | Complete | 2026-02-21 |
 | 2. Extended Simulation Charts | v1.1 | 4/4 | Complete | 2026-02-21 |
 | 3. Schema and Quality System | v1.2 | Complete    | 2026-02-21 | 2026-02-21 |
-| 4. Search and Pagination | v1.2 | 0/? | Not started | - |
+| 4. Search and Pagination | v1.2 | 0/2 | Planning complete | - |
 | 5. Import Pipelines and Fixture Data | v1.2 | 0/? | Not started | - |
 | 6. Frontend Integration | v1.2 | 0/? | Not started | - |
