@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 5 of 6 (Import Pipelines and Fixture Data)
-Plan: 1 of 3 in current phase -- COMPLETE
-Status: Plan 05-01 complete. Ready for Plan 05-02 (fixture data).
-Last activity: 2026-02-22 — Completed 05-01-PLAN.md (schema foundation for import pipelines)
+Plan: 2 of 3 in current phase -- COMPLETE
+Status: Plan 05-02 complete. Ready for Plan 05-03 (seed refactoring and import endpoints).
+Last activity: 2026-02-22 — Completed 05-02-PLAN.md (fixture data compilation)
 
-Progress: [==========-] 87% (13 plans complete across all milestones)
+Progress: [===========-] 90% (14 plans complete across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
-- Average duration: 5.2min
-- Total execution time: 1.13 hours
+- Total plans completed: 14
+- Average duration: 5.3min
+- Total execution time: 1.25 hours
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [==========-] 87% (13 plans complete across all milestones)
 | 2 - Extended Simulation Charts | 4/4 | 19min | 4.8min |
 | 3 - Schema and Quality System | 2/2 | 10min | 5min |
 | 4 - Search and Pagination | 2/2 | 11min | 5.5min |
-| 5 - Import Pipelines | 1/3 | 4min | 4min |
+| 5 - Import Pipelines | 2/3 | 11min | 5.5min |
 
 **Recent Trend:**
-- Last 5 plans: 7, 3, 4, 7, 4 min
+- Last 5 plans: 3, 4, 7, 4, 7 min
 - Trend: Stable
 
 ## Accumulated Context
@@ -60,6 +60,10 @@ Recent decisions affecting current work:
 - [05-01]: ImportMode enum and ImportResult defined in schemas/powder.py as shared import infrastructure
 - [05-01]: Bullet length_mm changed to nullable to support incomplete import data
 - [05-01]: GrtImportResult extended with updated list and mode field for overwrite/merge support
+- [05-02]: Burn rate coefficients estimated via Vieille model from relative position (a = 3.5e-8 * exp(-0.012 * brr))
+- [05-02]: Generic SB/DB thermochemical defaults applied from materials_database.md for powders without specific data
+- [05-02]: Bullets: match + hunting lines only (no varmint/plinking/FMJ) per user decision
+- [05-02]: Cartridge parent lineage stored as informational string, not FK-enforced
 
 ### Pending Todos
 
@@ -67,13 +71,13 @@ None.
 
 ### Blockers/Concerns
 
-- GRT community database on GitHub (zen/grt_databases) has limited files. Full 200+ powder dataset may require GRT installation export or manual curation.
-- Bullet data compilation (100-200 bullets) requires manual work from manufacturer PDF specs -- no automated source exists.
+- ~~GRT community database on GitHub (zen/grt_databases) has limited files~~ RESOLVED: 208 powders compiled from multiple sources (manufacturer data, burn rate charts, generic defaults)
+- ~~Bullet data compilation requires manual work~~ RESOLVED: 127 bullets compiled from manufacturer catalogs
 - ~~Breaking API contract~~ RESOLVED: Frontend hooks updated with select unwrap in 04-02.
 - ~~pg_trgm not available in aiosqlite~~ RESOLVED: Search tests skip fuzzy search; 22 new tests cover pagination/filtering with SQLite.
 
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 05-01-PLAN.md (schema foundation for import pipelines)
+Stopped at: Completed 05-02-PLAN.md (fixture data compilation)
 Resume file: None
