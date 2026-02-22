@@ -7,10 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.grt_converter import convert_grt_to_powder
 from app.core.grt_parser import parse_propellant_file, parse_propellant_zip
+from app.core.quality import compute_quality_score
 from app.db.session import get_db
 from app.models.powder import Powder
 from app.schemas.powder import (
     GrtImportResult,
+    ImportMode,
     PaginatedPowderResponse,
     PowderCreate,
     PowderResponse,
@@ -101,8 +103,6 @@ async def list_powder_manufacturers(db: AsyncSession = Depends(get_db)):
 
 @router.post("", response_model=PowderResponse, status_code=201)
 async def create_powder(data: PowderCreate, db: AsyncSession = Depends(get_db)):
-    from app.core.quality import compute_quality_score
-
     powder = Powder(**data.model_dump())
     # Compute initial quality score
     powder_dict = data.model_dump()
@@ -115,12 +115,21 @@ async def create_powder(data: PowderCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/import-grt", response_model=GrtImportResult)
-async def import_grt(file: UploadFile, overwrite: bool = False, db: AsyncSession = Depends(get_db)):
+async def import_grt(
+    file: UploadFile,
+    mode: ImportMode = Query(ImportMode.skip),
+    db: AsyncSession = Depends(get_db),
+):
     """Import powders from a GRT .propellant file or a .zip of .propellant files.
 
     Parses the file, converts GRT parameters to our internal format, and creates
-    powder records. Powders whose names already exist in the DB are skipped
-    unless overwrite=True, in which case they are updated.
+    powder records. Collision handling is controlled by mode:
+    - skip: existing powders are skipped (default)
+    - overwrite: existing powders are fully updated (except user-created records)
+    - merge: only NULL fields on existing records are filled
+
+    User-created records (data_source='manual') are NEVER overwritten. Instead,
+    the imported version is created as a new record with ' (GRT Import)' suffix.
     """
     if not file.filename:
         raise HTTPException(400, "No filename provided")
@@ -154,6 +163,7 @@ async def import_grt(file: UploadFile, overwrite: bool = False, db: AsyncSession
 
     # Convert and insert
     created: list[Powder] = []
+    updated: list[Powder] = []
     skipped: list[str] = []
 
     # Pre-fetch existing powders for duplicate detection
@@ -168,43 +178,83 @@ async def import_grt(file: UploadFile, overwrite: bool = False, db: AsyncSession
             continue
 
         name = powder_data["name"]
-        if name.lower() in existing_powders:
-            if overwrite:
-                # Update existing powder with new data
-                existing_powder = existing_powders[name.lower()]
-                for key, value in powder_data.items():
-                    setattr(existing_powder, key, value)
-                created.append(existing_powder)
-            else:
+        existing = existing_powders.get(name.lower())
+
+        if existing:
+            # User-created records are NEVER overwritten
+            if existing.data_source == "manual":
+                # Create a renamed copy instead
+                new_name = f"{name} (GRT Import)"
+                powder = Powder(**powder_data)
+                powder.name = new_name
+                powder.data_source = "grt_community"
+                powder_dict = {c.key: getattr(powder, c.key) for c in Powder.__table__.columns}
+                breakdown = compute_quality_score(powder_dict, powder.data_source)
+                powder.quality_score = breakdown.score
+                db.add(powder)
+                existing_powders[new_name.lower()] = powder
+                created.append(powder)
+            elif mode == ImportMode.skip:
                 skipped.append(name)
-            continue
+            elif mode == ImportMode.overwrite:
+                # Update ALL fields on existing record
+                for key, value in powder_data.items():
+                    if hasattr(existing, key) and key not in ("name",):
+                        setattr(existing, key, value)
+                existing.data_source = "grt_community"
+                powder_dict = {c.key: getattr(existing, c.key) for c in Powder.__table__.columns}
+                breakdown = compute_quality_score(powder_dict, existing.data_source)
+                existing.quality_score = breakdown.score
+                updated.append(existing)
+            elif mode == ImportMode.merge:
+                # Only update fields that are currently NULL
+                for key, value in powder_data.items():
+                    if hasattr(existing, key) and getattr(existing, key) is None and value is not None:
+                        setattr(existing, key, value)
+                # Leave data_source unchanged for merge
+                powder_dict = {c.key: getattr(existing, c.key) for c in Powder.__table__.columns}
+                breakdown = compute_quality_score(powder_dict, existing.data_source)
+                existing.quality_score = breakdown.score
+                updated.append(existing)
+        else:
+            powder = Powder(**powder_data)
+            powder.data_source = "grt_community"
+            powder_dict = {c.key: getattr(powder, c.key) for c in Powder.__table__.columns}
+            breakdown = compute_quality_score(powder_dict, powder.data_source)
+            powder.quality_score = breakdown.score
+            db.add(powder)
+            existing_powders[name.lower()] = powder
+            created.append(powder)
 
-        powder = Powder(**powder_data)
-        powder.data_source = "grt_community"
-        db.add(powder)
-        existing_powders[name.lower()] = powder
-        created.append(powder)
-
-    # Compute quality scores for all created/updated powders
-    if created:
-        from app.core.quality import compute_quality_score
-
-        for p in created:
-            powder_dict = {c.key: getattr(p, c.key) for c in Powder.__table__.columns}
-            breakdown = compute_quality_score(powder_dict, p.data_source)
-            p.quality_score = breakdown.score
+    if created or updated:
         await db.commit()
-        for p in created:
+        for p in created + updated:
             await db.refresh(p)
 
-    logger.info("GRT import: %d created, %d skipped, %d errors",
-                len(created), len(skipped), len(parse_errors))
+    logger.info("GRT import (mode=%s): %d created, %d updated, %d skipped, %d errors",
+                mode.value, len(created), len(updated), len(skipped), len(parse_errors))
 
     return GrtImportResult(
         created=[PowderResponse.model_validate(p) for p in created],
+        updated=[PowderResponse.model_validate(p) for p in updated],
         skipped=skipped,
         errors=parse_errors,
+        mode=mode.value,
     )
+
+
+@router.get("/{powder_id}/aliases", response_model=list[PowderResponse])
+async def get_powder_aliases(powder_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    """Return other powders in the same alias group as the given powder."""
+    powder = await db.get(Powder, powder_id)
+    if not powder:
+        raise HTTPException(404, "Powder not found")
+    if not powder.alias_group:
+        return []
+    result = await db.execute(
+        select(Powder).where(Powder.alias_group == powder.alias_group, Powder.id != powder_id)
+    )
+    return list(result.scalars().all())
 
 
 @router.get("/{powder_id}", response_model=PowderResponse)
@@ -217,8 +267,6 @@ async def get_powder(powder_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
 
 @router.put("/{powder_id}", response_model=PowderResponse)
 async def update_powder(powder_id: uuid.UUID, data: PowderUpdate, db: AsyncSession = Depends(get_db)):
-    from app.core.quality import compute_quality_score
-
     powder = await db.get(Powder, powder_id)
     if not powder:
         raise HTTPException(404, "Powder not found")

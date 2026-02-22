@@ -1,317 +1,56 @@
-"""Initial seed data for powders, bullets, and cartridges.
+"""Fixture-based seed data loader for powders, bullets, and cartridges.
 
-Data sourced from materials_database.md.
-Burn rate coefficients (a1) are calibrated estimates for simulation use.
+Loads data from JSON fixture files in backend/app/seed/fixtures/ on first boot.
+Computes quality scores and applies alias groups during seeding.
 
-IMPORTANT: density_g_cm3 is the SOLID grain density (~1.60 g/cm3 for NC-based),
-NOT the bulk/loading density (0.82-0.96 g/cm3). The solver's free_volume()
-calculation divides omega/rho_p to get solid propellant volume and requires
-the material density of the propellant grains themselves.
+Data sources:
+- powders.json: 208 powders from 13 manufacturers
+- bullets.json: 127 bullets from 5 manufacturers
+- cartridges.json: 53 cartridges with SAAMI/CIP specs
+- powder_aliases.json: 11 ADI/Hodgdon alias group mappings
 """
 
+import json
 import logging
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.quality import (
+    compute_bullet_quality_score,
+    compute_cartridge_quality_score,
+    compute_quality_score,
+)
 from app.models.bullet import Bullet
 from app.models.cartridge import Cartridge
 from app.models.powder import Powder
 from app.models.rifle import Rifle
+from app.services.search import derive_caliber_family
 
 logger = logging.getLogger(__name__)
 
-POWDERS = [
-    {
-        "name": "IMR 4198",
-        "manufacturer": "IMR/Hodgdon",
-        "burn_rate_relative": 52,
-        "force_constant_j_kg": 950000,
-        "covolume_m3_kg": 0.001,
-        "flame_temp_k": 3860,
-        "gamma": 1.24,
-        "density_g_cm3": 1.60,  # Solid grain density (NC single-base)
-        "burn_rate_coeff": 2.0e-8,
-        "burn_rate_exp": 0.85,
-    },
-    {
-        "name": "Hodgdon H322",
-        "manufacturer": "Hodgdon",
-        "burn_rate_relative": 60,
-        "force_constant_j_kg": 950000,
-        "covolume_m3_kg": 0.001,
-        "flame_temp_k": 3850,
-        "gamma": 1.24,
-        "density_g_cm3": 1.60,
-        "burn_rate_coeff": 1.8e-8,
-        "burn_rate_exp": 0.85,
-    },
-    {
-        "name": "Vihtavuori N133",
-        "manufacturer": "Vihtavuori",
-        "burn_rate_relative": 62,
-        "force_constant_j_kg": 950000,
-        "covolume_m3_kg": 0.001,
-        "flame_temp_k": 3630,
-        "gamma": 1.24,
-        "density_g_cm3": 1.60,
-        "burn_rate_coeff": 1.7e-8,
-        "burn_rate_exp": 0.85,
-    },
-    {
-        "name": "Hodgdon H335",
-        "manufacturer": "Hodgdon",
-        "burn_rate_relative": 68,
-        "force_constant_j_kg": 950000,
-        "covolume_m3_kg": 0.001,
-        "flame_temp_k": 3980,
-        "gamma": 1.24,
-        "density_g_cm3": 1.60,
-        "burn_rate_coeff": 1.6e-8,
-        "burn_rate_exp": 0.85,
-    },
-    {
-        "name": "Vihtavuori N135",
-        "manufacturer": "Vihtavuori",
-        "burn_rate_relative": 70,
-        "force_constant_j_kg": 950000,
-        "covolume_m3_kg": 0.001,
-        "flame_temp_k": 3590,
-        "gamma": 1.24,
-        "density_g_cm3": 1.60,
-        "burn_rate_coeff": 1.6e-8,
-        "burn_rate_exp": 0.85,
-    },
-    {
-        "name": "IMR 4064",
-        "manufacturer": "IMR/Hodgdon",
-        "burn_rate_relative": 80,
-        "force_constant_j_kg": 950000,
-        "covolume_m3_kg": 0.001,
-        "flame_temp_k": 3880,
-        "gamma": 1.24,
-        "density_g_cm3": 1.60,
-        "burn_rate_coeff": 1.5e-8,
-        "burn_rate_exp": 0.85,
-    },
-    {
-        "name": "Hodgdon Varget",
-        "manufacturer": "Hodgdon/ADI",
-        "burn_rate_relative": 82,
-        "force_constant_j_kg": 950000,
-        "covolume_m3_kg": 0.001,
-        "flame_temp_k": 4050,
-        "gamma": 1.24,
-        "density_g_cm3": 1.60,
-        "burn_rate_coeff": 1.6e-8,
-        "burn_rate_exp": 0.86,
-    },
-    {
-        "name": "Vihtavuori N140",
-        "manufacturer": "Vihtavuori",
-        "burn_rate_relative": 85,
-        "force_constant_j_kg": 950000,
-        "covolume_m3_kg": 0.001,
-        "flame_temp_k": 3720,
-        "gamma": 1.24,
-        "density_g_cm3": 1.60,
-        "burn_rate_coeff": 1.5e-8,
-        "burn_rate_exp": 0.85,
-    },
-    {
-        "name": "Hodgdon H4350",
-        "manufacturer": "Hodgdon/ADI",
-        "burn_rate_relative": 96,
-        "force_constant_j_kg": 950000,
-        "covolume_m3_kg": 0.001,
-        "flame_temp_k": 3760,
-        "gamma": 1.24,
-        "density_g_cm3": 1.60,
-        "burn_rate_coeff": 1.4e-8,
-        "burn_rate_exp": 0.86,
-    },
-    {
-        "name": "Hodgdon Retumbo",
-        "manufacturer": "Hodgdon/ADI",
-        "burn_rate_relative": 120,
-        "force_constant_j_kg": 950000,
-        "covolume_m3_kg": 0.001,
-        "flame_temp_k": 3710,
-        "gamma": 1.24,
-        "density_g_cm3": 1.60,
-        "burn_rate_coeff": 8.0e-9,
-        "burn_rate_exp": 0.88,
-    },
-]
-
-BULLETS = [
-    {
-        "name": "Sierra 69gr HPBT MK .224",
-        "manufacturer": "Sierra",
-        "weight_grains": 69,
-        "diameter_mm": 5.70,
-        "length_mm": 22.0,
-        "bc_g1": 0.301,
-        "bc_g7": 0.153,
-        "sectional_density": 0.197,
-        "material": "copper",
-    },
-    {
-        "name": "Sierra 77gr HPBT MK .224",
-        "manufacturer": "Sierra",
-        "weight_grains": 77,
-        "diameter_mm": 5.70,
-        "length_mm": 24.0,
-        "bc_g1": 0.340,
-        "bc_g7": 0.175,
-        "sectional_density": 0.219,
-        "material": "copper",
-    },
-    {
-        "name": "Sierra 140gr HPBT MK .264",
-        "manufacturer": "Sierra",
-        "weight_grains": 140,
-        "diameter_mm": 6.72,
-        "length_mm": 32.5,
-        "bc_g1": 0.585,
-        "bc_g7": 0.295,
-        "sectional_density": 0.287,
-        "material": "copper",
-    },
-    {
-        "name": "Hornady 140gr ELD Match .264",
-        "manufacturer": "Hornady",
-        "weight_grains": 140,
-        "diameter_mm": 6.72,
-        "length_mm": 32.5,
-        "bc_g1": 0.646,
-        "bc_g7": 0.326,
-        "sectional_density": 0.287,
-        "material": "copper",
-    },
-    {
-        "name": "Sierra 155gr HPBT Palma .308",
-        "manufacturer": "Sierra",
-        "weight_grains": 155,
-        "diameter_mm": 7.82,
-        "length_mm": 30.0,
-        "bc_g1": 0.450,
-        "bc_g7": 0.212,
-        "sectional_density": 0.233,
-        "material": "copper",
-    },
-    {
-        "name": "Sierra 168gr HPBT MK .308",
-        "manufacturer": "Sierra",
-        "weight_grains": 168,
-        "diameter_mm": 7.82,
-        "length_mm": 31.2,
-        "bc_g1": 0.462,
-        "bc_g7": 0.218,
-        "sectional_density": 0.253,
-        "material": "copper",
-    },
-    {
-        "name": "Sierra 175gr HPBT MK .308",
-        "manufacturer": "Sierra",
-        "weight_grains": 175,
-        "diameter_mm": 7.82,
-        "length_mm": 32.0,
-        "bc_g1": 0.505,
-        "bc_g7": 0.243,
-        "sectional_density": 0.264,
-        "material": "copper",
-    },
-    {
-        "name": "Hornady 168gr ELD Match .308",
-        "manufacturer": "Hornady",
-        "weight_grains": 168,
-        "diameter_mm": 7.82,
-        "length_mm": 31.5,
-        "bc_g1": 0.523,
-        "bc_g7": 0.264,
-        "sectional_density": 0.253,
-        "material": "copper",
-    },
-    {
-        "name": "Berger 185gr Hybrid Target .308",
-        "manufacturer": "Berger",
-        "weight_grains": 185,
-        "diameter_mm": 7.82,
-        "length_mm": 34.0,
-        "bc_g1": 0.569,
-        "bc_g7": 0.295,
-        "sectional_density": 0.279,
-        "material": "copper",
-    },
-    {
-        "name": "Hornady 285gr ELD Match .338",
-        "manufacturer": "Hornady",
-        "weight_grains": 285,
-        "diameter_mm": 8.61,
-        "length_mm": 42.0,
-        "bc_g1": 0.789,
-        "bc_g7": 0.398,
-        "sectional_density": 0.356,
-        "material": "copper",
-    },
-]
-
-CARTRIDGES = [
-    {
-        "name": ".223 Remington",
-        "saami_max_pressure_psi": 55000,
-        "cip_max_pressure_mpa": 430.0,
-        "case_capacity_grains_h2o": 28.8,
-        "case_length_mm": 44.70,
-        "overall_length_mm": 57.40,
-        "bore_diameter_mm": 5.56,
-        "groove_diameter_mm": 5.70,
-    },
-    {
-        "name": "6.5 Creedmoor",
-        "saami_max_pressure_psi": 62000,
-        "cip_max_pressure_mpa": 420.0,
-        "case_capacity_grains_h2o": 52.5,
-        "case_length_mm": 48.77,
-        "overall_length_mm": 72.39,
-        "bore_diameter_mm": 6.50,
-        "groove_diameter_mm": 6.72,
-    },
-    {
-        "name": ".308 Winchester",
-        "saami_max_pressure_psi": 62000,
-        "cip_max_pressure_mpa": 415.0,
-        "case_capacity_grains_h2o": 54.0,
-        "case_length_mm": 51.18,
-        "overall_length_mm": 71.12,
-        "bore_diameter_mm": 7.62,
-        "groove_diameter_mm": 7.82,
-    },
-    {
-        "name": ".30-06 Springfield",
-        "saami_max_pressure_psi": 60000,
-        "cip_max_pressure_mpa": 405.0,
-        "case_capacity_grains_h2o": 68.0,
-        "case_length_mm": 63.35,
-        "overall_length_mm": 84.84,
-        "bore_diameter_mm": 7.62,
-        "groove_diameter_mm": 7.82,
-    },
-    {
-        "name": ".338 Lapua Magnum",
-        "saami_max_pressure_psi": 65000,
-        "cip_max_pressure_mpa": 420.0,
-        "case_capacity_grains_h2o": 91.5,
-        "case_length_mm": 69.20,
-        "overall_length_mm": 93.50,
-        "bore_diameter_mm": 8.38,
-        "groove_diameter_mm": 8.61,
-    },
-]
+FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 
-# Rifles: (name, cartridge_name, barrel_length_mm, twist_rate_mm, chamber_volume_mm3, weight_kg)
+def _load_fixture(filename: str) -> list | dict:
+    """Load a JSON fixture file from the fixtures directory.
+
+    Args:
+        filename: Name of the JSON file (e.g. 'powders.json').
+
+    Returns:
+        Parsed JSON content (list or dict), or empty list if file not found.
+    """
+    filepath = FIXTURES_DIR / filename
+    if filepath.exists():
+        with open(filepath, encoding="utf-8") as f:
+            return json.load(f)
+    logger.warning("Fixture file not found: %s", filepath)
+    return []
+
+
+# Rifles remain inline (only 5 records, tied to cartridge_name references)
 RIFLES = [
     {
         "name": "Remington 700 SPS (.308 Win)",
@@ -357,34 +96,74 @@ RIFLES = [
 
 
 async def seed_initial_data(db: AsyncSession):
-    """Insert initial seed data if tables are empty."""
+    """Load fixture data on first boot if tables are empty."""
     existing = await db.execute(select(Powder).limit(1))
     if existing.scalar():
         logger.info("Seed data already exists, skipping")
         return
 
-    logger.info("Seeding initial data...")
+    logger.info("Seeding fixture data from JSON fixtures...")
 
-    from app.core.quality import compute_quality_score
+    # ---- Powders ----
+    powders_data = _load_fixture("powders.json")
+    powder_objects = []
+    for data in powders_data:
+        # Filter to only known Powder model columns
+        powder = Powder(**{k: v for k, v in data.items() if hasattr(Powder, k) and k != "id"})
+        if not powder.data_source:
+            powder.data_source = "estimated"
+        # Compute quality score
+        powder_dict = {k: v for k, v in data.items()}
+        breakdown = compute_quality_score(powder_dict, powder.data_source)
+        powder.quality_score = breakdown.score
+        powder_objects.append(powder)
+    db.add_all(powder_objects)
 
-    created_powders = []
-    for data in POWDERS:
-        data["data_source"] = "manual"
-        powder = Powder(**data)
-        db.add(powder)
-        created_powders.append(powder)
-    for data in BULLETS:
-        db.add(Bullet(**data))
+    # Apply alias groups from separate file
+    aliases_data = _load_fixture("powder_aliases.json")
+    if aliases_data and isinstance(aliases_data, dict):
+        await db.flush()  # ensure powder names are in session
+        for group_name, powder_names in aliases_data.items():
+            for pname in powder_names:
+                result = await db.execute(select(Powder).where(Powder.name == pname))
+                p = result.scalar_one_or_none()
+                if p:
+                    p.alias_group = group_name
 
-    # Seed cartridges and collect them for rifle FK references
-    cartridge_map: dict[str, Cartridge] = {}
-    for data in CARTRIDGES:
-        cart = Cartridge(**data)
-        db.add(cart)
-        cartridge_map[data["name"]] = cart
+    # ---- Bullets ----
+    bullets_data = _load_fixture("bullets.json")
+    bullet_objects = []
+    for data in bullets_data:
+        bullet = Bullet(**{k: v for k, v in data.items() if hasattr(Bullet, k) and k != "id"})
+        if not bullet.data_source:
+            bullet.data_source = "manufacturer"
+        bullet.caliber_family = derive_caliber_family(bullet.diameter_mm)
+        bullet_dict = {k: v for k, v in data.items()}
+        breakdown = compute_bullet_quality_score(bullet_dict, bullet.data_source)
+        bullet.quality_score = breakdown.score
+        bullet_objects.append(bullet)
+    db.add_all(bullet_objects)
+
+    # ---- Cartridges ----
+    cartridges_data = _load_fixture("cartridges.json")
+    cartridge_objects = []
+    for data in cartridges_data:
+        cart = Cartridge(**{k: v for k, v in data.items() if hasattr(Cartridge, k) and k != "id"})
+        if not cart.data_source:
+            cart.data_source = "saami"
+        cart.caliber_family = derive_caliber_family(cart.groove_diameter_mm)
+        cart_dict = {k: v for k, v in data.items()}
+        breakdown = compute_cartridge_quality_score(cart_dict, cart.data_source)
+        cart.quality_score = breakdown.score
+        cartridge_objects.append(cart)
+
+    # Build cartridge map for rifle FK references
+    cartridge_map = {c_data["name"]: cart for c_data, cart in zip(cartridges_data, cartridge_objects)}
+    db.add_all(cartridge_objects)
 
     await db.flush()  # assign IDs to cartridges before creating rifles
 
+    # ---- Rifles (inline, only 5) ----
     for data in RIFLES:
         cart = cartridge_map.get(data["cartridge_name"])
         if not cart:
@@ -401,12 +180,6 @@ async def seed_initial_data(db: AsyncSession):
         )
         db.add(rifle)
 
-    # Compute quality scores for seed powders
-    for powder in created_powders:
-        powder_dict = {c.key: getattr(powder, c.key) for c in Powder.__table__.columns}
-        breakdown = compute_quality_score(powder_dict, powder.data_source)
-        powder.quality_score = breakdown.score
-
     await db.commit()
-    logger.info("Seed data inserted: %d powders, %d bullets, %d cartridges, %d rifles",
-                len(POWDERS), len(BULLETS), len(CARTRIDGES), len(RIFLES))
+    logger.info("Fixture data seeded: %d powders, %d bullets, %d cartridges, %d rifles",
+                len(powder_objects), len(bullet_objects), len(cartridge_objects), len(RIFLES))
