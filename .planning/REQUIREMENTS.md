@@ -13,19 +13,19 @@ Requirements for v1.2 Component Databases + Search milestone. Each maps to roadm
 - [x] **PWD-02**: User sees red/yellow/green quality badges on each powder based on GRT Qlty field and data completeness
 - [x] **PWD-03**: User can view computed quality score (0-100) with breakdown tooltip showing data completeness and source reliability
 - [x] **PWD-04**: Powder records track data source provenance (grt_community, manufacturer, manual, estimated)
-- [ ] **PWD-05**: Powder aliases are resolved so duplicate entries across markets are linked (e.g., ADI AR2208 = Hodgdon Varget)
+- [x] **PWD-05**: Powder aliases are resolved so duplicate entries across markets are linked (e.g., ADI AR2208 = Hodgdon Varget)
 
 ### Bullet Database
 
 - [ ] **BUL-01**: Simulator ships with 100-200 pre-loaded bullets from major manufacturers (Sierra, Hornady, Berger, Nosler, Lapua) covering .308, 6.5CM, .223, .300WM calibers
-- [ ] **BUL-02**: Bullet records include manufacturer, model number, weight, diameter, BC (G1/G7), bullet type, and base type
-- [ ] **BUL-03**: Bullet schema tolerates missing fields (nullable length_mm, bc_g7) with completeness indicators
+- [x] **BUL-02**: Bullet records include manufacturer, model number, weight, diameter, BC (G1/G7), bullet type, and base type
+- [x] **BUL-03**: Bullet schema tolerates missing fields (nullable length_mm, bc_g7) with completeness indicators
 - [ ] **BUL-04**: User can batch-import bullets from JSON fixture files via scriptable pipeline
 
 ### Cartridge Database
 
 - [ ] **CRT-01**: Simulator ships with 50+ pre-loaded cartridges with CIP/SAAMI specs (max pressure, case capacity, bore/groove diameter)
-- [ ] **CRT-02**: Cartridge records include parent cartridge lineage and extended dimensions
+- [x] **CRT-02**: Cartridge records include parent cartridge lineage and extended dimensions
 - [ ] **CRT-03**: User can batch-import cartridges from JSON fixture files via scriptable pipeline
 
 ### Quality System
@@ -84,13 +84,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PWD-02 | Phase 3 | Complete |
 | PWD-03 | Phase 3 | Complete |
 | PWD-04 | Phase 3 | Complete |
-| PWD-05 | Phase 5 | Pending |
+| PWD-05 | Phase 5 | Complete |
 | BUL-01 | Phase 5 | Pending |
-| BUL-02 | Phase 5 | Pending |
-| BUL-03 | Phase 5 | Pending |
+| BUL-02 | Phase 5 | Complete |
+| BUL-03 | Phase 5 | Complete |
 | BUL-04 | Phase 5 | Pending |
 | CRT-01 | Phase 5 | Pending |
-| CRT-02 | Phase 5 | Pending |
+| CRT-02 | Phase 5 | Complete |
 | CRT-03 | Phase 5 | Pending |
 | QLT-01 | Phase 6 | Pending |
 | QLT-02 | Phase 3 | Complete |

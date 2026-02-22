@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases so users can simulate immediately without manual data entry.
-**Current focus:** Phase 4 - Search and Pagination (v1.2)
+**Current focus:** Phase 5 - Import Pipelines and Fixture Data (v1.2)
 
 ## Current Position
 
-Phase: 4 of 6 (Search and Pagination) -- COMPLETE
-Plan: 2 of 2 in current phase
-Status: Phase 4 complete. Ready for Phase 5.
-Last activity: 2026-02-21 — Completed 04-02-PLAN.md (endpoint integration, frontend compat, tests)
+Phase: 5 of 6 (Import Pipelines and Fixture Data)
+Plan: 1 of 3 in current phase -- COMPLETE
+Status: Plan 05-01 complete. Ready for Plan 05-02 (fixture data).
+Last activity: 2026-02-22 — Completed 05-01-PLAN.md (schema foundation for import pipelines)
 
-Progress: [==========-] 85% (12 plans complete across all milestones)
+Progress: [==========-] 87% (13 plans complete across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
-- Average duration: 5.3min
-- Total execution time: 1.06 hours
+- Total plans completed: 13
+- Average duration: 5.2min
+- Total execution time: 1.13 hours
 
 **By Phase:**
 
@@ -31,9 +31,10 @@ Progress: [==========-] 85% (12 plans complete across all milestones)
 | 2 - Extended Simulation Charts | 4/4 | 19min | 4.8min |
 | 3 - Schema and Quality System | 2/2 | 10min | 5min |
 | 4 - Search and Pagination | 2/2 | 11min | 5.5min |
+| 5 - Import Pipelines | 1/3 | 4min | 4min |
 
 **Recent Trend:**
-- Last 5 plans: 4.5, 7, 3, 4, 7 min
+- Last 5 plans: 7, 3, 4, 7, 4 min
 - Trend: Stable
 
 ## Accumulated Context
@@ -56,6 +57,9 @@ Recent decisions affecting current work:
 - [04-02]: Cartridge caliber_family derived from groove_diameter_mm (not bore_diameter_mm)
 - [04-02]: apply_fuzzy_search accepts configurable fields parameter for models without manufacturer
 - [04-02]: Frontend hooks use TanStack Query select to unwrap .items for backward compat
+- [05-01]: ImportMode enum and ImportResult defined in schemas/powder.py as shared import infrastructure
+- [05-01]: Bullet length_mm changed to nullable to support incomplete import data
+- [05-01]: GrtImportResult extended with updated list and mode field for overwrite/merge support
 
 ### Pending Todos
 
@@ -70,6 +74,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Completed 04-02-PLAN.md (Phase 4 complete)
+Last session: 2026-02-22
+Stopped at: Completed 05-01-PLAN.md (schema foundation for import pipelines)
 Resume file: None
