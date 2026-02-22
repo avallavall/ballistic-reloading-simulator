@@ -1,7 +1,23 @@
 import uuid
+from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field, computed_field
+
+
+class ImportMode(str, Enum):
+    """Collision handling strategy for batch imports."""
+    skip = "skip"
+    overwrite = "overwrite"
+    merge = "merge"
+
+
+class ImportResult(BaseModel):
+    """Shared base schema for batch import results."""
+    created: int = 0
+    updated: int = 0
+    skipped: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
 
 
 class PowderCreate(BaseModel):
@@ -25,6 +41,9 @@ class PowderCreate(BaseModel):
     z1: float | None = Field(None, ge=0.01, le=0.99, description="Phase 1/2 burn-up limit")
     z2: float | None = Field(None, ge=0.02, le=0.99, description="Phase 2/3 burn-up limit")
     a0: float | None = Field(None, ge=0.0, le=20.0, description="Ba(phi) coefficient 0")
+
+    # Import pipeline
+    alias_group: str | None = Field(None, max_length=100, description="Alias group identifier linking equivalent powders")
 
     # Data provenance
     data_source: str = Field(default="manual", description="Data source provenance")
@@ -51,6 +70,9 @@ class PowderUpdate(BaseModel):
     z1: float | None = Field(None, ge=0.01, le=0.99, description="Phase 1/2 burn-up limit")
     z2: float | None = Field(None, ge=0.02, le=0.99, description="Phase 2/3 burn-up limit")
     a0: float | None = Field(None, ge=0.0, le=20.0, description="Ba(phi) coefficient 0")
+
+    # Import pipeline
+    alias_group: str | None = Field(None, max_length=100, description="Alias group identifier linking equivalent powders")
 
     # Data provenance (optional on update)
     data_source: str | None = None
@@ -79,6 +101,9 @@ class PowderResponse(BaseModel):
     z1: float | None = None
     z2: float | None = None
     a0: float | None = None
+
+    # Import pipeline
+    alias_group: str | None = None
 
     # Data provenance and quality
     data_source: str = "manual"
@@ -145,5 +170,7 @@ class PaginatedPowderResponse(BaseModel):
 
 class GrtImportResult(BaseModel):
     created: list[PowderResponse] = Field(default_factory=list)
+    updated: list[PowderResponse] = Field(default_factory=list)
     skipped: list[str] = Field(default_factory=list, description="Names skipped (already exist)")
     errors: list[str] = Field(default_factory=list, description="Parse/conversion errors")
+    mode: str = "skip"

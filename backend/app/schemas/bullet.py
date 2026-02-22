@@ -8,11 +8,16 @@ class BulletCreate(BaseModel):
     manufacturer: str = Field(min_length=1, max_length=100)
     weight_grains: float = Field(gt=0, le=1000, description="Bullet weight (grains), typical 40-300")
     diameter_mm: float = Field(gt=0, le=20, description="Bullet diameter (mm), typical 5.56-12.7")
-    length_mm: float = Field(gt=0, le=100, description="Bullet length (mm)")
+    length_mm: float | None = Field(None, gt=0, le=100, description="Bullet length (mm), nullable for incomplete data")
     bc_g1: float = Field(gt=0, le=2.0, description="Ballistic coefficient G1 model")
     bc_g7: float | None = Field(None, gt=0, le=2.0, description="Ballistic coefficient G7 model")
     sectional_density: float = Field(gt=0, le=1.0, description="Sectional density (lb/in2)")
     material: str = Field(default="copper", max_length=50)
+
+    # Extended manufacturer fields (import pipeline)
+    model_number: str | None = Field(None, max_length=50, description="Manufacturer part number")
+    bullet_type: str | None = Field(None, max_length=30, description="Type: match, hunting, target")
+    base_type: str | None = Field(None, max_length=50, description="Base type: hollow_point_boat_tail, polymer_tip, flat_base, etc.")
 
     # Data provenance
     data_source: str = Field(default="manual", description="Data source provenance")
@@ -29,6 +34,11 @@ class BulletUpdate(BaseModel):
     sectional_density: float | None = Field(None, gt=0, le=1.0)
     material: str | None = Field(None, max_length=50)
 
+    # Extended manufacturer fields (import pipeline)
+    model_number: str | None = Field(None, max_length=50, description="Manufacturer part number")
+    bullet_type: str | None = Field(None, max_length=30, description="Type: match, hunting, target")
+    base_type: str | None = Field(None, max_length=50, description="Base type: hollow_point_boat_tail, polymer_tip, flat_base, etc.")
+
     # Data provenance (optional on update)
     data_source: str | None = None
 
@@ -39,11 +49,16 @@ class BulletResponse(BaseModel):
     manufacturer: str
     weight_grains: float
     diameter_mm: float
-    length_mm: float
+    length_mm: float | None
     bc_g1: float
     bc_g7: float | None
     sectional_density: float
     material: str
+
+    # Extended manufacturer fields
+    model_number: str | None = None
+    bullet_type: str | None = None
+    base_type: str | None = None
 
     # Data provenance and quality
     data_source: str = "manual"
@@ -104,3 +119,8 @@ class PaginatedBulletResponse(BaseModel):
     total: int
     page: int
     size: int
+
+
+class BulletImportRequest(BaseModel):
+    """Batch import request for bullets."""
+    bullets: list[BulletCreate]

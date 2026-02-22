@@ -103,6 +103,9 @@ BULLET_CRITICAL_FIELDS = [
 BULLET_BONUS_FIELDS = [
     "bc_g7",
     "length_mm",
+    "model_number",
+    "bullet_type",
+    "base_type",
 ]
 
 
@@ -155,6 +158,11 @@ CARTRIDGE_BONUS_FIELDS = [
     "cip_max_pressure_mpa",
     "case_length_mm",
     "overall_length_mm",
+    "parent_cartridge_name",
+    "shoulder_diameter_mm",
+    "neck_diameter_mm",
+    "base_diameter_mm",
+    "rim_diameter_mm",
 ]
 
 

@@ -13,6 +13,13 @@ class CartridgeCreate(BaseModel):
     bore_diameter_mm: float = Field(gt=0, le=20, description="Bore diameter (mm)")
     groove_diameter_mm: float = Field(gt=0, le=20, description="Groove diameter (mm)")
 
+    # Extended dimension and lineage fields (import pipeline)
+    parent_cartridge_name: str | None = Field(None, max_length=100, description="Parent cartridge name for lineage")
+    shoulder_diameter_mm: float | None = Field(None, gt=0, le=20)
+    neck_diameter_mm: float | None = Field(None, gt=0, le=20)
+    base_diameter_mm: float | None = Field(None, gt=0, le=20)
+    rim_diameter_mm: float | None = Field(None, gt=0, le=20)
+
     # Data provenance
     data_source: str = Field(default="manual", description="Data source provenance")
 
@@ -26,6 +33,13 @@ class CartridgeUpdate(BaseModel):
     overall_length_mm: float | None = Field(None, gt=0, le=200)
     bore_diameter_mm: float | None = Field(None, gt=0, le=20)
     groove_diameter_mm: float | None = Field(None, gt=0, le=20)
+
+    # Extended dimension and lineage fields (import pipeline)
+    parent_cartridge_name: str | None = Field(None, max_length=100, description="Parent cartridge name for lineage")
+    shoulder_diameter_mm: float | None = Field(None, gt=0, le=20)
+    neck_diameter_mm: float | None = Field(None, gt=0, le=20)
+    base_diameter_mm: float | None = Field(None, gt=0, le=20)
+    rim_diameter_mm: float | None = Field(None, gt=0, le=20)
 
     # Data provenance (optional on update)
     data_source: str | None = None
@@ -41,6 +55,13 @@ class CartridgeResponse(BaseModel):
     overall_length_mm: float
     bore_diameter_mm: float
     groove_diameter_mm: float
+
+    # Extended dimension and lineage fields
+    parent_cartridge_name: str | None = None
+    shoulder_diameter_mm: float | None = None
+    neck_diameter_mm: float | None = None
+    base_diameter_mm: float | None = None
+    rim_diameter_mm: float | None = None
 
     # Data provenance and quality
     data_source: str = "manual"
@@ -101,3 +122,8 @@ class PaginatedCartridgeResponse(BaseModel):
     total: int
     page: int
     size: int
+
+
+class CartridgeImportRequest(BaseModel):
+    """Batch import request for cartridges."""
+    cartridges: list[CartridgeCreate]
