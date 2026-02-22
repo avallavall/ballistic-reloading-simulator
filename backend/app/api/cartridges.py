@@ -9,10 +9,12 @@ from app.db.session import get_db
 from app.models.cartridge import Cartridge
 from app.schemas.cartridge import (
     CartridgeCreate,
+    CartridgeImportRequest,
     CartridgeResponse,
     CartridgeUpdate,
     PaginatedCartridgeResponse,
 )
+from app.schemas.powder import ImportMode, ImportResult
 from app.services.pagination import paginate
 from app.services.search import apply_fuzzy_search, derive_caliber_family
 
@@ -101,6 +103,82 @@ async def create_cartridge(data: CartridgeCreate, db: AsyncSession = Depends(get
     await db.commit()
     await db.refresh(cartridge)
     return cartridge
+
+
+@router.post("/import", response_model=ImportResult)
+async def import_cartridges(
+    data: CartridgeImportRequest,
+    mode: ImportMode = Query(ImportMode.skip),
+    db: AsyncSession = Depends(get_db),
+):
+    """Batch import cartridges from JSON with collision handling.
+
+    Modes: skip (ignore duplicates), overwrite (replace), merge (fill NULLs only).
+    User-created records (data_source='manual') are NEVER overwritten -- the imported
+    version gets renamed with ' (Import)' suffix.
+    """
+    # Pre-fetch existing cartridges for collision detection
+    result = await db.execute(select(Cartridge))
+    existing_map = {c.name.lower(): c for c in result.scalars().all()}
+
+    created_count = 0
+    updated_count = 0
+    skipped = []
+    errors = []
+
+    for cart_data in data.cartridges:
+        try:
+            name_lower = cart_data.name.lower()
+            existing = existing_map.get(name_lower)
+            dump = cart_data.model_dump()
+
+            if existing:
+                if existing.data_source == "manual":
+                    # Never overwrite user data -- create renamed copy
+                    new_name = f"{cart_data.name} (Import)"
+                    cart = Cartridge(**{k: v for k, v in dump.items() if hasattr(Cartridge, k)})
+                    cart.name = new_name
+                    cart.caliber_family = derive_caliber_family(cart.groove_diameter_mm)
+                    c_dict = dump.copy()
+                    breakdown = compute_cartridge_quality_score(c_dict, cart.data_source or "saami")
+                    cart.quality_score = breakdown.score
+                    db.add(cart)
+                    existing_map[new_name.lower()] = cart
+                    created_count += 1
+                elif mode == ImportMode.skip:
+                    skipped.append(cart_data.name)
+                elif mode == ImportMode.overwrite:
+                    for key, value in dump.items():
+                        if hasattr(existing, key) and key not in ("name",):
+                            setattr(existing, key, value)
+                    existing.caliber_family = derive_caliber_family(existing.groove_diameter_mm)
+                    c_dict = {c.key: getattr(existing, c.key) for c in Cartridge.__table__.columns}
+                    breakdown = compute_cartridge_quality_score(c_dict, existing.data_source)
+                    existing.quality_score = breakdown.score
+                    updated_count += 1
+                elif mode == ImportMode.merge:
+                    for key, value in dump.items():
+                        if hasattr(existing, key) and getattr(existing, key) is None and value is not None:
+                            setattr(existing, key, value)
+                    existing.caliber_family = derive_caliber_family(existing.groove_diameter_mm)
+                    c_dict = {c.key: getattr(existing, c.key) for c in Cartridge.__table__.columns}
+                    breakdown = compute_cartridge_quality_score(c_dict, existing.data_source)
+                    existing.quality_score = breakdown.score
+                    updated_count += 1
+            else:
+                cart = Cartridge(**{k: v for k, v in dump.items() if hasattr(Cartridge, k)})
+                cart.caliber_family = derive_caliber_family(cart.groove_diameter_mm)
+                c_dict = dump.copy()
+                breakdown = compute_cartridge_quality_score(c_dict, cart.data_source or "saami")
+                cart.quality_score = breakdown.score
+                db.add(cart)
+                existing_map[name_lower] = cart
+                created_count += 1
+        except Exception as e:
+            errors.append(f"{cart_data.name}: {e}")
+
+    await db.commit()
+    return ImportResult(created=created_count, updated=updated_count, skipped=skipped, errors=errors)
 
 
 @router.get("/{cartridge_id}", response_model=CartridgeResponse)

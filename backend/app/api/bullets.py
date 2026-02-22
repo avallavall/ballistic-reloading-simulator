@@ -9,10 +9,12 @@ from app.db.session import get_db
 from app.models.bullet import Bullet
 from app.schemas.bullet import (
     BulletCreate,
+    BulletImportRequest,
     BulletResponse,
     BulletUpdate,
     PaginatedBulletResponse,
 )
+from app.schemas.powder import ImportMode, ImportResult
 from app.services.pagination import paginate
 from app.services.search import apply_fuzzy_search, derive_caliber_family
 
@@ -119,6 +121,82 @@ async def create_bullet(data: BulletCreate, db: AsyncSession = Depends(get_db)):
     await db.commit()
     await db.refresh(bullet)
     return bullet
+
+
+@router.post("/import", response_model=ImportResult)
+async def import_bullets(
+    data: BulletImportRequest,
+    mode: ImportMode = Query(ImportMode.skip),
+    db: AsyncSession = Depends(get_db),
+):
+    """Batch import bullets from JSON with collision handling.
+
+    Modes: skip (ignore duplicates), overwrite (replace), merge (fill NULLs only).
+    User-created records (data_source='manual') are NEVER overwritten -- the imported
+    version gets renamed with ' (Import)' suffix.
+    """
+    # Pre-fetch existing bullets for collision detection
+    result = await db.execute(select(Bullet))
+    existing_map = {b.name.lower(): b for b in result.scalars().all()}
+
+    created_count = 0
+    updated_count = 0
+    skipped = []
+    errors = []
+
+    for bullet_data in data.bullets:
+        try:
+            name_lower = bullet_data.name.lower()
+            existing = existing_map.get(name_lower)
+            dump = bullet_data.model_dump()
+
+            if existing:
+                if existing.data_source == "manual":
+                    # Never overwrite user data -- create renamed copy
+                    new_name = f"{bullet_data.name} (Import)"
+                    bullet = Bullet(**{k: v for k, v in dump.items() if hasattr(Bullet, k)})
+                    bullet.name = new_name
+                    bullet.caliber_family = derive_caliber_family(bullet.diameter_mm)
+                    b_dict = dump.copy()
+                    breakdown = compute_bullet_quality_score(b_dict, bullet.data_source or "manufacturer")
+                    bullet.quality_score = breakdown.score
+                    db.add(bullet)
+                    existing_map[new_name.lower()] = bullet
+                    created_count += 1
+                elif mode == ImportMode.skip:
+                    skipped.append(bullet_data.name)
+                elif mode == ImportMode.overwrite:
+                    for key, value in dump.items():
+                        if hasattr(existing, key) and key not in ("name",):
+                            setattr(existing, key, value)
+                    existing.caliber_family = derive_caliber_family(existing.diameter_mm)
+                    b_dict = {c.key: getattr(existing, c.key) for c in Bullet.__table__.columns}
+                    breakdown = compute_bullet_quality_score(b_dict, existing.data_source)
+                    existing.quality_score = breakdown.score
+                    updated_count += 1
+                elif mode == ImportMode.merge:
+                    for key, value in dump.items():
+                        if hasattr(existing, key) and getattr(existing, key) is None and value is not None:
+                            setattr(existing, key, value)
+                    existing.caliber_family = derive_caliber_family(existing.diameter_mm)
+                    b_dict = {c.key: getattr(existing, c.key) for c in Bullet.__table__.columns}
+                    breakdown = compute_bullet_quality_score(b_dict, existing.data_source)
+                    existing.quality_score = breakdown.score
+                    updated_count += 1
+            else:
+                bullet = Bullet(**{k: v for k, v in dump.items() if hasattr(Bullet, k)})
+                bullet.caliber_family = derive_caliber_family(bullet.diameter_mm)
+                b_dict = dump.copy()
+                breakdown = compute_bullet_quality_score(b_dict, bullet.data_source or "manufacturer")
+                bullet.quality_score = breakdown.score
+                db.add(bullet)
+                existing_map[name_lower] = bullet
+                created_count += 1
+        except Exception as e:
+            errors.append(f"{bullet_data.name}: {e}")
+
+    await db.commit()
+    return ImportResult(created=created_count, updated=updated_count, skipped=skipped, errors=errors)
 
 
 @router.get("/{bullet_id}", response_model=BulletResponse)
