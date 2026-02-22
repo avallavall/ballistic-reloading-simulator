@@ -15,6 +15,13 @@ class Cartridge(UUIDMixin, Base):
     bore_diameter_mm = Column(Float, nullable=False)
     groove_diameter_mm = Column(Float, nullable=False)
 
+    # Extended dimension and lineage fields (import pipeline)
+    parent_cartridge_name = Column(String(100), nullable=True)
+    shoulder_diameter_mm = Column(Float, nullable=True)
+    neck_diameter_mm = Column(Float, nullable=True)
+    base_diameter_mm = Column(Float, nullable=True)
+    rim_diameter_mm = Column(Float, nullable=True)
+
     # Data provenance and quality scoring
     data_source = Column(String(20), nullable=False, default="manual")
     quality_score = Column(Integer, nullable=False, default=0)

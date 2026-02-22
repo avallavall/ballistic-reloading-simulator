@@ -27,6 +27,9 @@ class Powder(UUIDMixin, Base):
     z2 = Column(Float, nullable=True)    # Phase 2/3 transition
     a0 = Column(Float, nullable=True)    # Ba(phi) coefficient 0
 
+    # Import pipeline fields
+    alias_group = Column(String(100), nullable=True, index=True)
+
     # Data provenance and quality scoring
     data_source = Column(String(20), nullable=False, default="manual")
     quality_score = Column(Integer, nullable=False, default=0)
