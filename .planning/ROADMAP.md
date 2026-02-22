@@ -66,12 +66,12 @@ Plans:
   3. After fresh Docker boot, the cartridge database contains 50+ records with CIP/SAAMI max pressure, case capacity, bore/groove diameter, and parent cartridge lineage
   4. User can batch-import GRT powder XML with collision handling (skip duplicates or overwrite), and duplicate powder names across markets are linked via aliases (e.g., ADI AR2208 = Hodgdon Varget)
   5. Bullet records tolerate missing fields (nullable length_mm, bc_g7) with completeness indicators, and can be batch-imported from JSON fixture files
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
-- [ ] 05-03: TBD
+- [ ] 05-01-PLAN.md — Schema: migration 007 (powder alias_group, bullet model_number/type/base_type + nullable length_mm, cartridge parent_cartridge_name + extended dims), ORM models, Pydantic schemas, ImportMode/ImportResult, quality scorer updates
+- [ ] 05-02-PLAN.md — Fixtures: compile 200+ powders, 100-200 bullets, 50+ cartridges, powder alias mappings as JSON files under backend/app/seed/fixtures/
+- [ ] 05-03-PLAN.md — Import: refactor seed to load JSON fixtures, 3-mode collision import endpoints (powders/bullets/cartridges), aliases endpoint, 18+ tests
 
 ### Phase 6: Frontend Integration
 **Goal**: Users interact with the expanded databases through searchable pickers, paginated tables, and quality badges -- replacing flat dropdowns that cannot scale past 50 items
@@ -100,5 +100,5 @@ Note: Phase 5 (fixture data compilation) can begin in parallel with Phase 6 (fro
 | 2. Extended Simulation Charts | v1.1 | 4/4 | Complete | 2026-02-21 |
 | 3. Schema and Quality System | v1.2 | Complete    | 2026-02-21 | 2026-02-21 |
 | 4. Search and Pagination | v1.2 | Complete    | 2026-02-21 | 2026-02-21 |
-| 5. Import Pipelines and Fixture Data | v1.2 | 0/? | Not started | - |
+| 5. Import Pipelines and Fixture Data | v1.2 | 0/3 | Planning | - |
 | 6. Frontend Integration | v1.2 | 0/? | Not started | - |
