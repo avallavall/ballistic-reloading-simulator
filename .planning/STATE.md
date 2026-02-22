@@ -9,19 +9,19 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 
 ## Current Position
 
-Phase: 5 of 6 (Import Pipelines and Fixture Data)
-Plan: 2 of 3 in current phase -- COMPLETE
-Status: Plan 05-02 complete. Ready for Plan 05-03 (seed refactoring and import endpoints).
-Last activity: 2026-02-22 — Completed 05-02-PLAN.md (fixture data compilation)
+Phase: 5 of 6 (Import Pipelines and Fixture Data) -- COMPLETE
+Plan: 3 of 3 in current phase -- COMPLETE
+Status: Phase 05 complete (all 3 plans). Ready for Phase 06.
+Last activity: 2026-02-22 — Completed 05-03-PLAN.md (import endpoints and seed refactoring)
 
-Progress: [===========-] 90% (14 plans complete across all milestones)
+Progress: [============] 94% (15 plans complete across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
-- Average duration: 5.3min
-- Total execution time: 1.25 hours
+- Total plans completed: 15
+- Average duration: 5.5min
+- Total execution time: 1.37 hours
 
 **By Phase:**
 
@@ -31,10 +31,10 @@ Progress: [===========-] 90% (14 plans complete across all milestones)
 | 2 - Extended Simulation Charts | 4/4 | 19min | 4.8min |
 | 3 - Schema and Quality System | 2/2 | 10min | 5min |
 | 4 - Search and Pagination | 2/2 | 11min | 5.5min |
-| 5 - Import Pipelines | 2/3 | 11min | 5.5min |
+| 5 - Import Pipelines | 3/3 | 18min | 6min |
 
 **Recent Trend:**
-- Last 5 plans: 3, 4, 7, 4, 7 min
+- Last 5 plans: 4, 7, 4, 7, 7 min
 - Trend: Stable
 
 ## Accumulated Context
@@ -64,6 +64,9 @@ Recent decisions affecting current work:
 - [05-02]: Generic SB/DB thermochemical defaults applied from materials_database.md for powders without specific data
 - [05-02]: Bullets: match + hunting lines only (no varmint/plinking/FMJ) per user decision
 - [05-02]: Cartridge parent lineage stored as informational string, not FK-enforced
+- [05-03]: Seed loader uses _load_fixture() with FIXTURES_DIR for JSON fixture loading
+- [05-03]: GRT import creates renamed copy with "(GRT Import)" suffix for manual record collision
+- [05-03]: RIFLES kept inline in seed (only 5 records with FK references to cartridge names)
 
 ### Pending Todos
 
@@ -79,5 +82,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed 05-02-PLAN.md (fixture data compilation)
+Stopped at: Completed 05-03-PLAN.md (import endpoints and seed refactoring). Phase 05 complete.
 Resume file: None
