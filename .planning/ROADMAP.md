@@ -21,7 +21,7 @@
 
 - [x] **Phase 3: Schema and Quality System** - Alembic migration with new columns, quality scorer, data provenance, solver web_thickness fix
 - [x] **Phase 4: Search and Pagination** - pg_trgm fuzzy search, server-side pagination, multi-field filtering on all component endpoints
-- [ ] **Phase 5: Import Pipelines and Fixture Data** - GRT powder import, powder aliases, bullet/cartridge fixture compilation, batch import endpoints
+- [x] **Phase 5: Import Pipelines and Fixture Data** - GRT powder import, powder aliases, bullet/cartridge fixture compilation, batch import endpoints (completed 2026-02-22)
 - [ ] **Phase 6: Frontend Integration** - Searchable picker modals, pagination UI, quality badges display on all component pages
 
 ## Phase Details
@@ -100,5 +100,5 @@ Note: Phase 5 (fixture data compilation) can begin in parallel with Phase 6 (fro
 | 2. Extended Simulation Charts | v1.1 | 4/4 | Complete | 2026-02-21 |
 | 3. Schema and Quality System | v1.2 | Complete    | 2026-02-21 | 2026-02-21 |
 | 4. Search and Pagination | v1.2 | Complete    | 2026-02-21 | 2026-02-21 |
-| 5. Import Pipelines and Fixture Data | v1.2 | 0/3 | Planning | - |
+| 5. Import Pipelines and Fixture Data | v1.2 | Complete    | 2026-02-22 | - |
 | 6. Frontend Integration | v1.2 | 0/? | Not started | - |
