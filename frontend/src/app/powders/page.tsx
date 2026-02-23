@@ -65,7 +65,7 @@ export default function PowdersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [importResult, setImportResult] = useState<{ created: number; skipped: string[]; errors: string[] } | null>(null);
+  const [importResult, setImportResult] = useState<{ created: number; updated: number; skipped: string[]; errors: string[]; mode: string } | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [lastImportFile, setLastImportFile] = useState<File | null>(null);
@@ -167,7 +167,13 @@ export default function PowdersPage() {
     setLastImportFile(file);
     importMutation.mutate(file, {
       onSuccess: (data) => {
-        setImportResult({ created: data.created.length, skipped: data.skipped, errors: data.errors });
+        setImportResult({
+          created: data.created.length,
+          updated: data.updated?.length ?? 0,
+          skipped: data.skipped,
+          errors: data.errors,
+          mode: data.mode ?? 'skip',
+        });
       },
       onError: (error) => {
         setImportError(error instanceof Error ? error.message : 'Error al importar archivo');
@@ -184,7 +190,13 @@ export default function PowdersPage() {
       try {
         const { importGrtPowders } = await import('@/lib/api');
         const data = await importGrtPowders(lastImportFile, true);
-        setImportResult({ created: data.created.length, skipped: data.skipped, errors: data.errors });
+        setImportResult({
+          created: data.created.length,
+          updated: data.updated?.length ?? 0,
+          skipped: data.skipped,
+          errors: data.errors,
+          mode: data.mode ?? 'overwrite',
+        });
       } catch (error) {
         setImportError(error instanceof Error ? error.message : 'Error al sobrescribir');
       }
@@ -524,6 +536,12 @@ export default function PowdersPage() {
                     <Badge variant="success">{importResult.created}</Badge>{' '}
                     {importResult.created === 1 ? 'polvora' : 'polvoras'} correctamente.
                   </p>
+                  {importResult.updated > 0 && (
+                    <p className="mt-1 text-sm text-slate-400">
+                      <Badge variant="default">{importResult.updated}</Badge>{' '}
+                      {importResult.updated === 1 ? 'polvora actualizada' : 'polvoras actualizadas'}.
+                    </p>
+                  )}
 
                   {/* Collision dialog: show skipped names with overwrite option */}
                   {importResult.skipped.length > 0 && (
@@ -544,7 +562,7 @@ export default function PowdersPage() {
                           size="sm"
                           onClick={() => {
                             // Just dismiss - keep existing (skip all)
-                            setImportResult(prev => prev ? { ...prev, skipped: [] } : null);
+                            setImportResult(prev => prev ? { ...prev, skipped: [] as string[] } : null);
                           }}
                         >
                           Omitir todos

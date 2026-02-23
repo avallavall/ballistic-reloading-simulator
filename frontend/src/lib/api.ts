@@ -106,7 +106,7 @@ export async function importGrtPowders(file: File, overwrite: boolean = false): 
   const formData = new FormData();
   formData.append('file', file);
 
-  const url = `${API_PREFIX}/powders/import-grt${overwrite ? '?overwrite=true' : ''}`;
+  const url = `${API_PREFIX}/powders/import-grt${overwrite ? '?mode=overwrite' : ''}`;
   const response = await fetch(url, {
     method: 'POST',
     body: formData,

@@ -56,7 +56,7 @@ export default function CartridgesPage() {
     setForm({
       name: cartridge.name,
       saami_max_pressure_psi: cartridge.saami_max_pressure_psi,
-      cip_max_pressure_mpa: cartridge.cip_max_pressure_mpa,
+      cip_max_pressure_mpa: cartridge.cip_max_pressure_mpa ?? 0,
       case_capacity_grains_h2o: cartridge.case_capacity_grains_h2o,
       case_length_mm: cartridge.case_length_mm,
       overall_length_mm: cartridge.overall_length_mm,

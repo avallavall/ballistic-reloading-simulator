@@ -24,6 +24,7 @@ export interface Powder {
   z2?: number | null;
   a0?: number | null;
   has_3curve: boolean;
+  alias_group: string | null;
   data_source: string;
   quality_score: number;
   quality_level: string;      // "success" | "warning" | "danger"
@@ -33,8 +34,10 @@ export interface Powder {
 
 export interface GrtImportResult {
   created: Powder[];
+  updated: Powder[];
   skipped: string[];
   errors: string[];
+  mode: string;
 }
 
 export interface PowderCreate {
@@ -92,11 +95,14 @@ export interface Bullet {
   manufacturer: string;
   weight_grains: number;
   diameter_mm: number;
-  length_mm: number;
+  length_mm: number | null;
   bc_g1: number;
-  bc_g7: number;
+  bc_g7: number | null;
   sectional_density: number;
   material: string;
+  model_number: string | null;
+  bullet_type: string | null;
+  base_type: string | null;
   data_source?: string;
   quality_score?: number;
   caliber_family?: string | null;
@@ -109,9 +115,9 @@ export interface BulletCreate {
   manufacturer: string;
   weight_grains: number;
   diameter_mm: number;
-  length_mm: number;
+  length_mm?: number | null;
   bc_g1: number;
-  bc_g7: number;
+  bc_g7?: number | null;
   sectional_density: number;
   material: string;
 }
@@ -124,12 +130,17 @@ export interface Cartridge {
   id: string;
   name: string;
   saami_max_pressure_psi: number;
-  cip_max_pressure_mpa: number;
+  cip_max_pressure_mpa: number | null;
   case_capacity_grains_h2o: number;
   case_length_mm: number;
   overall_length_mm: number;
   bore_diameter_mm: number;
   groove_diameter_mm: number;
+  parent_cartridge_name: string | null;
+  shoulder_diameter_mm: number | null;
+  neck_diameter_mm: number | null;
+  base_diameter_mm: number | null;
+  rim_diameter_mm: number | null;
   data_source?: string;
   quality_score?: number;
   caliber_family?: string | null;
