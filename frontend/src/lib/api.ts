@@ -24,6 +24,25 @@ import type {
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const API_PREFIX = `${API_BASE}/api/v1`;
 
+// ============================================================
+// Query Params
+// ============================================================
+
+export interface ListParams {
+  page?: number;
+  size?: number;
+  q?: string;
+}
+
+function buildQueryString(params: ListParams): string {
+  const sp = new URLSearchParams();
+  if (params.page) sp.set('page', String(params.page));
+  if (params.size) sp.set('size', String(params.size));
+  if (params.q && params.q.length >= 3) sp.set('q', params.q);
+  const qs = sp.toString();
+  return qs ? `?${qs}` : '';
+}
+
 class ApiClientError extends Error {
   status: number;
   detail: string;
@@ -73,8 +92,8 @@ async function request<T>(
 // Powders
 // ============================================================
 
-export async function getPowders(): Promise<PaginatedResponse<Powder>> {
-  return request<PaginatedResponse<Powder>>('/powders');
+export async function getPowders(params: ListParams = {}): Promise<PaginatedResponse<Powder>> {
+  return request<PaginatedResponse<Powder>>(`/powders${buildQueryString(params)}`);
 }
 
 export async function getPowder(id: string): Promise<Powder> {
@@ -130,8 +149,8 @@ export async function importGrtPowders(file: File, overwrite: boolean = false): 
 // Bullets
 // ============================================================
 
-export async function getBullets(): Promise<PaginatedResponse<Bullet>> {
-  return request<PaginatedResponse<Bullet>>('/bullets');
+export async function getBullets(params: ListParams = {}): Promise<PaginatedResponse<Bullet>> {
+  return request<PaginatedResponse<Bullet>>(`/bullets${buildQueryString(params)}`);
 }
 
 export async function getBullet(id: string): Promise<Bullet> {
@@ -163,8 +182,8 @@ export async function deleteBullet(id: string): Promise<void> {
 // Cartridges
 // ============================================================
 
-export async function getCartridges(): Promise<PaginatedResponse<Cartridge>> {
-  return request<PaginatedResponse<Cartridge>>('/cartridges');
+export async function getCartridges(params: ListParams = {}): Promise<PaginatedResponse<Cartridge>> {
+  return request<PaginatedResponse<Cartridge>>(`/cartridges${buildQueryString(params)}`);
 }
 
 export async function getCartridge(id: string): Promise<Cartridge> {

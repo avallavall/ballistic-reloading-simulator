@@ -1,12 +1,22 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { getCartridges, getCartridge, createCartridge, updateCartridge, deleteCartridge } from '@/lib/api';
+import type { ListParams } from '@/lib/api';
 import type { CartridgeCreate } from '@/lib/types';
 
 export function useCartridges() {
   return useQuery({
     queryKey: ['cartridges'],
-    queryFn: getCartridges,
+    queryFn: () => getCartridges(),
     select: (data) => data.items,
+  });
+}
+
+export function useCartridgesPaginated(params: ListParams = {}) {
+  const { page = 1, size = 20, q } = params;
+  return useQuery({
+    queryKey: ['cartridges', 'list', { page, size, q }],
+    queryFn: () => getCartridges({ page, size, q }),
+    placeholderData: keepPreviousData,
   });
 }
 

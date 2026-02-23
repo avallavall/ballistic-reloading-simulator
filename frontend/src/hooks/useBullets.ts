@@ -1,12 +1,22 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { getBullets, getBullet, createBullet, updateBullet, deleteBullet } from '@/lib/api';
+import type { ListParams } from '@/lib/api';
 import type { BulletCreate } from '@/lib/types';
 
 export function useBullets() {
   return useQuery({
     queryKey: ['bullets'],
-    queryFn: getBullets,
+    queryFn: () => getBullets(),
     select: (data) => data.items,
+  });
+}
+
+export function useBulletsPaginated(params: ListParams = {}) {
+  const { page = 1, size = 20, q } = params;
+  return useQuery({
+    queryKey: ['bullets', 'list', { page, size, q }],
+    queryFn: () => getBullets({ page, size, q }),
+    placeholderData: keepPreviousData,
   });
 }
 
