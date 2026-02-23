@@ -15,8 +15,11 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Spinner from '@/components/ui/Spinner';
-import { useBullets, useCreateBullet, useUpdateBullet, useDeleteBullet } from '@/hooks/useBullets';
-import type { BulletCreate } from '@/lib/types';
+import QualityBadge from '@/components/ui/QualityBadge';
+import SkeletonRows from '@/components/ui/SkeletonRows';
+import Pagination from '@/components/ui/Pagination';
+import { useBulletsPaginated, useCreateBullet, useUpdateBullet, useDeleteBullet } from '@/hooks/useBullets';
+import type { Bullet, BulletCreate } from '@/lib/types';
 
 const materialOptions = [
   { value: 'copper', label: 'Cobre' },
@@ -41,7 +44,11 @@ const emptyForm: BulletCreate = {
 };
 
 export default function BulletsPage() {
-  const { data: bullets, isLoading, isError } = useBullets();
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(20);
+  const { data, isLoading, isError, isPlaceholderData } = useBulletsPaginated({ page, size });
+  const bullets = data?.items ?? [];
+  const totalPages = Math.ceil((data?.total ?? 0) / size);
   const createMutation = useCreateBullet();
   const updateMutation = useUpdateBullet();
   const deleteMutation = useDeleteBullet();
@@ -60,7 +67,7 @@ export default function BulletsPage() {
     }));
   };
 
-  const handleEdit = (bullet: typeof bullets extends (infer T)[] | undefined ? T : never) => {
+  const handleEdit = (bullet: Bullet) => {
     if (!bullet) return;
     setEditingId(bullet.id);
     setForm({
@@ -255,12 +262,6 @@ export default function BulletsPage() {
         </Card>
       )}
 
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <Spinner size="lg" />
-        </div>
-      )}
-
       {isError && (
         <Card className="border-red-500/30 bg-red-500/5">
           <CardContent>
@@ -271,7 +272,7 @@ export default function BulletsPage() {
         </Card>
       )}
 
-      {bullets && bullets.length === 0 && !showForm && (
+      {!isLoading && bullets.length === 0 && !showForm && (
         <Card>
           <CardContent>
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -298,77 +299,103 @@ export default function BulletsPage() {
         </Card>
       )}
 
-      {bullets && bullets.length > 0 && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Fabricante</TableHead>
-              <TableHead>Peso (gr)</TableHead>
-              <TableHead>Diametro (mm)</TableHead>
-              <TableHead>BC G1</TableHead>
-              <TableHead>BC G7</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {bullets.map((bullet) => (
-              <TableRow key={bullet.id}>
-                <TableCell className="font-medium text-white">
-                  {bullet.name}
-                </TableCell>
-                <TableCell>{bullet.manufacturer}</TableCell>
-                <TableCell className="font-mono">
-                  {bullet.weight_grains}
-                </TableCell>
-                <TableCell className="font-mono">
-                  {bullet.diameter_mm}
-                </TableCell>
-                <TableCell className="font-mono">{bullet.bc_g1}</TableCell>
-                <TableCell className="font-mono">{bullet.bc_g7}</TableCell>
-                <TableCell className="text-right">
-                  {deleteConfirm === bullet.id ? (
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="text-xs text-red-400">Eliminar?</span>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleDelete(bullet.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        Si
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setDeleteConfirm(null)}
-                      >
-                        No
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(bullet)}
-                      >
-                        <Pencil size={14} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleteConfirm(bullet.id)}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  )}
-                </TableCell>
+      {(isLoading || bullets.length > 0) && (
+        <div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Calidad</TableHead>
+                <TableHead>Fabricante</TableHead>
+                <TableHead>Peso (gr)</TableHead>
+                <TableHead>Diametro (mm)</TableHead>
+                <TableHead>BC G1</TableHead>
+                <TableHead>BC G7</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <SkeletonRows columns={8} rows={size} />
+              ) : (
+                <>
+                  {bullets.map((bullet) => (
+                    <TableRow
+                      key={bullet.id}
+                      className={isPlaceholderData ? 'opacity-50 transition-opacity' : 'transition-opacity'}
+                    >
+                      <TableCell className="font-medium text-white">
+                        {bullet.name}
+                      </TableCell>
+                      <TableCell>
+                        <QualityBadge
+                          score={bullet.quality_score}
+                          level={bullet.quality_level}
+                          tooltip={bullet.quality_tooltip}
+                        />
+                      </TableCell>
+                      <TableCell>{bullet.manufacturer}</TableCell>
+                      <TableCell className="font-mono">
+                        {bullet.weight_grains}
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        {bullet.diameter_mm}
+                      </TableCell>
+                      <TableCell className="font-mono">{bullet.bc_g1}</TableCell>
+                      <TableCell className="font-mono">{bullet.bc_g7}</TableCell>
+                      <TableCell className="text-right">
+                        {deleteConfirm === bullet.id ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-xs text-red-400">Eliminar?</span>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handleDelete(bullet.id)}
+                              disabled={deleteMutation.isPending}
+                            >
+                              Si
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setDeleteConfirm(null)}
+                            >
+                              No
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(bullet)}
+                            >
+                              <Pencil size={14} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteConfirm(bullet.id)}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </>
+              )}
+            </TableBody>
+          </Table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            size={size}
+            onPageChange={setPage}
+            onSizeChange={(s) => { setSize(s); setPage(1); }}
+          />
+        </div>
       )}
     </div>
   );

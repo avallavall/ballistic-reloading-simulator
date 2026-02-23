@@ -14,13 +14,16 @@ import {
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
+import QualityBadge from '@/components/ui/QualityBadge';
+import SkeletonRows from '@/components/ui/SkeletonRows';
+import Pagination from '@/components/ui/Pagination';
 import {
-  useCartridges,
+  useCartridgesPaginated,
   useCreateCartridge,
   useUpdateCartridge,
   useDeleteCartridge,
 } from '@/hooks/useCartridges';
-import type { CartridgeCreate } from '@/lib/types';
+import type { Cartridge, CartridgeCreate } from '@/lib/types';
 
 const emptyForm: CartridgeCreate = {
   name: '',
@@ -34,7 +37,11 @@ const emptyForm: CartridgeCreate = {
 };
 
 export default function CartridgesPage() {
-  const { data: cartridges, isLoading, isError } = useCartridges();
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(20);
+  const { data, isLoading, isError, isPlaceholderData } = useCartridgesPaginated({ page, size });
+  const cartridges = data?.items ?? [];
+  const totalPages = Math.ceil((data?.total ?? 0) / size);
   const createMutation = useCreateCartridge();
   const updateMutation = useUpdateCartridge();
   const deleteMutation = useDeleteCartridge();
@@ -50,7 +57,7 @@ export default function CartridgesPage() {
     }));
   };
 
-  const handleEdit = (cartridge: typeof cartridges extends (infer T)[] | undefined ? T : never) => {
+  const handleEdit = (cartridge: Cartridge) => {
     if (!cartridge) return;
     setEditingId(cartridge.id);
     setForm({
@@ -253,12 +260,6 @@ export default function CartridgesPage() {
         </Card>
       )}
 
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <Spinner size="lg" />
-        </div>
-      )}
-
       {isError && (
         <Card className="border-red-500/30 bg-red-500/5">
           <CardContent>
@@ -269,7 +270,7 @@ export default function CartridgesPage() {
         </Card>
       )}
 
-      {cartridges && cartridges.length === 0 && !showForm && (
+      {!isLoading && cartridges.length === 0 && !showForm && (
         <Card>
           <CardContent>
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -296,79 +297,105 @@ export default function CartridgesPage() {
         </Card>
       )}
 
-      {cartridges && cartridges.length > 0 && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>SAAMI Max (psi)</TableHead>
-              <TableHead>Capacidad (gr H2O)</TableHead>
-              <TableHead>Long. Vaina (mm)</TableHead>
-              <TableHead>Bore (mm)</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {cartridges.map((cartridge) => (
-              <TableRow key={cartridge.id}>
-                <TableCell className="font-medium text-white">
-                  {cartridge.name}
-                </TableCell>
-                <TableCell className="font-mono">
-                  {cartridge.saami_max_pressure_psi.toLocaleString()}
-                </TableCell>
-                <TableCell className="font-mono">
-                  {cartridge.case_capacity_grains_h2o}
-                </TableCell>
-                <TableCell className="font-mono">
-                  {cartridge.case_length_mm}
-                </TableCell>
-                <TableCell className="font-mono">
-                  {cartridge.bore_diameter_mm}
-                </TableCell>
-                <TableCell className="text-right">
-                  {deleteConfirm === cartridge.id ? (
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="text-xs text-red-400">Eliminar?</span>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleDelete(cartridge.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        Si
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setDeleteConfirm(null)}
-                      >
-                        No
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(cartridge)}
-                      >
-                        <Pencil size={14} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleteConfirm(cartridge.id)}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  )}
-                </TableCell>
+      {(isLoading || cartridges.length > 0) && (
+        <div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Calidad</TableHead>
+                <TableHead>SAAMI Max (psi)</TableHead>
+                <TableHead>Capacidad (gr H2O)</TableHead>
+                <TableHead>Long. Vaina (mm)</TableHead>
+                <TableHead>Bore (mm)</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <SkeletonRows columns={7} rows={size} />
+              ) : (
+                <>
+                  {cartridges.map((cartridge) => (
+                    <TableRow
+                      key={cartridge.id}
+                      className={isPlaceholderData ? 'opacity-50 transition-opacity' : 'transition-opacity'}
+                    >
+                      <TableCell className="font-medium text-white">
+                        {cartridge.name}
+                      </TableCell>
+                      <TableCell>
+                        <QualityBadge
+                          score={cartridge.quality_score}
+                          level={cartridge.quality_level}
+                          tooltip={cartridge.quality_tooltip}
+                        />
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        {cartridge.saami_max_pressure_psi.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        {cartridge.case_capacity_grains_h2o}
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        {cartridge.case_length_mm}
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        {cartridge.bore_diameter_mm}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {deleteConfirm === cartridge.id ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-xs text-red-400">Eliminar?</span>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handleDelete(cartridge.id)}
+                              disabled={deleteMutation.isPending}
+                            >
+                              Si
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setDeleteConfirm(null)}
+                            >
+                              No
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(cartridge)}
+                            >
+                              <Pencil size={14} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteConfirm(cartridge.id)}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </>
+              )}
+            </TableBody>
+          </Table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            size={size}
+            onPageChange={setPage}
+            onSizeChange={(s) => { setSize(s); setPage(1); }}
+          />
+        </div>
       )}
     </div>
   );
