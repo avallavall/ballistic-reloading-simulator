@@ -17,8 +17,6 @@ import EnergyRecoilChart from '@/components/charts/EnergyRecoilChart';
 import TemperatureChart from '@/components/charts/TemperatureChart';
 import SensitivityPanel from '@/components/panels/SensitivityPanel';
 import { useRifles } from '@/hooks/useRifles';
-import { useBullets } from '@/hooks/useBullets';
-import { usePowders } from '@/hooks/usePowders';
 import { useSimulation } from '@/hooks/useSimulation';
 import { useSensitivity } from '@/hooks/useSensitivity';
 import type { SimulationInput, SimulationResult } from '@/lib/types';
@@ -407,15 +405,13 @@ function exportCsv(result: SimulationResult) {
 
 export default function SimulatePage() {
   const { data: rifles, isLoading: loadingRifles } = useRifles();
-  const { data: bullets, isLoading: loadingBullets } = useBullets();
-  const { data: powders, isLoading: loadingPowders } = usePowders();
   const simulation = useSimulation();
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [lastParams, setLastParams] = useState<SimulationInput | null>(null);
   const [expandedChart, setExpandedChart] = useState<ExpandedChart>(null);
   const [sensitivityOpen, setSensitivityOpen] = useState(false);
 
-  const isLoadingData = loadingRifles || loadingBullets || loadingPowders;
+  const isLoadingData = loadingRifles;
 
   const handleSimulate = (input: SimulationInput) => {
     setLastParams(input);
@@ -507,8 +503,6 @@ export default function SimulatePage() {
               ) : (
                 <SimulationForm
                   rifles={rifles || []}
-                  bullets={bullets || []}
-                  powders={powders || []}
                   isLoading={simulation.isPending}
                   onSubmit={handleSimulate}
                 />

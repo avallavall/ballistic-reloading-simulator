@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings2, Zap } from 'lucide-react';
+import { Settings2, Zap, ChevronDown } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Select from '@/components/ui/Select';
 import Input from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
 import Tooltip from '@/components/ui/Tooltip';
+import ComponentPicker from '@/components/pickers/ComponentPicker';
+import { getBullets, getPowders } from '@/lib/api';
 import type { Rifle, Bullet, Powder, SimulationInput } from '@/lib/types';
 
 const STORAGE_KEY = 'sim-form-mode';
@@ -32,16 +34,12 @@ function useFormMode() {
 
 interface SimulationFormProps {
   rifles: Rifle[];
-  bullets: Bullet[];
-  powders: Powder[];
   isLoading: boolean;
   onSubmit: (input: SimulationInput) => void;
 }
 
 export default function SimulationForm({
   rifles,
-  bullets,
-  powders,
   isLoading,
   onSubmit,
 }: SimulationFormProps) {
@@ -52,6 +50,13 @@ export default function SimulationForm({
   const [chargeGrains, setChargeGrains] = useState(42);
   const [coalMm, setCoalMm] = useState(71.0);
   const [seatingDepthMm, setSeatingDepthMm] = useState(8.0);
+
+  // Picker modal state
+  const [showBulletPicker, setShowBulletPicker] = useState(false);
+  const [selectedBullet, setSelectedBullet] = useState<Bullet | null>(null);
+
+  const [showPowderPicker, setShowPowderPicker] = useState(false);
+  const [selectedPowder, setSelectedPowder] = useState<Powder | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +102,7 @@ export default function SimulationForm({
         </button>
       </div>
 
-      {/* Section 1: Rifle Selection */}
+      {/* Section 1: Rifle Selection (flat Select -- only 5 records) */}
       <div className="space-y-4">
         <h3 className="flex items-center text-sm font-semibold uppercase tracking-wider text-slate-400">
           1. Rifle
@@ -116,41 +121,103 @@ export default function SimulationForm({
         />
       </div>
 
-      {/* Section 2: Bullet Selection */}
+      {/* Section 2: Bullet Selection (picker modal) */}
       <div className="space-y-4">
         <h3 className="flex items-center text-sm font-semibold uppercase tracking-wider text-slate-400">
           2. Proyectil
           <Tooltip text="Selecciona el proyectil. El peso y coeficiente balistico determinan la aceleracion." />
         </h3>
-        <Select
-          id="bullet"
-          label="Seleccionar proyectil"
-          placeholder="-- Seleccionar proyectil --"
-          value={bulletId}
-          onChange={(e) => setBulletId(e.target.value)}
-          options={bullets.map((b) => ({
-            value: b.id,
-            label: `${b.name} - ${b.weight_grains}gr (BC G7: ${b.bc_g7})`,
-          }))}
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-slate-300">
+            Seleccionar proyectil
+          </label>
+          <div
+            onClick={() => setShowBulletPicker(true)}
+            className="flex items-center justify-between rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 cursor-pointer
+              hover:border-blue-500 transition-colors"
+          >
+            {selectedBullet ? (
+              <div className="min-w-0">
+                <span className="text-sm font-medium text-white">{selectedBullet.name}</span>
+                <span className="ml-2 text-xs text-slate-400">
+                  {selectedBullet.weight_grains}gr - BC G7: {selectedBullet.bc_g7 ?? 'N/D'}
+                </span>
+              </div>
+            ) : (
+              <span className="text-sm text-slate-500">-- Seleccionar proyectil --</span>
+            )}
+            <ChevronDown size={16} className="ml-2 flex-shrink-0 text-slate-400" />
+          </div>
+        </div>
+        <ComponentPicker<Bullet>
+          open={showBulletPicker}
+          onClose={() => setShowBulletPicker(false)}
+          onSelect={(bullet) => {
+            setSelectedBullet(bullet);
+            setBulletId(bullet.id);
+          }}
+          title="Seleccionar Proyectil"
+          fetchFn={getBullets}
+          getId={(b) => b.id}
+          selectedId={bulletId}
+          renderItem={(b) => (
+            <div>
+              <div className="text-sm font-medium text-white">{b.name}</div>
+              <div className="text-xs text-slate-400">
+                {b.manufacturer} - {b.weight_grains}gr - {b.diameter_mm}mm - BC G7: {b.bc_g7 ?? 'N/D'}
+              </div>
+            </div>
+          )}
         />
       </div>
 
-      {/* Section 3: Powder Selection */}
+      {/* Section 3: Powder Selection (picker modal) */}
       <div className="space-y-4">
         <h3 className="flex items-center text-sm font-semibold uppercase tracking-wider text-slate-400">
           3. Polvora
           <Tooltip text="Selecciona la polvora. La tasa de combustion y energia determinan la curva de presion." />
         </h3>
-        <Select
-          id="powder"
-          label="Seleccionar polvora"
-          placeholder="-- Seleccionar polvora --"
-          value={powderId}
-          onChange={(e) => setPowderId(e.target.value)}
-          options={powders.map((p) => ({
-            value: p.id,
-            label: `${p.name} (${p.manufacturer})`,
-          }))}
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-slate-300">
+            Seleccionar polvora
+          </label>
+          <div
+            onClick={() => setShowPowderPicker(true)}
+            className="flex items-center justify-between rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 cursor-pointer
+              hover:border-blue-500 transition-colors"
+          >
+            {selectedPowder ? (
+              <div className="min-w-0">
+                <span className="text-sm font-medium text-white">{selectedPowder.name}</span>
+                <span className="ml-2 text-xs text-slate-400">
+                  {selectedPowder.manufacturer}
+                </span>
+              </div>
+            ) : (
+              <span className="text-sm text-slate-500">-- Seleccionar polvora --</span>
+            )}
+            <ChevronDown size={16} className="ml-2 flex-shrink-0 text-slate-400" />
+          </div>
+        </div>
+        <ComponentPicker<Powder>
+          open={showPowderPicker}
+          onClose={() => setShowPowderPicker(false)}
+          onSelect={(powder) => {
+            setSelectedPowder(powder);
+            setPowderId(powder.id);
+          }}
+          title="Seleccionar Polvora"
+          fetchFn={getPowders}
+          getId={(p) => p.id}
+          selectedId={powderId}
+          renderItem={(p) => (
+            <div>
+              <div className="text-sm font-medium text-white">{p.name}</div>
+              <div className="text-xs text-slate-400">
+                {p.manufacturer} - Burn rate: {p.burn_rate_relative}
+              </div>
+            </div>
+          )}
         />
       </div>
 
