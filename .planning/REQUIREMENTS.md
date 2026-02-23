@@ -30,7 +30,7 @@ Requirements for v1.2 Component Databases + Search milestone. Each maps to roadm
 
 ### Quality System
 
-- [ ] **QLT-01**: All component records display quality/completeness badges (green = well-validated, yellow = estimated, red = sparse data)
+- [x] **QLT-01**: All component records display quality/completeness badges (green = well-validated, yellow = estimated, red = sparse data)
 - [x] **QLT-02**: Quality scores are automatically recomputed when records are updated via PUT endpoints
 - [x] **QLT-03**: Quality scoring uses deterministic formula: data completeness (fields filled) + source reliability tier (manufacturer > GRT community > manual > estimated)
 
@@ -39,8 +39,8 @@ Requirements for v1.2 Component Databases + Search milestone. Each maps to roadm
 - [x] **SRC-01**: All component list endpoints support server-side pagination (page, size params) with total count
 - [x] **SRC-02**: User can fuzzy-search components by name using pg_trgm (handles typos like "hodgon" -> "Hodgdon")
 - [x] **SRC-03**: User can filter components by manufacturer, caliber/caliber family, and quality level
-- [ ] **SRC-04**: Simulation form replaces flat <Select> dropdowns with searchable picker modals for powder, bullet, and cartridge selection
-- [ ] **SRC-05**: Frontend pagination with smooth transitions (TanStack Query keepPreviousData)
+- [x] **SRC-04**: Simulation form replaces flat <Select> dropdowns with searchable picker modals for powder, bullet, and cartridge selection
+- [x] **SRC-05**: Frontend pagination with smooth transitions (TanStack Query keepPreviousData)
 
 ### Solver Fix
 
@@ -92,14 +92,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CRT-01 | Phase 5 | Complete |
 | CRT-02 | Phase 5 | Complete |
 | CRT-03 | Phase 5 | Complete |
-| QLT-01 | Phase 6 | Pending |
+| QLT-01 | Phase 6 | Complete |
 | QLT-02 | Phase 3 | Complete |
 | QLT-03 | Phase 3 | Complete |
 | SRC-01 | Phase 4 | Complete |
 | SRC-02 | Phase 4 | Complete |
 | SRC-03 | Phase 4 | Complete |
-| SRC-04 | Phase 6 | Pending |
-| SRC-05 | Phase 6 | Pending |
+| SRC-04 | Phase 6 | Complete |
+| SRC-05 | Phase 6 | Complete |
 | SOL-01 | Phase 3 | Complete |
 
 **Coverage:**
