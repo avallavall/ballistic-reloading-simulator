@@ -22,6 +22,7 @@
 - [x] **Phase 3: Schema and Quality System** - Alembic migration with new columns, quality scorer, data provenance, solver web_thickness fix
 - [x] **Phase 4: Search and Pagination** - pg_trgm fuzzy search, server-side pagination, multi-field filtering on all component endpoints
 - [x] **Phase 5: Import Pipelines and Fixture Data** - GRT powder import, powder aliases, bullet/cartridge fixture compilation, batch import endpoints (completed 2026-02-22)
+- [ ] **Phase 7: Cross-Phase Integration Fixes** - Fix pg_trgm bootstrap, import mode parameter mismatch, TypeScript nullable alignment
 - [ ] **Phase 6: Frontend Integration** - Searchable picker modals, pagination UI, quality badges display on all component pages
 
 ## Phase Details
@@ -73,9 +74,24 @@ Plans:
 - [ ] 05-02-PLAN.md — Fixtures: compile 200+ powders, 100-200 bullets, 50+ cartridges, powder alias mappings as JSON files under backend/app/seed/fixtures/
 - [ ] 05-03-PLAN.md — Import: refactor seed to load JSON fixtures, 3-mode collision import endpoints (powders/bullets/cartridges), aliases endpoint, 18+ tests
 
+### Phase 7: Cross-Phase Integration Fixes
+**Goal**: Fix critical wiring bugs between completed phases so Docker boot, GRT import, and frontend type safety work correctly before building Phase 6 UI
+**Depends on**: Phase 5 (completed)
+**Requirements**: Protects PWD-01, SRC-02, BUL-03 (integration fixes for already-satisfied requirements)
+**Gap Closure:** Closes 3 integration gaps + 3 broken flows from v1.2 audit
+**Success Criteria** (what must be TRUE):
+  1. Fresh Docker boot with `create_all` (no Alembic) creates pg_trgm extension and GIN indexes — `GET /powders?q=varget` works without manual `alembic upgrade head`
+  2. Frontend GRT import with overwrite mode sends `?mode=overwrite` (matching backend ImportMode enum) and backend correctly overwrites collisions
+  3. Frontend TypeScript `Bullet` interface declares `length_mm` and `bc_g7` as `number | null`, matching backend nullable schema
+  4. Frontend `GrtImportResult` interface includes `updated` array and `mode` field matching backend response
+**Plans**: TBD
+
+Plans:
+- [ ] 07-01-PLAN.md — Fix pg_trgm bootstrap in app startup, align frontend import parameters, fix TypeScript nullable types
+
 ### Phase 6: Frontend Integration
 **Goal**: Users interact with the expanded databases through searchable pickers, paginated tables, and quality badges -- replacing flat dropdowns that cannot scale past 50 items
-**Depends on**: Phase 3 (quality API), Phase 4 (search/pagination API)
+**Depends on**: Phase 3 (quality API), Phase 4 (search/pagination API), Phase 7 (integration fixes)
 **Requirements**: QLT-01, SRC-04, SRC-05
 **Success Criteria** (what must be TRUE):
   1. All component list pages (/powders, /bullets, /cartridges) display quality badges (green/yellow/red) on every record
@@ -90,9 +106,9 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 3 -> 4 -> 5 -> 6
+Phases execute: 3 -> 4 -> 5 -> 7 -> 6
 
-Note: Phase 5 (fixture data compilation) can begin in parallel with Phase 6 (frontend) once Phase 4 is stable, since they modify different layers.
+Note: Phase 7 (integration fixes) must complete before Phase 6 (frontend) since Phase 6 depends on correct API wiring.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -101,4 +117,5 @@ Note: Phase 5 (fixture data compilation) can begin in parallel with Phase 6 (fro
 | 3. Schema and Quality System | v1.2 | Complete    | 2026-02-21 | 2026-02-21 |
 | 4. Search and Pagination | v1.2 | Complete    | 2026-02-21 | 2026-02-21 |
 | 5. Import Pipelines and Fixture Data | v1.2 | Complete    | 2026-02-22 | - |
+| 7. Cross-Phase Integration Fixes | v1.2 | 0/1 | Not started | - |
 | 6. Frontend Integration | v1.2 | 0/? | Not started | - |
