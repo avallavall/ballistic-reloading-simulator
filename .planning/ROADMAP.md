@@ -15,7 +15,7 @@
 
 </details>
 
-### ✅ v1.2 Component Databases + Search (Shipped 2026-02-23)
+### v1.2 Component Databases + Search
 
 **Milestone Goal:** Build comprehensive pre-loaded component databases with quality indicators, multi-source import pipelines, and advanced search/filtering so users can simulate immediately without manual data entry.
 
@@ -24,6 +24,9 @@
 - [x] **Phase 5: Import Pipelines and Fixture Data** - GRT powder import, powder aliases, bullet/cartridge fixture compilation, batch import endpoints (completed 2026-02-22)
 - [x] **Phase 7: Cross-Phase Integration Fixes** - Fix pg_trgm bootstrap, import mode parameter mismatch, TypeScript nullable alignment (completed 2026-02-23)
 - [x] **Phase 6: Frontend Integration** - Searchable picker modals, pagination UI, quality badges display on all component pages (completed 2026-02-23)
+- [ ] **Phase 8: Frontend Filter & Search Controls** - Filter dropdowns (manufacturer, caliber, quality) and search input on list pages
+- [ ] **Phase 9: Powder Alias UI + Import Cache Fix** - Alias display, GRT alias mapping during import, overwrite cache invalidation
+- [ ] **Phase 10: Tech Debt Cleanup** - QualityBadge in pickers, caliber_family backfill fix, extended field display
 
 ## Phase Details
 
@@ -104,6 +107,42 @@ Plans:
 - [x] 06-02-PLAN.md — List pages: quality badge columns + pagination controls on powders, bullets, and cartridges pages with skeleton loading
 - [x] 06-03-PLAN.md — Picker modals: generic ComponentPicker modal + SimulationForm integration replacing flat Select dropdowns
 
+### Phase 8: Frontend Filter & Search Controls
+**Goal**: Users can filter component lists by manufacturer, caliber family, and quality level using dropdown controls, and search directly on list pages
+**Depends on**: Phase 4 (backend filter endpoints), Phase 6 (frontend integration)
+**Requirements**: SRC-03
+**Gap Closure:** Closes SRC-03 (partial→satisfied) + integration gap (buildQueryString not passing filter params)
+**Success Criteria** (what must be TRUE):
+  1. ListParams interface includes manufacturer, caliber_family, quality_level, sort, and order fields, and buildQueryString sends them to the backend
+  2. Powders, bullets, and cartridges list pages have filter dropdown controls populated from /manufacturers and /caliber-families endpoints
+  3. List pages have a search input widget so users can fuzzy-search without navigating to /simulate ComponentPicker
+  4. Filters combine with search and pagination (AND logic, no interference)
+**Plans**: TBD
+
+### Phase 9: Powder Alias UI + Import Cache Fix
+**Goal**: Powder aliases are visible to users and applied during GRT import, and the overwrite import flow correctly refreshes the UI
+**Depends on**: Phase 5 (alias backend), Phase 6 (frontend integration)
+**Requirements**: PWD-05
+**Gap Closure:** Closes PWD-05 (partial→satisfied) + integration gap (overwrite cache invalidation) + flow gap (GRT overwrite refresh)
+**Success Criteria** (what must be TRUE):
+  1. Powder list page shows alias indicator (e.g., badge or icon) on powders that belong to an alias group, with hover/click revealing linked names
+  2. getPowderAliases() exists in frontend api.ts and is consumed by the UI
+  3. GRT import endpoint applies powder_aliases.json mappings so newly imported powders get correct alias_group values
+  4. handleOverwriteDuplicates invalidates TanStack Query cache after import, and the powder list auto-refreshes
+**Plans**: TBD
+
+### Phase 10: Tech Debt Cleanup
+**Goal**: Resolve non-blocking tech debt items from v1.2 audit to improve data display accuracy and UI polish
+**Depends on**: Phase 8, Phase 9
+**Requirements**: None (quality-of-life improvements)
+**Gap Closure:** Closes 4 tech debt items from v1.2 audit
+**Success Criteria** (what must be TRUE):
+  1. ComponentPicker renderItem displays QualityBadge on picker modal rows
+  2. Migration backfill for cartridge caliber_family uses groove_diameter_mm (matching live endpoint logic)
+  3. Bullets table displays model_number, bullet_type, and base_type columns
+  4. Cartridges table displays parent_cartridge_name and extended dimension fields
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
@@ -120,3 +159,6 @@ Note: Phase 7 (integration fixes) must complete before Phase 6 (frontend) since 
 | 5. Import Pipelines and Fixture Data | v1.2 | Complete    | 2026-02-22 | - |
 | 7. Cross-Phase Integration Fixes | v1.2 | 1/1 | Complete | 2026-02-23 |
 | 6. Frontend Integration | v1.2 | 3/3 | Complete | 2026-02-23 |
+| 8. Frontend Filter & Search Controls | v1.2 | 0/? | Pending | - |
+| 9. Powder Alias UI + Import Cache Fix | v1.2 | 0/? | Pending | - |
+| 10. Tech Debt Cleanup | v1.2 | 0/? | Pending | - |

@@ -13,7 +13,7 @@ Requirements for v1.2 Component Databases + Search milestone. Each maps to roadm
 - [x] **PWD-02**: User sees red/yellow/green quality badges on each powder based on GRT Qlty field and data completeness
 - [x] **PWD-03**: User can view computed quality score (0-100) with breakdown tooltip showing data completeness and source reliability
 - [x] **PWD-04**: Powder records track data source provenance (grt_community, manufacturer, manual, estimated)
-- [x] **PWD-05**: Powder aliases are resolved so duplicate entries across markets are linked (e.g., ADI AR2208 = Hodgdon Varget)
+- [ ] **PWD-05**: Powder aliases are resolved so duplicate entries across markets are linked (e.g., ADI AR2208 = Hodgdon Varget)
 
 ### Bullet Database
 
@@ -38,7 +38,7 @@ Requirements for v1.2 Component Databases + Search milestone. Each maps to roadm
 
 - [x] **SRC-01**: All component list endpoints support server-side pagination (page, size params) with total count
 - [x] **SRC-02**: User can fuzzy-search components by name using pg_trgm (handles typos like "hodgon" -> "Hodgdon")
-- [x] **SRC-03**: User can filter components by manufacturer, caliber/caliber family, and quality level
+- [ ] **SRC-03**: User can filter components by manufacturer, caliber/caliber family, and quality level
 - [x] **SRC-04**: Simulation form replaces flat <Select> dropdowns with searchable picker modals for powder, bullet, and cartridge selection
 - [x] **SRC-05**: Frontend pagination with smooth transitions (TanStack Query keepPreviousData)
 
@@ -84,7 +84,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PWD-02 | Phase 3 | Complete |
 | PWD-03 | Phase 3 | Complete |
 | PWD-04 | Phase 3 | Complete |
-| PWD-05 | Phase 5 | Complete |
+| PWD-05 | Phase 9 | Pending |
 | BUL-01 | Phase 5 | Complete |
 | BUL-02 | Phase 5 | Complete |
 | BUL-03 | Phase 5 | Complete |
@@ -97,7 +97,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QLT-03 | Phase 3 | Complete |
 | SRC-01 | Phase 4 | Complete |
 | SRC-02 | Phase 4 | Complete |
-| SRC-03 | Phase 4 | Complete |
+| SRC-03 | Phase 8 | Pending |
 | SRC-04 | Phase 6 | Complete |
 | SRC-05 | Phase 6 | Complete |
 | SOL-01 | Phase 3 | Complete |
@@ -105,8 +105,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 **Coverage:**
 - v1.2 requirements: 21 total
 - Mapped to phases: 21
+- Complete: 19
+- Pending (gap closure): 2 (SRC-03 → Phase 8, PWD-05 → Phase 9)
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-21*
-*Last updated: 2026-02-23 after gap closure planning (Phase 7 added for integration fixes)*
+*Last updated: 2026-02-23 after gap closure planning (Phases 8-10 added for audit gaps + tech debt)*
