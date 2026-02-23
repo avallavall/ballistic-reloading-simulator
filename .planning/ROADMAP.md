@@ -117,7 +117,11 @@ Plans:
   2. Powders, bullets, and cartridges list pages have filter dropdown controls populated from /manufacturers and /caliber-families endpoints
   3. List pages have a search input widget so users can fuzzy-search without navigating to /simulate ComponentPicker
   4. Filters combine with search and pagination (AND logic, no interference)
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 08-01-PLAN.md -- API layer: extend ListParams/buildQueryString, filter API functions, useFilterOptions hooks, reusable FilterBar component
+- [ ] 08-02-PLAN.md -- Page wiring: update paginated hooks, wire FilterBar into powders/bullets/cartridges list pages with filter state and zero-results handling
 
 ### Phase 9: Powder Alias UI + Import Cache Fix
 **Goal**: Powder aliases are visible to users and applied during GRT import, and the overwrite import flow correctly refreshes the UI
@@ -159,6 +163,6 @@ Note: Phase 7 (integration fixes) must complete before Phase 6 (frontend) since 
 | 5. Import Pipelines and Fixture Data | v1.2 | Complete    | 2026-02-22 | - |
 | 7. Cross-Phase Integration Fixes | v1.2 | 1/1 | Complete | 2026-02-23 |
 | 6. Frontend Integration | v1.2 | 3/3 | Complete | 2026-02-23 |
-| 8. Frontend Filter & Search Controls | v1.2 | 0/? | Pending | - |
+| 8. Frontend Filter & Search Controls | v1.2 | 0/2 | Pending | - |
 | 9. Powder Alias UI + Import Cache Fix | v1.2 | 0/? | Pending | - |
 | 10. Tech Debt Cleanup | v1.2 | 0/? | Pending | - |
