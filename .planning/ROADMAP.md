@@ -97,11 +97,12 @@ Plans:
   1. All component list pages (/powders, /bullets, /cartridges) display quality badges (green/yellow/red) on every record
   2. Simulation form uses searchable picker modals (with debounced text input) instead of flat Select dropdowns for powder, bullet, and cartridge selection
   3. Component list pages support smooth pagination with page controls, and navigating between pages does not flash empty content (keepPreviousData)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: TBD
-- [ ] 06-02: TBD
+- [ ] 06-01-PLAN.md — Foundation: reusable UI components (QualityBadge, Pagination, SkeletonRows, Toast), useDebounce hook, API query param support, paginated hook variants with keepPreviousData
+- [ ] 06-02-PLAN.md — List pages: quality badge columns + pagination controls on powders, bullets, and cartridges pages with skeleton loading
+- [ ] 06-03-PLAN.md — Picker modals: generic ComponentPicker modal + SimulationForm integration replacing flat Select dropdowns
 
 ## Progress
 
@@ -118,4 +119,4 @@ Note: Phase 7 (integration fixes) must complete before Phase 6 (frontend) since 
 | 4. Search and Pagination | v1.2 | Complete    | 2026-02-21 | 2026-02-21 |
 | 5. Import Pipelines and Fixture Data | v1.2 | Complete    | 2026-02-22 | - |
 | 7. Cross-Phase Integration Fixes | v1.2 | 1/1 | Complete | 2026-02-23 |
-| 6. Frontend Integration | v1.2 | 0/? | Not started | - |
+| 6. Frontend Integration | v1.2 | 0/3 | Not started | - |
