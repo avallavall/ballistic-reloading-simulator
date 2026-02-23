@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -37,6 +37,7 @@ _QUALITY_RANGES = {
 
 @router.get("", response_model=PaginatedBulletResponse)
 async def list_bullets(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     q: str | None = Query(None, min_length=3, description="Fuzzy search on name/manufacturer"),
     manufacturer: str | None = Query(None, description="Filter by exact manufacturer"),
@@ -50,9 +51,9 @@ async def list_bullets(
 ):
     query = select(Bullet)
 
-    # Fuzzy search (requires PostgreSQL pg_trgm)
+    # Fuzzy search (pg_trgm with ILIKE fallback)
     if q:
-        query = apply_fuzzy_search(query, Bullet, q)
+        query = apply_fuzzy_search(query, Bullet, q, has_trgm=getattr(request.app.state, "has_trgm", False))
     else:
         # Apply user sort when not searching
         sort_col = _BULLET_SORT_COLUMNS.get(sort, Bullet.quality_score)

@@ -37,6 +37,31 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database tables created (create_all fallback)")
 
+    # Create pg_trgm extension and GIN indexes for fuzzy search
+    try:
+        async with engine.begin() as conn:
+            await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+            await conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_powders_name_trgm ON powders USING gin (name gin_trgm_ops)"
+            ))
+            await conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_powders_mfg_trgm ON powders USING gin (manufacturer gin_trgm_ops)"
+            ))
+            await conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_bullets_name_trgm ON bullets USING gin (name gin_trgm_ops)"
+            ))
+            await conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_bullets_mfg_trgm ON bullets USING gin (manufacturer gin_trgm_ops)"
+            ))
+            await conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS ix_cartridges_name_trgm ON cartridges USING gin (name gin_trgm_ops)"
+            ))
+        app.state.has_trgm = True
+        logger.info("pg_trgm extension and GIN indexes ready")
+    except Exception as e:
+        app.state.has_trgm = False
+        logger.warning("pg_trgm unavailable (%s) - fuzzy search will use ILIKE fallback", e)
+
     # Seed initial data
     async with async_session_factory() as session:
         await seed_initial_data(session)

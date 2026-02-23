@@ -42,12 +42,13 @@ def apply_fuzzy_search(
     model,
     search_term: str,
     fields: list[str] | None = None,
+    has_trgm: bool = True,
 ):
-    """Apply pg_trgm fuzzy search on specified columns.
+    """Apply fuzzy search on specified columns.
 
-    Filters rows where any of the specified fields is similar to the search term
-    (using the % trigram operator), then orders by similarity descending with
-    quality_score as tiebreaker.
+    When pg_trgm is available (has_trgm=True), uses the % trigram operator and
+    similarity() ordering. When pg_trgm is unavailable (has_trgm=False), falls
+    back to case-insensitive ILIKE with %search_term% pattern.
 
     Args:
         query: SQLAlchemy select statement to modify.
@@ -55,6 +56,7 @@ def apply_fuzzy_search(
         search_term: User-provided search string.
         fields: List of column names to search. Defaults to ["name", "manufacturer"].
             Columns that don't exist on the model are silently skipped.
+        has_trgm: Whether pg_trgm extension is available. Defaults to True.
 
     Returns:
         Modified query with WHERE and ORDER BY clauses.
@@ -68,12 +70,23 @@ def apply_fuzzy_search(
     if not search_columns:
         return query
 
-    conditions = [col.op("%")(search_term) for col in search_columns]
-    query = query.where(or_(*conditions))
+    if has_trgm:
+        # pg_trgm path: trigram similarity operator + similarity ordering
+        conditions = [col.op("%")(search_term) for col in search_columns]
+        query = query.where(or_(*conditions))
 
-    # Order by similarity on the first search column (typically name)
-    query = query.order_by(
-        func.similarity(search_columns[0], search_term).desc(),
-        model.quality_score.desc(),
-    )
+        # Order by similarity on the first search column (typically name)
+        query = query.order_by(
+            func.similarity(search_columns[0], search_term).desc(),
+            model.quality_score.desc(),
+        )
+    else:
+        # ILIKE fallback: case-insensitive contains match
+        pattern = f"%{search_term}%"
+        conditions = [col.ilike(pattern) for col in search_columns]
+        query = query.where(or_(*conditions))
+
+        # No similarity function available; order by quality_score only
+        query = query.order_by(model.quality_score.desc())
+
     return query

@@ -1,7 +1,7 @@
 import logging
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -42,6 +42,7 @@ _QUALITY_RANGES = {
 
 @router.get("", response_model=PaginatedPowderResponse)
 async def list_powders(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     q: str | None = Query(None, min_length=3, description="Fuzzy search on name/manufacturer"),
     manufacturer: str | None = Query(None, description="Filter by exact manufacturer"),
@@ -56,9 +57,9 @@ async def list_powders(
 ):
     query = select(Powder)
 
-    # Fuzzy search (requires PostgreSQL pg_trgm)
+    # Fuzzy search (pg_trgm with ILIKE fallback)
     if q:
-        query = apply_fuzzy_search(query, Powder, q)
+        query = apply_fuzzy_search(query, Powder, q, has_trgm=getattr(request.app.state, "has_trgm", False))
     else:
         # Apply user sort when not searching (search has its own ordering)
         sort_col = _POWDER_SORT_COLUMNS.get(sort, Powder.quality_score)

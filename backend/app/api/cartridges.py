@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -36,6 +36,7 @@ _QUALITY_RANGES = {
 
 @router.get("", response_model=PaginatedCartridgeResponse)
 async def list_cartridges(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     q: str | None = Query(None, min_length=3, description="Fuzzy search on name"),
     caliber_family: str | None = Query(None, description="Filter by caliber family (e.g. .308)"),
@@ -50,7 +51,7 @@ async def list_cartridges(
 
     # Fuzzy search on name only (cartridges have no manufacturer column)
     if q:
-        query = apply_fuzzy_search(query, Cartridge, q, fields=["name"])
+        query = apply_fuzzy_search(query, Cartridge, q, fields=["name"], has_trgm=getattr(request.app.state, "has_trgm", False))
     else:
         # Apply user sort when not searching
         sort_col = _CARTRIDGE_SORT_COLUMNS.get(sort, Cartridge.quality_score)
