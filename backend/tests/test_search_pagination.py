@@ -518,3 +518,118 @@ async def test_bullet_quality_recomputed_on_update(client):
     updated = resp.json()
     assert updated["caliber_family"] == ".224"
     assert updated["caliber_family"] != orig_family
+
+
+# ---------------------------------------------------------------------------
+# ILIKE fallback + import mode tests (07-01)
+# ---------------------------------------------------------------------------
+
+
+def test_apply_fuzzy_search_ilike_fallback():
+    """apply_fuzzy_search with has_trgm=False produces ILIKE-based SQL."""
+    from sqlalchemy import select
+
+    from app.models.powder import Powder
+    from app.services.search import apply_fuzzy_search
+
+    query = select(Powder)
+    result_query = apply_fuzzy_search(query, Powder, "test", has_trgm=False)
+
+    # Compile query to string and verify it uses ILIKE pattern
+    # SQLAlchemy compiles .ilike() as ILIKE on PostgreSQL dialect, but as
+    # lower(col) LIKE lower(pattern) on the default dialect. Both are valid.
+    compiled = str(result_query.compile(compile_kwargs={"literal_binds": True}))
+    compiled_lower = compiled.lower()
+    uses_ilike = "ilike" in compiled_lower
+    uses_lower_like = "lower(" in compiled_lower and "like" in compiled_lower
+    assert uses_ilike or uses_lower_like, \
+        f"Expected ILIKE or lower/LIKE pattern in compiled query but got: {compiled}"
+    # Should NOT use similarity (that's the pg_trgm path)
+    assert "similarity" not in compiled_lower, \
+        f"ILIKE fallback should not use similarity but got: {compiled}"
+
+
+def test_apply_fuzzy_search_trgm_path():
+    """apply_fuzzy_search with has_trgm=True (default) uses trigram % operator."""
+    from sqlalchemy import select
+
+    from app.models.powder import Powder
+    from app.services.search import apply_fuzzy_search
+
+    query = select(Powder)
+    result_query = apply_fuzzy_search(query, Powder, "test", has_trgm=True)
+
+    # Compile query to string and verify it uses % operator (trigram), not ILIKE
+    compiled = str(result_query.compile(compile_kwargs={"literal_binds": True}))
+    # pg_trgm path uses the % operator and similarity() function
+    assert "similarity" in compiled.lower(), \
+        f"Expected similarity in compiled query but got: {compiled}"
+    # ILIKE should NOT be present in the trgm path
+    assert "ilike" not in compiled.lower(), \
+        f"ILIKE should not be in trigram path but got: {compiled}"
+
+
+@pytest.mark.asyncio
+async def test_search_ilike_fallback_returns_results(client):
+    """Search with ILIKE fallback returns matching results on SQLite."""
+    # Ensure app.state.has_trgm is False for ILIKE fallback path
+    app.state.has_trgm = False
+
+    await create_powder(client, {"name": "Hodgdon Varget", "manufacturer": "Hodgdon"})
+    await create_powder(client, {"name": "Vihtavuori N150", "manufacturer": "Vihtavuori"})
+    await create_powder(client, {"name": "Hodgdon H4350", "manufacturer": "Hodgdon"})
+
+    resp = await client.get("/api/v1/powders", params={"q": "Hodgdon"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["total"] == 2
+    names = {item["name"] for item in body["items"]}
+    assert "Hodgdon Varget" in names
+    assert "Hodgdon H4350" in names
+
+
+# Minimal GRT .propellant XML fixture for import tests
+_GRT_PROPELLANT_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
+<data>
+  <propellantfile>
+    <var name="pname" value="Test%20GRT%20Powder"/>
+    <var name="mname" value="TestMfg"/>
+    <var name="Qex" value="3800"/>
+    <var name="k" value="1.24"/>
+    <var name="Ba" value="1.5"/>
+    <var name="Bp" value="0.3"/>
+    <var name="Br" value="0.2"/>
+    <var name="Brp" value="0.1"/>
+    <var name="z1" value="0.30"/>
+    <var name="z2" value="0.70"/>
+    <var name="a0" value="5.0"/>
+    <var name="eta" value="1.0"/>
+    <var name="pc" value="1600"/>
+    <var name="pt" value="250"/>
+  </propellantfile>
+</data>
+"""
+
+
+@pytest.mark.asyncio
+async def test_import_grt_mode_overwrite_parameter(client):
+    """POST /powders/import-grt?mode=overwrite accepts the mode parameter."""
+    resp = await client.post(
+        "/api/v1/powders/import-grt?mode=overwrite",
+        files={"file": ("test.propellant", _GRT_PROPELLANT_XML, "application/xml")},
+    )
+    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+    body = resp.json()
+    assert body["mode"] == "overwrite"
+
+
+@pytest.mark.asyncio
+async def test_import_grt_mode_skip_default(client):
+    """POST /powders/import-grt without mode defaults to 'skip'."""
+    resp = await client.post(
+        "/api/v1/powders/import-grt",
+        files={"file": ("test.propellant", _GRT_PROPELLANT_XML, "application/xml")},
+    )
+    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+    body = resp.json()
+    assert body["mode"] == "skip"
