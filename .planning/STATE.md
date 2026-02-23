@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 6 of 7 (Frontend Integration)
-Plan: 2 of 3 in current phase
-Status: Plan 06-01 complete (1/3 plans). Executing Phase 06.
-Last activity: 2026-02-23 — Completed 06-01-PLAN.md (foundation UI components + paginated hooks)
+Plan: 3 of 3 in current phase -- PHASE COMPLETE
+Status: Phase 06 complete (3/3 plans). All v1.2 phases done.
+Last activity: 2026-02-23 — Completed 06-03-PLAN.md (picker modals + SimulationForm integration)
 
-Progress: [==============] 100% (17 plans complete across all milestones)
+Progress: [===============] 100% (19 plans complete across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17
-- Average duration: 5.4min
-- Total execution time: 1.52 hours
+- Total plans completed: 19
+- Average duration: 5.2min
+- Total execution time: 1.62 hours
 
 **By Phase:**
 
@@ -32,12 +32,13 @@ Progress: [==============] 100% (17 plans complete across all milestones)
 | 3 - Schema and Quality System | 2/2 | 10min | 5min |
 | 4 - Search and Pagination | 2/2 | 11min | 5.5min |
 | 5 - Import Pipelines | 3/3 | 18min | 6min |
-| 6 - Frontend Integration | 1/3 | 3min | 3min |
+| 6 - Frontend Integration | 3/3 | 9min | 3min |
 | 7 - Cross-Phase Integration Fixes | 1/1 | 6min | 6min |
 
 **Recent Trend:**
-- Last 5 plans: 4, 7, 7, 6, 3 min
-- Trend: Stable
+- Last 5 plans: 7, 6, 3, 3, 3 min
+- Trend: Accelerating
+| Phase 06 P02 | 4min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,10 @@ Recent decisions affecting current work:
 - [06-01]: Wrap existing hook queryFn references in arrow functions to preserve type inference after adding optional params
 - [06-01]: Paginated hooks use distinct queryKey prefix ['entity', 'list', {...}] to avoid cache collision with existing hooks
 - [06-01]: Toast uses React portal + useToast pattern instead of global state management
+- [06-03]: ComponentPicker uses internal useQuery for data fetching (not entity-specific hooks) to remain fully generic
+- [06-03]: SimulationForm no longer receives bullets/powders as props; pickers fetch their own data on-demand
+- [06-03]: Rifle selection remains flat Select dropdown (only 5 records) per research recommendation
+- [Phase 06]: CRUD mutation invalidation unchanged -- existing prefix match already covers paginated query keys
 
 ### Pending Todos
 
@@ -89,5 +94,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 06-01-PLAN.md (foundation UI components + paginated hooks)
-Resume file: .planning/phases/06-frontend-integration/06-01-SUMMARY.md
+Stopped at: Completed 06-03-PLAN.md (picker modals + SimulationForm integration). Phase 06 complete.
+Resume file: .planning/phases/06-frontend-integration/06-03-SUMMARY.md

@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.1 3-Curve Engine + Extended Charts** — Phases 1-2 (shipped 2026-02-21)
-- 🚧 **v1.2 Component Databases + Search** — Phases 3-6 (in progress)
+- ✅ **v1.2 Component Databases + Search** — Phases 3-6 (shipped 2026-02-23)
 
 ## Phases
 
@@ -15,7 +15,7 @@
 
 </details>
 
-### 🚧 v1.2 Component Databases + Search (In Progress)
+### ✅ v1.2 Component Databases + Search (Shipped 2026-02-23)
 
 **Milestone Goal:** Build comprehensive pre-loaded component databases with quality indicators, multi-source import pipelines, and advanced search/filtering so users can simulate immediately without manual data entry.
 
@@ -23,7 +23,7 @@
 - [x] **Phase 4: Search and Pagination** - pg_trgm fuzzy search, server-side pagination, multi-field filtering on all component endpoints
 - [x] **Phase 5: Import Pipelines and Fixture Data** - GRT powder import, powder aliases, bullet/cartridge fixture compilation, batch import endpoints (completed 2026-02-22)
 - [x] **Phase 7: Cross-Phase Integration Fixes** - Fix pg_trgm bootstrap, import mode parameter mismatch, TypeScript nullable alignment (completed 2026-02-23)
-- [ ] **Phase 6: Frontend Integration** - Searchable picker modals, pagination UI, quality badges display on all component pages
+- [x] **Phase 6: Frontend Integration** - Searchable picker modals, pagination UI, quality badges display on all component pages (completed 2026-02-23)
 
 ## Phase Details
 
@@ -100,9 +100,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — Foundation: reusable UI components (QualityBadge, Pagination, SkeletonRows, Toast), useDebounce hook, API query param support, paginated hook variants with keepPreviousData
-- [ ] 06-02-PLAN.md — List pages: quality badge columns + pagination controls on powders, bullets, and cartridges pages with skeleton loading
-- [ ] 06-03-PLAN.md — Picker modals: generic ComponentPicker modal + SimulationForm integration replacing flat Select dropdowns
+- [x] 06-01-PLAN.md — Foundation: reusable UI components (QualityBadge, Pagination, SkeletonRows, Toast), useDebounce hook, API query param support, paginated hook variants with keepPreviousData
+- [x] 06-02-PLAN.md — List pages: quality badge columns + pagination controls on powders, bullets, and cartridges pages with skeleton loading
+- [x] 06-03-PLAN.md — Picker modals: generic ComponentPicker modal + SimulationForm integration replacing flat Select dropdowns
 
 ## Progress
 
@@ -119,4 +119,4 @@ Note: Phase 7 (integration fixes) must complete before Phase 6 (frontend) since 
 | 4. Search and Pagination | v1.2 | Complete    | 2026-02-21 | 2026-02-21 |
 | 5. Import Pipelines and Fixture Data | v1.2 | Complete    | 2026-02-22 | - |
 | 7. Cross-Phase Integration Fixes | v1.2 | 1/1 | Complete | 2026-02-23 |
-| 6. Frontend Integration | v1.2 | 0/3 | Not started | - |
+| 6. Frontend Integration | v1.2 | 3/3 | Complete | 2026-02-23 |
