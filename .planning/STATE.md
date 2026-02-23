@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases so users can simulate immediately without manual data entry.
-**Current focus:** Phase 5 - Import Pipelines and Fixture Data (v1.2)
+**Current focus:** Phase 7 - Cross-Phase Integration Fixes (v1.2) -- COMPLETE
 
 ## Current Position
 
-Phase: 5 of 6 (Import Pipelines and Fixture Data) -- COMPLETE
-Plan: 3 of 3 in current phase -- COMPLETE
-Status: Phase 05 complete (all 3 plans). Ready for Phase 06.
-Last activity: 2026-02-22 — Completed 05-03-PLAN.md (import endpoints and seed refactoring)
+Phase: 7 of 7 (Cross-Phase Integration Fixes) -- COMPLETE
+Plan: 1 of 1 in current phase -- COMPLETE
+Status: Phase 07 complete (1/1 plans). Ready for Phase 06.
+Last activity: 2026-02-23 — Completed 07-01-PLAN.md (cross-phase integration fixes)
 
-Progress: [============] 94% (15 plans complete across all milestones)
+Progress: [=============] 100% (16 plans complete across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: 5.5min
-- Total execution time: 1.37 hours
+- Total execution time: 1.47 hours
 
 **By Phase:**
 
@@ -32,9 +32,10 @@ Progress: [============] 94% (15 plans complete across all milestones)
 | 3 - Schema and Quality System | 2/2 | 10min | 5min |
 | 4 - Search and Pagination | 2/2 | 11min | 5.5min |
 | 5 - Import Pipelines | 3/3 | 18min | 6min |
+| 7 - Cross-Phase Integration Fixes | 1/1 | 6min | 6min |
 
 **Recent Trend:**
-- Last 5 plans: 4, 7, 4, 7, 7 min
+- Last 5 plans: 7, 4, 7, 7, 6 min
 - Trend: Stable
 
 ## Accumulated Context
@@ -67,6 +68,8 @@ Recent decisions affecting current work:
 - [05-03]: Seed loader uses _load_fixture() with FIXTURES_DIR for JSON fixture loading
 - [05-03]: GRT import creates renamed copy with "(GRT Import)" suffix for manual record collision
 - [05-03]: RIFLES kept inline in seed (only 5 records with FK references to cartridge names)
+- [07-01]: app.state.has_trgm flag set once at startup, passed defensively via getattr(request.app.state, "has_trgm", False)
+- [07-01]: ILIKE fallback with %search_term% pattern when pg_trgm unavailable (graceful degradation)
 
 ### Pending Todos
 
@@ -82,5 +85,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Phase 7 context gathered, ready for planning
-Resume file: .planning/phases/07-cross-phase-integration-fixes/07-CONTEXT.md
+Stopped at: Completed 07-01-PLAN.md (cross-phase integration fixes)
+Resume file: .planning/phases/07-cross-phase-integration-fixes/07-01-SUMMARY.md

@@ -22,7 +22,7 @@
 - [x] **Phase 3: Schema and Quality System** - Alembic migration with new columns, quality scorer, data provenance, solver web_thickness fix
 - [x] **Phase 4: Search and Pagination** - pg_trgm fuzzy search, server-side pagination, multi-field filtering on all component endpoints
 - [x] **Phase 5: Import Pipelines and Fixture Data** - GRT powder import, powder aliases, bullet/cartridge fixture compilation, batch import endpoints (completed 2026-02-22)
-- [ ] **Phase 7: Cross-Phase Integration Fixes** - Fix pg_trgm bootstrap, import mode parameter mismatch, TypeScript nullable alignment
+- [x] **Phase 7: Cross-Phase Integration Fixes** - Fix pg_trgm bootstrap, import mode parameter mismatch, TypeScript nullable alignment (completed 2026-02-23)
 - [ ] **Phase 6: Frontend Integration** - Searchable picker modals, pagination UI, quality badges display on all component pages
 
 ## Phase Details
@@ -87,7 +87,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 07-01-PLAN.md — Fix pg_trgm bootstrap + ILIKE fallback, align frontend import parameters and TypeScript nullable types, add 5 integration tests
+- [x] 07-01-PLAN.md — Fix pg_trgm bootstrap + ILIKE fallback, align frontend import parameters and TypeScript nullable types, add 5 integration tests
 
 ### Phase 6: Frontend Integration
 **Goal**: Users interact with the expanded databases through searchable pickers, paginated tables, and quality badges -- replacing flat dropdowns that cannot scale past 50 items
@@ -117,5 +117,5 @@ Note: Phase 7 (integration fixes) must complete before Phase 6 (frontend) since 
 | 3. Schema and Quality System | v1.2 | Complete    | 2026-02-21 | 2026-02-21 |
 | 4. Search and Pagination | v1.2 | Complete    | 2026-02-21 | 2026-02-21 |
 | 5. Import Pipelines and Fixture Data | v1.2 | Complete    | 2026-02-22 | - |
-| 7. Cross-Phase Integration Fixes | v1.2 | 0/1 | Not started | - |
+| 7. Cross-Phase Integration Fixes | v1.2 | 1/1 | Complete | 2026-02-23 |
 | 6. Frontend Integration | v1.2 | 0/? | Not started | - |
