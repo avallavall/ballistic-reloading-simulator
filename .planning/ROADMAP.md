@@ -84,10 +84,10 @@ Plans:
   2. Frontend GRT import with overwrite mode sends `?mode=overwrite` (matching backend ImportMode enum) and backend correctly overwrites collisions
   3. Frontend TypeScript `Bullet` interface declares `length_mm` and `bc_g7` as `number | null`, matching backend nullable schema
   4. Frontend `GrtImportResult` interface includes `updated` array and `mode` field matching backend response
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 07-01-PLAN.md — Fix pg_trgm bootstrap in app startup, align frontend import parameters, fix TypeScript nullable types
+- [ ] 07-01-PLAN.md — Fix pg_trgm bootstrap + ILIKE fallback, align frontend import parameters and TypeScript nullable types, add 5 integration tests
 
 ### Phase 6: Frontend Integration
 **Goal**: Users interact with the expanded databases through searchable pickers, paginated tables, and quality badges -- replacing flat dropdowns that cannot scale past 50 items
