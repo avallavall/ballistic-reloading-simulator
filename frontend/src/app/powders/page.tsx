@@ -16,9 +16,12 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
 import Badge from '@/components/ui/Badge';
+import QualityBadge from '@/components/ui/QualityBadge';
+import SkeletonRows from '@/components/ui/SkeletonRows';
+import Pagination from '@/components/ui/Pagination';
 import { getSourceLabel } from '@/lib/utils';
-import { usePowders, useCreatePowder, useUpdatePowder, useDeletePowder, useImportGrtPowders } from '@/hooks/usePowders';
-import type { PowderCreate } from '@/lib/types';
+import { usePowdersPaginated, useCreatePowder, useUpdatePowder, useDeletePowder, useImportGrtPowders } from '@/hooks/usePowders';
+import type { Powder, PowderCreate } from '@/lib/types';
 
 const emptyForm: PowderCreate = {
   name: '',
@@ -54,7 +57,11 @@ const THREECURVE_FIELDS = [
 type ThreeCurveKey = typeof THREECURVE_FIELDS[number]['key'];
 
 export default function PowdersPage() {
-  const { data: powders, isLoading, isError } = usePowders();
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(20);
+  const { data, isLoading, isError, isPlaceholderData } = usePowdersPaginated({ page, size });
+  const powders = data?.items ?? [];
+  const totalPages = Math.ceil((data?.total ?? 0) / size);
   const createMutation = useCreatePowder();
   const updateMutation = useUpdatePowder();
   const deleteMutation = useDeletePowder();
@@ -78,7 +85,7 @@ export default function PowdersPage() {
     }));
   };
 
-  const handleEdit = (powder: typeof powders extends (infer T)[] | undefined ? T : never) => {
+  const handleEdit = (powder: Powder) => {
     if (!powder) return;
     setEditingId(powder.id);
     setForm({
@@ -633,12 +640,6 @@ export default function PowdersPage() {
         </Card>
       )}
 
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <Spinner size="lg" />
-        </div>
-      )}
-
       {isError && (
         <Card className="border-red-500/30 bg-red-500/5">
           <CardContent>
@@ -649,7 +650,7 @@ export default function PowdersPage() {
         </Card>
       )}
 
-      {powders && powders.length === 0 && !showForm && (
+      {!isLoading && powders.length === 0 && !showForm && (
         <Card>
           <CardContent>
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -676,105 +677,118 @@ export default function PowdersPage() {
         </Card>
       )}
 
-      {powders && powders.length > 0 && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Calidad</TableHead>
-              <TableHead>Fuente</TableHead>
-              <TableHead>Fabricante</TableHead>
-              <TableHead>Burn Rate Rel</TableHead>
-              <TableHead>Fuerza (J/kg)</TableHead>
-              <TableHead>Temp Llama (K)</TableHead>
-              <TableHead>Densidad</TableHead>
-              <TableHead className="text-right">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {powders.map((powder) => (
-              <TableRow key={powder.id}>
-                <TableCell className="font-medium text-white">
-                  <span className="flex items-center gap-2">
-                    {powder.name}
-                    <Badge variant={powder.has_3curve ? 'success' : 'default'}>
-                      {powder.has_3curve ? '3C' : '2C'}
-                    </Badge>
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className="group relative inline-flex items-center cursor-default">
-                    <Badge variant={powder.quality_level as 'success' | 'warning' | 'danger'}>
-                      {powder.quality_score}
-                    </Badge>
-                    <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2
-                      whitespace-nowrap rounded bg-slate-800 px-3 py-1.5 text-xs text-slate-200
-                      opacity-0 transition-opacity group-hover:opacity-100 border border-slate-600 shadow-lg z-10">
-                      {powder.quality_tooltip}
-                    </span>
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className="text-xs text-slate-400">
-                    {getSourceLabel(powder.data_source)}
-                  </span>
-                </TableCell>
-                <TableCell>{powder.manufacturer}</TableCell>
-                <TableCell className="font-mono">
-                  {powder.burn_rate_relative}
-                </TableCell>
-                <TableCell className="font-mono">
-                  {powder.force_constant_j_kg.toLocaleString()}
-                </TableCell>
-                <TableCell className="font-mono">
-                  {powder.flame_temp_k.toLocaleString()}
-                </TableCell>
-                <TableCell className="font-mono">
-                  {powder.density_g_cm3}
-                </TableCell>
-                <TableCell className="text-right">
-                  {deleteConfirm === powder.id ? (
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="text-xs text-red-400">Eliminar?</span>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleDelete(powder.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        Si
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => setDeleteConfirm(null)}
-                      >
-                        No
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(powder)}
-                      >
-                        <Pencil size={14} />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeleteConfirm(powder.id)}
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                    </div>
-                  )}
-                </TableCell>
+      {(isLoading || powders.length > 0) && (
+        <div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nombre</TableHead>
+                <TableHead>Calidad</TableHead>
+                <TableHead>Fuente</TableHead>
+                <TableHead>Fabricante</TableHead>
+                <TableHead>Burn Rate Rel</TableHead>
+                <TableHead>Fuerza (J/kg)</TableHead>
+                <TableHead>Temp Llama (K)</TableHead>
+                <TableHead>Densidad</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <SkeletonRows columns={9} rows={size} />
+              ) : (
+                <>
+                  {powders.map((powder) => (
+                    <TableRow
+                      key={powder.id}
+                      className={isPlaceholderData ? 'opacity-50 transition-opacity' : 'transition-opacity'}
+                    >
+                      <TableCell className="font-medium text-white">
+                        <span className="flex items-center gap-2">
+                          {powder.name}
+                          <Badge variant={powder.has_3curve ? 'success' : 'default'}>
+                            {powder.has_3curve ? '3C' : '2C'}
+                          </Badge>
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <QualityBadge
+                          score={powder.quality_score}
+                          level={powder.quality_level}
+                          tooltip={powder.quality_tooltip}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs text-slate-400">
+                          {getSourceLabel(powder.data_source)}
+                        </span>
+                      </TableCell>
+                      <TableCell>{powder.manufacturer}</TableCell>
+                      <TableCell className="font-mono">
+                        {powder.burn_rate_relative}
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        {powder.force_constant_j_kg.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        {powder.flame_temp_k.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        {powder.density_g_cm3}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {deleteConfirm === powder.id ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="text-xs text-red-400">Eliminar?</span>
+                            <Button
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handleDelete(powder.id)}
+                              disabled={deleteMutation.isPending}
+                            >
+                              Si
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => setDeleteConfirm(null)}
+                            >
+                              No
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(powder)}
+                            >
+                              <Pencil size={14} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteConfirm(powder.id)}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </>
+              )}
+            </TableBody>
+          </Table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            size={size}
+            onPageChange={setPage}
+            onSizeChange={(s) => { setSize(s); setPage(1); }}
+          />
+        </div>
       )}
     </div>
   );
