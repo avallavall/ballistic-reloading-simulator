@@ -20,9 +20,12 @@ import Input from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
 import Badge from '@/components/ui/Badge';
 import QualityBadge from '@/components/ui/QualityBadge';
+import AliasBadge from '@/components/ui/AliasBadge';
 import SkeletonRows from '@/components/ui/SkeletonRows';
 import Pagination from '@/components/ui/Pagination';
+import { useToast } from '@/components/ui/Toast';
 import { getSourceLabel } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 import { usePowdersPaginated, useCreatePowder, useUpdatePowder, useDeletePowder, useImportGrtPowders } from '@/hooks/usePowders';
 import type { Powder, PowderCreate } from '@/lib/types';
 
@@ -60,6 +63,8 @@ const THREECURVE_FIELDS = [
 type ThreeCurveKey = typeof THREECURVE_FIELDS[number]['key'];
 
 export default function PowdersPage() {
+  const queryClient = useQueryClient();
+  const { showToast, ToastContainer } = useToast();
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(20);
   const [searchTerm, setSearchTerm] = useState('');
@@ -211,12 +216,16 @@ export default function PowdersPage() {
           errors: data.errors,
           mode: data.mode ?? 'skip',
         });
+        showToast(
+          `Importados ${data.created.length} polvoras (${data.aliases_linked ?? 0} aliases vinculados, ${data.skipped.length} omitidos)`,
+          'success'
+        );
       },
       onError: (error) => {
         setImportError(error instanceof Error ? error.message : 'Error al importar archivo');
       },
     });
-  }, [importMutation]);
+  }, [importMutation, showToast]);
 
   const handleOverwriteDuplicates = useCallback(() => {
     if (!lastImportFile) return;
@@ -234,12 +243,17 @@ export default function PowdersPage() {
           errors: data.errors,
           mode: data.mode ?? 'overwrite',
         });
+        queryClient.invalidateQueries({ queryKey: ['powders'] });
+        showToast(
+          `Actualizados ${data.updated?.length ?? 0} polvoras (${data.aliases_linked ?? 0} aliases vinculados)`,
+          'success'
+        );
       } catch (error) {
         setImportError(error instanceof Error ? error.message : 'Error al sobrescribir');
       }
     };
     doOverwrite();
-  }, [lastImportFile]);
+  }, [lastImportFile, queryClient, showToast]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -763,6 +777,9 @@ export default function PowdersPage() {
                           <Badge variant={powder.has_3curve ? 'success' : 'default'}>
                             {powder.has_3curve ? '3C' : '2C'}
                           </Badge>
+                          {powder.alias_group && (
+                            <AliasBadge powderId={powder.id} aliasGroup={powder.alias_group} />
+                          )}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -844,6 +861,7 @@ export default function PowdersPage() {
           />
         </div>
       )}
+      <ToastContainer />
     </div>
   );
 }
