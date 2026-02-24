@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases so users can simulate immediately without manual data entry.
-**Current focus:** Phase 10 - Tech Debt Cleanup
+**Current focus:** Phase 10 - Tech Debt Cleanup -- COMPLETE
 
 ## Current Position
 
-Phase: 10 of 10 (Tech Debt Cleanup)
-Plan: 1 of 2 in current phase (10-01 complete)
-Status: Phase 10 in progress. Plan 10-01 complete, 10-02 remaining.
-Last activity: 2026-02-24 — Completed 10-01-PLAN.md (Corrective migration for cartridge caliber_family backfill)
+Phase: 10 of 10 (Tech Debt Cleanup) -- COMPLETE
+Plan: 2 of 2 in current phase (10-02 complete, phase done)
+Status: Phase 10 complete. All plans executed. v1.2 milestone fully shipped.
+Last activity: 2026-02-24 — Completed 10-02-PLAN.md (QualityBadge in pickers, extended tables, null display convention)
 
-Progress: [================] 96% (24 plans complete across all milestones)
+Progress: [================] 100% (25 plans complete across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 24
-- Average duration: 4.3min
-- Total execution time: 1.76 hours
+- Total plans completed: 25
+- Average duration: 4.2min
+- Total execution time: 1.81 hours
 
 **By Phase:**
 
@@ -36,15 +36,15 @@ Progress: [================] 96% (24 plans complete across all milestones)
 | 7 - Cross-Phase Integration Fixes | 1/1 | 6min | 6min |
 | 8 - Frontend Filter/Search Controls | 2/2 | 4min | 2min |
 | 9 - Powder Alias UI, Import & Cache Fix | 2/2 | 4min | 2min |
-| 10 - Tech Debt Cleanup | 1/2 | 1min | 1min |
+| 10 - Tech Debt Cleanup | 2/2 | 4min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 3, 2, 2, 2, 1 min
-- Trend: Accelerating
-| Phase 08 P02 | 2min | 2 tasks | 6 files |
+- Last 5 plans: 2, 2, 2, 1, 3 min
+- Trend: Stable
 | Phase 09 P01 | 2min | 2 tasks | 3 files |
 | Phase 09 P02 | 2min | 2 tasks | 5 files |
 | Phase 10 P01 | 1min | 1 tasks | 1 files |
+| Phase 10 P02 | 3min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -99,6 +99,9 @@ Recent decisions affecting current work:
 - [09-02]: Toast success type uses green-500/60 border color consistent with existing error/info patterns
 - [10-01]: Data-only migration using op.execute (no sa import needed) for corrective caliber_family backfill
 - [10-01]: Downgrade reverts to bore_diameter_mm-based derivation (original 006 behavior)
+- [10-02]: TypeBadge defined inline in bullets page (not shared component) since specific to bullet_type/base_type
+- [10-02]: displayValue() utility established as project-wide null display convention (em dash U+2014)
+- [10-02]: Cartridge neck_diameter_mm displayed with toFixed(3) for sub-mm precision
 
 ### Pending Todos
 
@@ -114,5 +117,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 10-01-PLAN.md (Corrective migration for cartridge caliber_family backfill)
-Resume file: .planning/phases/10-tech-debt-cleanup/10-01-SUMMARY.md
+Stopped at: Completed 10-02-PLAN.md (QualityBadge in pickers, extended tables, null display -- Phase 10 complete, v1.2 fully shipped)
+Resume file: .planning/phases/10-tech-debt-cleanup/10-02-SUMMARY.md

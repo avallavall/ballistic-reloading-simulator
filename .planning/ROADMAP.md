@@ -26,7 +26,7 @@
 - [x] **Phase 6: Frontend Integration** - Searchable picker modals, pagination UI, quality badges display on all component pages (completed 2026-02-23)
 - [ ] **Phase 8: Frontend Filter & Search Controls** - Filter dropdowns (manufacturer, caliber, quality) and search input on list pages
 - [x] **Phase 9: Powder Alias UI + Import Cache Fix** - Alias display, GRT alias mapping during import, overwrite cache invalidation (completed 2026-02-24)
-- [ ] **Phase 10: Tech Debt Cleanup** - QualityBadge in pickers, caliber_family backfill fix, extended field display
+- [x] **Phase 10: Tech Debt Cleanup** - QualityBadge in pickers, caliber_family backfill fix, extended field display (completed 2026-02-24)
 
 ## Phase Details
 
@@ -152,8 +152,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 10-01-PLAN.md — Backend: corrective Alembic migration for cartridge caliber_family backfill using groove_diameter_mm
-- [ ] 10-02-PLAN.md — Frontend: QualityBadge in pickers, extended bullets/cartridges table columns, shared null display convention
+- [x] 10-01-PLAN.md — Backend: corrective Alembic migration for cartridge caliber_family backfill using groove_diameter_mm
+- [x] 10-02-PLAN.md — Frontend: QualityBadge in pickers, extended bullets/cartridges table columns, shared null display convention
 
 ## Progress
 
@@ -173,4 +173,4 @@ Note: Phase 7 (integration fixes) must complete before Phase 6 (frontend) since 
 | 6. Frontend Integration | v1.2 | 3/3 | Complete | 2026-02-23 |
 | 8. Frontend Filter & Search Controls | v1.2 | 1/2 | In Progress | - |
 | 9. Powder Alias UI + Import Cache Fix | 2/2 | Complete   | 2026-02-24 | - |
-| 10. Tech Debt Cleanup | 1/2 | In Progress|  | - |
+| 10. Tech Debt Cleanup | v1.2 | 2/2 | Complete | 2026-02-24 |
