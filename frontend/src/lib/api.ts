@@ -32,6 +32,11 @@ export interface ListParams {
   page?: number;
   size?: number;
   q?: string;
+  manufacturer?: string;
+  caliber_family?: string;
+  quality_level?: string;
+  sort?: string;
+  order?: string;
 }
 
 function buildQueryString(params: ListParams): string {
@@ -39,6 +44,11 @@ function buildQueryString(params: ListParams): string {
   if (params.page) sp.set('page', String(params.page));
   if (params.size) sp.set('size', String(params.size));
   if (params.q && params.q.length >= 3) sp.set('q', params.q);
+  if (params.manufacturer) sp.set('manufacturer', params.manufacturer);
+  if (params.caliber_family) sp.set('caliber_family', params.caliber_family);
+  if (params.quality_level) sp.set('quality_level', params.quality_level);
+  if (params.sort) sp.set('sort', params.sort);
+  if (params.order) sp.set('order', params.order);
   const qs = sp.toString();
   return qs ? `?${qs}` : '';
 }
@@ -145,6 +155,10 @@ export async function importGrtPowders(file: File, overwrite: boolean = false): 
   return response.json();
 }
 
+export async function getPowderManufacturers(): Promise<string[]> {
+  return request<string[]>('/powders/manufacturers');
+}
+
 // ============================================================
 // Bullets
 // ============================================================
@@ -176,6 +190,14 @@ export async function updateBullet(
 
 export async function deleteBullet(id: string): Promise<void> {
   return request<void>(`/bullets/${id}`, { method: 'DELETE' });
+}
+
+export async function getBulletManufacturers(): Promise<string[]> {
+  return request<string[]>('/bullets/manufacturers');
+}
+
+export async function getBulletCaliberFamilies(): Promise<string[]> {
+  return request<string[]>('/bullets/caliber-families');
 }
 
 // ============================================================
@@ -211,6 +233,10 @@ export async function updateCartridge(
 
 export async function deleteCartridge(id: string): Promise<void> {
   return request<void>(`/cartridges/${id}`, { method: 'DELETE' });
+}
+
+export async function getCartridgeCaliberFamilies(): Promise<string[]> {
+  return request<string[]>('/cartridges/caliber-families');
 }
 
 // ============================================================
