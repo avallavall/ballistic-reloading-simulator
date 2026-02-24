@@ -24,7 +24,7 @@ import AliasBadge from '@/components/ui/AliasBadge';
 import SkeletonRows from '@/components/ui/SkeletonRows';
 import Pagination from '@/components/ui/Pagination';
 import { useToast } from '@/components/ui/Toast';
-import { getSourceLabel } from '@/lib/utils';
+import { getSourceLabel, displayValue } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePowdersPaginated, useCreatePowder, useUpdatePowder, useDeletePowder, useImportGrtPowders } from '@/hooks/usePowders';
 import type { Powder, PowderCreate } from '@/lib/types';

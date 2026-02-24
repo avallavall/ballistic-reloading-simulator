@@ -16,6 +16,7 @@ import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Badge from '@/components/ui/Badge';
 import Spinner from '@/components/ui/Spinner';
+import { displayValue } from '@/lib/utils';
 import { useRifles, useCreateRifle, useUpdateRifle, useDeleteRifle } from '@/hooks/useRifles';
 import { useCartridges } from '@/hooks/useCartridges';
 import type { RifleCreate } from '@/lib/types';
@@ -345,16 +346,16 @@ export default function RiflesPage() {
                 <TableCell>
                   {rifle.cartridge?.name || getCartridgeName(rifle.cartridge_id)}
                 </TableCell>
-                <TableCell className="font-mono">
-                  {rifle.weight_kg ?? 3.5}
+                <TableCell className={`font-mono ${rifle.weight_kg == null ? 'text-gray-500' : ''}`}>
+                  {rifle.weight_kg != null ? rifle.weight_kg : '\u2014'}
                 </TableCell>
                 <TableCell>
                   <Badge variant={conditionBadge[rifle.barrel_condition] || 'default'}>
                     {conditionLabel[rifle.barrel_condition] || rifle.barrel_condition}
                   </Badge>
                 </TableCell>
-                <TableCell className="font-mono">
-                  {rifle.round_count.toLocaleString()}
+                <TableCell className={`font-mono ${rifle.round_count == null ? 'text-gray-500' : ''}`}>
+                  {rifle.round_count != null ? rifle.round_count.toLocaleString() : '\u2014'}
                 </TableCell>
                 <TableCell className="text-right">
                   {deleteConfirm === rifle.id ? (

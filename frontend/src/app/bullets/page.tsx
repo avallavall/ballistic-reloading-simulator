@@ -21,8 +21,32 @@ import Spinner from '@/components/ui/Spinner';
 import QualityBadge from '@/components/ui/QualityBadge';
 import SkeletonRows from '@/components/ui/SkeletonRows';
 import Pagination from '@/components/ui/Pagination';
+import { displayValue } from '@/lib/utils';
 import { useBulletsPaginated, useCreateBullet, useUpdateBullet, useDeleteBullet } from '@/hooks/useBullets';
 import type { Bullet, BulletCreate } from '@/lib/types';
+
+const BULLET_TYPE_COLORS: Record<string, string> = {
+  'Match':    'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  'Hunting':  'bg-green-500/15 text-green-400 border-green-500/30',
+  'Target':   'bg-purple-500/15 text-purple-400 border-purple-500/30',
+  'Tactical': 'bg-orange-500/15 text-orange-400 border-orange-500/30',
+};
+
+const BASE_TYPE_COLORS: Record<string, string> = {
+  'BT':     'bg-sky-500/15 text-sky-400 border-sky-500/30',
+  'FB':     'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  'Hybrid': 'bg-violet-500/15 text-violet-400 border-violet-500/30',
+};
+
+function TypeBadge({ value, colorMap }: { value: string | null | undefined; colorMap: Record<string, string> }) {
+  if (!value) return <span className="text-gray-500">{'\u2014'}</span>;
+  const colors = colorMap[value] || 'bg-slate-500/15 text-slate-400 border-slate-500/30';
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${colors}`}>
+      {value}
+    </span>
+  );
+}
 
 const materialOptions = [
   { value: 'copper', label: 'Cobre' },
@@ -366,18 +390,21 @@ export default function BulletsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nombre</TableHead>
-                <TableHead>Calidad</TableHead>
-                <TableHead>Fabricante</TableHead>
+                <TableHead>N. Modelo</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Base</TableHead>
+                <TableHead>Longitud (mm)</TableHead>
                 <TableHead>Peso (gr)</TableHead>
                 <TableHead>Diametro (mm)</TableHead>
                 <TableHead>BC G1</TableHead>
                 <TableHead>BC G7</TableHead>
+                <TableHead>Calidad</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <SkeletonRows columns={8} rows={size} />
+                <SkeletonRows columns={11} rows={size} />
               ) : (
                 <>
                   {bullets.map((bullet) => (
@@ -388,14 +415,18 @@ export default function BulletsPage() {
                       <TableCell className="font-medium text-white">
                         {bullet.name}
                       </TableCell>
-                      <TableCell>
-                        <QualityBadge
-                          score={bullet.quality_score}
-                          level={bullet.quality_level}
-                          tooltip={bullet.quality_tooltip}
-                        />
+                      <TableCell className={bullet.model_number == null ? 'text-gray-500' : ''}>
+                        {displayValue(bullet.model_number)}
                       </TableCell>
-                      <TableCell>{bullet.manufacturer}</TableCell>
+                      <TableCell>
+                        <TypeBadge value={bullet.bullet_type} colorMap={BULLET_TYPE_COLORS} />
+                      </TableCell>
+                      <TableCell>
+                        <TypeBadge value={bullet.base_type} colorMap={BASE_TYPE_COLORS} />
+                      </TableCell>
+                      <TableCell className={`font-mono ${bullet.length_mm == null ? 'text-gray-500' : ''}`}>
+                        {bullet.length_mm != null ? bullet.length_mm.toFixed(2) : '\u2014'}
+                      </TableCell>
                       <TableCell className="font-mono">
                         {bullet.weight_grains}
                       </TableCell>
@@ -403,7 +434,16 @@ export default function BulletsPage() {
                         {bullet.diameter_mm}
                       </TableCell>
                       <TableCell className="font-mono">{bullet.bc_g1}</TableCell>
-                      <TableCell className="font-mono">{bullet.bc_g7}</TableCell>
+                      <TableCell className={`font-mono ${bullet.bc_g7 == null ? 'text-gray-500' : ''}`}>
+                        {bullet.bc_g7 != null ? bullet.bc_g7 : '\u2014'}
+                      </TableCell>
+                      <TableCell>
+                        <QualityBadge
+                          score={bullet.quality_score}
+                          level={bullet.quality_level}
+                          tooltip={bullet.quality_tooltip}
+                        />
+                      </TableCell>
                       <TableCell className="text-right">
                         {deleteConfirm === bullet.id ? (
                           <div className="flex items-center justify-end gap-2">

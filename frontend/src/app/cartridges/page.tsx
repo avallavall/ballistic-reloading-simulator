@@ -20,6 +20,7 @@ import Spinner from '@/components/ui/Spinner';
 import QualityBadge from '@/components/ui/QualityBadge';
 import SkeletonRows from '@/components/ui/SkeletonRows';
 import Pagination from '@/components/ui/Pagination';
+import { displayValue } from '@/lib/utils';
 import {
   useCartridgesPaginated,
   useCreateCartridge,
@@ -357,17 +358,21 @@ export default function CartridgesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nombre</TableHead>
-                <TableHead>Calidad</TableHead>
-                <TableHead>SAAMI Max (psi)</TableHead>
+                <TableHead>Cartucho Padre</TableHead>
                 <TableHead>Capacidad (gr H2O)</TableHead>
                 <TableHead>Long. Vaina (mm)</TableHead>
+                <TableHead>OAL (mm)</TableHead>
+                <TableHead>Cuello (mm)</TableHead>
                 <TableHead>Bore (mm)</TableHead>
+                <TableHead>Groove (mm)</TableHead>
+                <TableHead>SAAMI Max (psi)</TableHead>
+                <TableHead>Calidad</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <SkeletonRows columns={7} rows={size} />
+                <SkeletonRows columns={11} rows={size} />
               ) : (
                 <>
                   {cartridges.map((cartridge) => (
@@ -378,15 +383,8 @@ export default function CartridgesPage() {
                       <TableCell className="font-medium text-white">
                         {cartridge.name}
                       </TableCell>
-                      <TableCell>
-                        <QualityBadge
-                          score={cartridge.quality_score}
-                          level={cartridge.quality_level}
-                          tooltip={cartridge.quality_tooltip}
-                        />
-                      </TableCell>
-                      <TableCell className="font-mono">
-                        {cartridge.saami_max_pressure_psi.toLocaleString()}
+                      <TableCell className={cartridge.parent_cartridge_name == null ? 'text-gray-500' : ''}>
+                        {displayValue(cartridge.parent_cartridge_name)}
                       </TableCell>
                       <TableCell className="font-mono">
                         {cartridge.case_capacity_grains_h2o}
@@ -395,7 +393,26 @@ export default function CartridgesPage() {
                         {cartridge.case_length_mm}
                       </TableCell>
                       <TableCell className="font-mono">
+                        {cartridge.overall_length_mm}
+                      </TableCell>
+                      <TableCell className={`font-mono ${cartridge.neck_diameter_mm == null ? 'text-gray-500' : ''}`}>
+                        {cartridge.neck_diameter_mm != null ? cartridge.neck_diameter_mm.toFixed(3) : '\u2014'}
+                      </TableCell>
+                      <TableCell className="font-mono">
                         {cartridge.bore_diameter_mm}
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        {cartridge.groove_diameter_mm}
+                      </TableCell>
+                      <TableCell className="font-mono">
+                        {cartridge.saami_max_pressure_psi.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <QualityBadge
+                          score={cartridge.quality_score}
+                          level={cartridge.quality_level}
+                          tooltip={cartridge.quality_tooltip}
+                        />
                       </TableCell>
                       <TableCell className="text-right">
                         {deleteConfirm === cartridge.id ? (
