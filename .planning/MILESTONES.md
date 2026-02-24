@@ -24,3 +24,27 @@
 
 ---
 
+
+## v1.2 Component Databases + Search (Shipped: 2026-02-24)
+
+**Delivered:** Built comprehensive pre-loaded component databases (208 powders, 127 bullets, 53 cartridges) with quality scoring, fuzzy search, pagination, filter controls, and searchable picker modals so users can simulate immediately without manual data entry.
+
+**Phases:** 3-10 | **Plans:** 17 | **Tasks:** ~34
+**Files modified:** 72 | **Insertions:** 8,045 | **Deletions:** 532
+**Timeline:** 4 days (2026-02-21 -> 2026-02-24)
+**Git range:** `53baf2c` -> `4da631c`
+
+**Key accomplishments:**
+1. Quality scoring system with red/yellow/green badges and 0-100 score tooltips across all component types, with auto-recompute on update
+2. pg_trgm fuzzy search with server-side pagination on all component endpoints (handles typos like "hodgon" -> "Hodgdon")
+3. Pre-loaded databases: 208 powders (GRT community data + estimated burn models), 127 bullets (Sierra/Hornady/Berger/Nosler/Lapua), 53 cartridges (CIP/SAAMI specs)
+4. Searchable picker modals replacing flat dropdowns in simulation form with debounced search and quality badges
+5. Filter controls (manufacturer, caliber family, quality level) on all list pages with AND composition
+6. Powder alias system linking 18 powders across 11 alias groups (e.g., ADI AR2208 = Hodgdon Varget) with UI display and GRT import integration
+
+**Requirements completed:** PWD-01 through PWD-05, BUL-01 through BUL-04, CRT-01 through CRT-03, QLT-01 through QLT-03, SRC-01 through SRC-05, SOL-01 (21/21)
+
+**Archive:** `milestones/v1.2-ROADMAP.md`, `milestones/v1.2-REQUIREMENTS.md`, `milestones/v1.2-MILESTONE-AUDIT.md`
+
+---
+

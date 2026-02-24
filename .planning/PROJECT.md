@@ -2,18 +2,11 @@
 
 ## What This Is
 
-A web-based internal ballistics simulator for precision ammunition reloading with a GRT-style 3-curve burn model achieving 1.45% mean velocity error, comprehensive chart dashboard with interactive sensitivity explorer, and validated accuracy across 4 calibers. Built as a modern web app (Next.js + FastAPI + PostgreSQL) with cloud storage, cross-platform access, and responsive dark-mode UI.
+A web-based internal ballistics simulator for precision ammunition reloading with a GRT-style 3-curve burn model achieving 1.45% mean velocity error, comprehensive chart dashboard with interactive sensitivity explorer, pre-loaded component databases (208 powders, 127 bullets, 53 cartridges) with quality scoring and fuzzy search, and validated accuracy across 4 calibers. Built as a modern web app (Next.js + FastAPI + PostgreSQL) with cloud storage, cross-platform access, and responsive dark-mode UI.
 
-## Current Milestone: v1.2 Component Databases + Search
+## Current State
 
-**Goal:** Build comprehensive pre-loaded component databases (powders, bullets, cartridges) with multi-source import pipelines, quality indicators, and advanced search/filtering UI so users can simulate immediately without manual data entry.
-
-**Target features:**
-- GRT powder import pipeline (XML/JSON parser, GitHub ingest, manual curation from tech sheets)
-- Comprehensive bullet database (500+ from Sierra, Hornady, Nosler, Berger, Lapua, etc.)
-- Comprehensive cartridge database (50+ with CIP/SAAMI specs)
-- Powder model quality indicators (red/yellow/green confidence badges)
-- Advanced search & filtering UI for all component databases
+Shipped v1.2 (2026-02-24). No active milestone — use `/gsd:new-milestone` to start next.
 
 ## Core Value
 
@@ -51,14 +44,26 @@ The most accurate internal ballistics simulation available, validated against pu
 - ✓ Temperature and heat curves (gas temp, barrel wall temp, heat loss) — v1.1
 - ✓ Sensitivity analysis with error bands (+/- charge variation) — v1.1
 - ✓ Interactive sensitivity explorer (3 sliders: charge, seating, barrel length) — v1.1
+- ✓ GRT community powder import (208 powders with batch collision handling) — v1.2
+- ✓ Quality scoring system with red/yellow/green badges and 0-100 tooltips — v1.2
+- ✓ Data source provenance tracking (grt_community, manufacturer, manual, estimated) — v1.2
+- ✓ Solver reads web_thickness per powder from DB (no hardcoded default) — v1.2
+- ✓ pg_trgm fuzzy search with typo tolerance on all component endpoints — v1.2
+- ✓ Server-side pagination with total count on all list endpoints — v1.2
+- ✓ Filter controls (manufacturer, caliber family, quality level) on list pages — v1.2
+- ✓ Pre-loaded bullet database (127 bullets from Sierra, Hornady, Berger, Nosler, Lapua) — v1.2
+- ✓ Pre-loaded cartridge database (53 cartridges with CIP/SAAMI specs) — v1.2
+- ✓ Batch import endpoints for powders, bullets, and cartridges — v1.2
+- ✓ Powder alias system (18 powders across 11 alias groups) — v1.2
+- ✓ Searchable picker modals replacing flat dropdowns in simulation form — v1.2
+- ✓ Frontend pagination with keepPreviousData transitions — v1.2
 
 ### Active
 
-**Pre-loaded Component Databases**
-- [ ] Import GRT community powder database (200+ powders with burn models)
-- [ ] Comprehensive bullet database from manufacturer specs (500+ bullets)
-- [ ] Comprehensive cartridge database with CIP/SAAMI specs (50+ cartridges)
-- [ ] Powder model quality indicators (red/yellow/green confidence levels)
+**Data Expansion**
+- [ ] Expand bullet database to 500+ covering all popular calibers
+- [ ] Dedicated bullet/cartridge upload UI (import from CSV/JSON in browser)
+- [ ] Caliber-scoped parametric search optimization
 
 **Advanced Simulation Models**
 - [ ] Temperature sensitivity coefficient for powder models
@@ -89,16 +94,20 @@ The most accurate internal ballistics simulation available, validated against pu
 - Real-time collaboration — community features cover sharing
 - External ballistics solver — different domain, provide muzzle velocity/BC for external tools
 - Authentication before community features — defer until community phase
+- Elasticsearch for search — pg_trgm handles 750 records trivially
+- Client-side table virtualization — server-side pagination eliminates the need
 
 ## Context
 
-Shipped v1.1 with 18,629 LOC (8,106 Python + 10,523 TypeScript).
+Shipped v1.2 with ~26,700 LOC (estimated: ~9,600 Python + ~17,100 TypeScript).
 Tech stack: Next.js 14, FastAPI, PostgreSQL 16, Docker Compose, Recharts, TanStack Query.
-255 passing tests (solver, structural, harmonics, schema, API, validation).
+322+ passing tests (solver, structural, harmonics, schema, API, validation, import, pagination).
 
-3-curve burn model achieves 1.45% mean velocity error across 21 reference loads (4 calibers: .308 Win, 6.5 Creedmoor, .223 Rem, .300 Win Mag). This surpasses the 5% target and approaches GRT's claimed 99.3% accuracy.
+3-curve burn model achieves 1.45% mean velocity error across 21 reference loads (4 calibers: .308 Win, 6.5 Creedmoor, .223 Rem, .300 Win Mag).
 
-Chart dashboard provides 6 interactive tiles (pressure, velocity, burn, energy, temperature, harmonics) with PNG/CSV export and expand-to-modal. Sensitivity explorer with 3 live sliders enables real-time what-if analysis.
+Chart dashboard provides 6 interactive tiles with PNG/CSV export and expand-to-modal. Sensitivity explorer with 3 live sliders enables real-time what-if analysis.
+
+Component databases ship pre-loaded: 208 powders (GRT community data + estimated burn models), 127 bullets (Sierra/Hornady/Berger/Nosler/Lapua), 53 cartridges (CIP/SAAMI specs). Quality scoring with automated badges provides data confidence indicators. Fuzzy search handles typos and filter controls enable browsing by manufacturer, caliber family, and quality level.
 
 Known technical debt: Z_PRIMER=0.01 bootstrapping hack, h=2000 heat loss coefficient needs per-calibre tuning, 3-curve form function reconstructed (not verified against closed-source GRT).
 
@@ -123,9 +132,15 @@ Known technical debt: Z_PRIMER=0.01 bootstrapping hack, h=2000 heat loss coeffic
 | Domain color system for charts | Blue (P/V/harmonics), orange (burn), red (temperature), green (energy/recoil) | ✓ Good — clear visual grouping |
 | Sensitivity endpoint: 3 full simulations | Center + upper + lower, returns complete responses, 10/min rate limit | ✓ Good — enables live sliders |
 | Barrel length override as transient field | Optional nullable field, no DB writes, slider doesn't modify rifle record | ✓ Good — clean separation |
-| GRT community DB as primary powder data source | Largest open dataset, already calibrated by community, GitHub accessible | — Pending |
+| pg_trgm for fuzzy search (no Elasticsearch) | Handles 750 records trivially; Elasticsearch is disproportionate | ✓ Good — fast, zero infra overhead |
+| Server-side pagination (no client-side virtualization) | 50/page eliminates need for virtual scrolling; simpler frontend | ✓ Good — clean implementation |
+| Per-entity paginated response models (not Generic[T]) | FastAPI OpenAPI generation struggles with Generic; explicit models cleaner | ✓ Good — type-safe endpoints |
+| Quality score: 30% source tier + 70% data completeness | Deterministic, transparent formula; auto-recompute on update | ✓ Good — users trust badges |
+| ComponentPicker with internal useQuery | Generic picker fetches its own data; SimulationForm no longer receives data as props | ✓ Good — clean separation |
+| Module-level alias map cache | Loaded once from powder_aliases.json, reused across requests; no DB overhead | ✓ Good — fast alias lookup |
+| GRT community DB as primary powder data source | Largest open dataset, already calibrated by community, GitHub accessible | ✓ Good — 208 powders imported |
 | Three.js for 3D viewers | Only viable browser-native 3D library, React Three Fiber for integration | — Pending |
 | Community features included | GRT's killer feature is crowdsourced data; we need this to compete | — Pending |
 
 ---
-*Last updated: 2026-02-21 after v1.2 milestone start*
+*Last updated: 2026-02-24 after v1.2 milestone*
