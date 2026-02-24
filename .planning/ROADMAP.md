@@ -149,7 +149,11 @@ Plans:
   2. Migration backfill for cartridge caliber_family uses groove_diameter_mm (matching live endpoint logic)
   3. Bullets table displays model_number, bullet_type, and base_type columns
   4. Cartridges table displays parent_cartridge_name and extended dimension fields
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — Backend: corrective Alembic migration for cartridge caliber_family backfill using groove_diameter_mm
+- [ ] 10-02-PLAN.md — Frontend: QualityBadge in pickers, extended bullets/cartridges table columns, shared null display convention
 
 ## Progress
 
@@ -169,4 +173,4 @@ Note: Phase 7 (integration fixes) must complete before Phase 6 (frontend) since 
 | 6. Frontend Integration | v1.2 | 3/3 | Complete | 2026-02-23 |
 | 8. Frontend Filter & Search Controls | v1.2 | 1/2 | In Progress | - |
 | 9. Powder Alias UI + Import Cache Fix | 2/2 | Complete   | 2026-02-24 | - |
-| 10. Tech Debt Cleanup | v1.2 | 0/? | Pending | - |
+| 10. Tech Debt Cleanup | v1.2 | 0/2 | Pending | - |
