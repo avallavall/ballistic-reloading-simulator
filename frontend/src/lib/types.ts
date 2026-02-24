@@ -38,6 +38,7 @@ export interface GrtImportResult {
   skipped: string[];
   errors: string[];
   mode: string;
+  aliases_linked: number;
 }
 
 export interface PowderCreate {

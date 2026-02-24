@@ -159,6 +159,10 @@ export async function getPowderManufacturers(): Promise<string[]> {
   return request<string[]>('/powders/manufacturers');
 }
 
+export async function getPowderAliases(powderId: string): Promise<Powder[]> {
+  return request<Powder[]>(`/powders/${powderId}/aliases`);
+}
+
 // ============================================================
 // Bullets
 // ============================================================

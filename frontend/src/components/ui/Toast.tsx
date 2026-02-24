@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-type ToastType = 'error' | 'info';
+type ToastType = 'error' | 'info' | 'success';
 
 interface ToastItem {
   id: number;
@@ -15,6 +15,7 @@ interface ToastItem {
 const BORDER_COLORS: Record<ToastType, string> = {
   error: 'border-red-500/60 text-red-300',
   info: 'border-blue-500/60 text-blue-300',
+  success: 'border-green-500/60 text-green-300',
 };
 
 let nextId = 0;
