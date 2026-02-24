@@ -25,7 +25,7 @@
 - [x] **Phase 7: Cross-Phase Integration Fixes** - Fix pg_trgm bootstrap, import mode parameter mismatch, TypeScript nullable alignment (completed 2026-02-23)
 - [x] **Phase 6: Frontend Integration** - Searchable picker modals, pagination UI, quality badges display on all component pages (completed 2026-02-23)
 - [ ] **Phase 8: Frontend Filter & Search Controls** - Filter dropdowns (manufacturer, caliber, quality) and search input on list pages
-- [ ] **Phase 9: Powder Alias UI + Import Cache Fix** - Alias display, GRT alias mapping during import, overwrite cache invalidation
+- [x] **Phase 9: Powder Alias UI + Import Cache Fix** - Alias display, GRT alias mapping during import, overwrite cache invalidation (completed 2026-02-24)
 - [ ] **Phase 10: Tech Debt Cleanup** - QualityBadge in pickers, caliber_family backfill fix, extended field display
 
 ## Phase Details
@@ -168,5 +168,5 @@ Note: Phase 7 (integration fixes) must complete before Phase 6 (frontend) since 
 | 7. Cross-Phase Integration Fixes | v1.2 | 1/1 | Complete | 2026-02-23 |
 | 6. Frontend Integration | v1.2 | 3/3 | Complete | 2026-02-23 |
 | 8. Frontend Filter & Search Controls | v1.2 | 1/2 | In Progress | - |
-| 9. Powder Alias UI + Import Cache Fix | v1.2 | 0/? | Pending | - |
+| 9. Powder Alias UI + Import Cache Fix | 2/2 | Complete   | 2026-02-24 | - |
 | 10. Tech Debt Cleanup | v1.2 | 0/? | Pending | - |
