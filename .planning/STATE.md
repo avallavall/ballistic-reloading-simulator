@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases so users can simulate immediately without manual data entry.
-**Current focus:** Phase 8 - Frontend Filter/Search Controls -- IN PROGRESS
+**Current focus:** Phase 8 - Frontend Filter/Search Controls -- COMPLETE
 
 ## Current Position
 
-Phase: 8 of 10 (Frontend Filter/Search Controls)
-Plan: 1 of 2 in current phase
-Status: Completed 08-01-PLAN.md (filter infrastructure). Plan 02 pending.
-Last activity: 2026-02-24 — Completed 08-01-PLAN.md (ListParams, filter API functions, useFilterOptions, FilterBar)
+Phase: 8 of 10 (Frontend Filter/Search Controls) -- COMPLETE
+Plan: 2 of 2 in current phase (all complete)
+Status: Phase 08 complete. All filter infrastructure and page integration done.
+Last activity: 2026-02-24 — Completed 08-02-PLAN.md (FilterBar wired into powders, bullets, cartridges pages)
 
-Progress: [================] 100% (20 plans complete across all milestones)
+Progress: [================] 100% (21 plans complete across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
-- Average duration: 5.0min
-- Total execution time: 1.65 hours
+- Total plans completed: 21
+- Average duration: 4.8min
+- Total execution time: 1.68 hours
 
 **By Phase:**
 
@@ -34,12 +34,13 @@ Progress: [================] 100% (20 plans complete across all milestones)
 | 5 - Import Pipelines | 3/3 | 18min | 6min |
 | 6 - Frontend Integration | 3/3 | 9min | 3min |
 | 7 - Cross-Phase Integration Fixes | 1/1 | 6min | 6min |
-| 8 - Frontend Filter/Search Controls | 1/2 | 2min | 2min |
+| 8 - Frontend Filter/Search Controls | 2/2 | 4min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 6, 3, 3, 3, 2 min
+- Last 5 plans: 3, 3, 3, 2, 2 min
 - Trend: Accelerating
 | Phase 08 P01 | 2min | 2 tasks | 3 files |
+| Phase 08 P02 | 2min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,9 @@ Recent decisions affecting current work:
 - [08-01]: Raw select elements in FilterBar instead of existing Select component (avoids label/error wrapper overhead)
 - [08-01]: FilterBar does not debounce internally; parent page controls debounce via useDebounce
 - [08-01]: Quality dropdown maps Alta/Media/Baja to success/warning/danger backend values
+- [08-02]: handleFilterChange generic helper resets page to 1 on any filter/search change
+- [08-02]: Pass undefined (not empty string) for inactive filter params to avoid sending empty query strings
+- [08-02]: FilterBar always rendered regardless of data length so users can always search/filter
 
 ### Pending Todos
 
@@ -98,5 +102,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 08-01-PLAN.md (filter infrastructure: ListParams, API functions, hooks, FilterBar)
-Resume file: .planning/phases/08-frontend-filter-search-controls/08-01-SUMMARY.md
+Stopped at: Completed 08-02-PLAN.md (FilterBar wired into powders, bullets, cartridges pages - Phase 08 complete)
+Resume file: .planning/phases/08-frontend-filter-search-controls/08-02-SUMMARY.md
