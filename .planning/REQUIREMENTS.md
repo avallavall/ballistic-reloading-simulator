@@ -38,7 +38,7 @@ Requirements for v1.2 Component Databases + Search milestone. Each maps to roadm
 
 - [x] **SRC-01**: All component list endpoints support server-side pagination (page, size params) with total count
 - [x] **SRC-02**: User can fuzzy-search components by name using pg_trgm (handles typos like "hodgon" -> "Hodgdon")
-- [ ] **SRC-03**: User can filter components by manufacturer, caliber/caliber family, and quality level
+- [x] **SRC-03**: User can filter components by manufacturer, caliber/caliber family, and quality level
 - [x] **SRC-04**: Simulation form replaces flat <Select> dropdowns with searchable picker modals for powder, bullet, and cartridge selection
 - [x] **SRC-05**: Frontend pagination with smooth transitions (TanStack Query keepPreviousData)
 
@@ -97,7 +97,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | QLT-03 | Phase 3 | Complete |
 | SRC-01 | Phase 4 | Complete |
 | SRC-02 | Phase 4 | Complete |
-| SRC-03 | Phase 8 | Pending |
+| SRC-03 | Phase 8 | Complete |
 | SRC-04 | Phase 6 | Complete |
 | SRC-05 | Phase 6 | Complete |
 | SOL-01 | Phase 3 | Complete |
