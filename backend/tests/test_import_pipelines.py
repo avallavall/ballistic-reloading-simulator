@@ -606,3 +606,83 @@ async def test_seed_idempotent(db_session):
     count2 = (await db_session.execute(select(Powder))).scalars().all()
 
     assert len(count1) == len(count2), "Seed should be idempotent (skip if data exists)"
+
+
+# ===========================================================================
+# Section 6: GRT import alias application tests (3 tests)
+# ===========================================================================
+
+
+def _make_grt_propellant_xml(powder_name: str, manufacturer: str = "TestMfg") -> bytes:
+    """Build a minimal valid GRT .propellant XML for testing.
+
+    Uses realistic thermochemical defaults that convert to valid PowderCreate values.
+    """
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<data>
+  <propellantfile>
+    <var name="pname" value="{powder_name}" />
+    <var name="mname" value="{manufacturer}" />
+    <var name="Qex" value="3800" />
+    <var name="k" value="1.24" />
+    <var name="Ba" value="1.5" />
+    <var name="Bp" value="0.1" />
+    <var name="eta" value="1.0" />
+    <var name="pc" value="1600" />
+  </propellantfile>
+</data>"""
+    return xml.encode("utf-8")
+
+
+@pytest.mark.asyncio
+async def test_grt_import_applies_alias_group(client):
+    """Import a GRT file with a powder name in powder_aliases.json -> alias_group set."""
+    # "Hodgdon Varget" is in powder_aliases.json under group "varget-ar2208"
+    xml_content = _make_grt_propellant_xml("Hodgdon Varget", "Hodgdon")
+    resp = await client.post(
+        "/api/v1/powders/import-grt?mode=skip",
+        files={"file": ("varget.propellant", xml_content, "application/xml")},
+    )
+    assert resp.status_code == 200
+    result = resp.json()
+    assert len(result["created"]) == 1
+    assert result["aliases_linked"] >= 1
+
+    created_powder = result["created"][0]
+    assert created_powder["alias_group"] == "varget-ar2208"
+
+
+@pytest.mark.asyncio
+async def test_grt_import_no_alias_for_unknown_powder(client):
+    """Import a GRT file with a powder name NOT in any alias group -> alias_group is None."""
+    xml_content = _make_grt_propellant_xml("Fictional Powder XYZ-999", "FictionalMfg")
+    resp = await client.post(
+        "/api/v1/powders/import-grt?mode=skip",
+        files={"file": ("unknown.propellant", xml_content, "application/xml")},
+    )
+    assert resp.status_code == 200
+    result = resp.json()
+    assert len(result["created"]) == 1
+    assert result["aliases_linked"] == 0
+
+    created_powder = result["created"][0]
+    assert created_powder["alias_group"] is None
+
+
+@pytest.mark.asyncio
+async def test_grt_import_alias_case_insensitive(client):
+    """Import with different casing than alias file -> alias_group still applied."""
+    # powder_aliases.json has "Hodgdon H4350" under group "h4350-ar2209"
+    # Import with lowercase to test case-insensitive matching
+    xml_content = _make_grt_propellant_xml("hodgdon h4350", "Hodgdon")
+    resp = await client.post(
+        "/api/v1/powders/import-grt?mode=skip",
+        files={"file": ("h4350.propellant", xml_content, "application/xml")},
+    )
+    assert resp.status_code == 200
+    result = resp.json()
+    assert len(result["created"]) == 1
+    assert result["aliases_linked"] >= 1
+
+    created_powder = result["created"][0]
+    assert created_powder["alias_group"] == "h4350-ar2209"
