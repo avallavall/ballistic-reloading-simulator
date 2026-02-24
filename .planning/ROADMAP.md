@@ -133,7 +133,11 @@ Plans:
   2. getPowderAliases() exists in frontend api.ts and is consumed by the UI
   3. GRT import endpoint applies powder_aliases.json mappings so newly imported powders get correct alias_group values
   4. handleOverwriteDuplicates invalidates TanStack Query cache after import, and the powder list auto-refreshes
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 09-01-PLAN.md -- Backend: GRT import alias mapping from powder_aliases.json + aliases_linked in response + 3 tests
+- [ ] 09-02-PLAN.md -- Frontend: AliasBadge component, Toast success type, getPowderAliases API, powder page wiring + cache invalidation fix
 
 ### Phase 10: Tech Debt Cleanup
 **Goal**: Resolve non-blocking tech debt items from v1.2 audit to improve data display accuracy and UI polish
