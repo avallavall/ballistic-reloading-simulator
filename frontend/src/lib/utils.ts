@@ -36,6 +36,12 @@ export function formatNum(value: number | null | undefined, decimals: number = 1
   return value.toFixed(decimals);
 }
 
+/** Display value or em dash for null/undefined/empty */
+export function displayValue(value: string | number | null | undefined): string {
+  if (value == null || value === '') return '\u2014';
+  return String(value);
+}
+
 /** Get pressure safety level — checks both pressure ratio AND critical warnings */
 export function getPressureSafetyLevel(
   peakPressurePsi: number,

@@ -8,6 +8,7 @@ import Input from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
 import Tooltip from '@/components/ui/Tooltip';
 import ComponentPicker from '@/components/pickers/ComponentPicker';
+import QualityBadge from '@/components/ui/QualityBadge';
 import { getBullets, getPowders } from '@/lib/api';
 import type { Rifle, Bullet, Powder, SimulationInput } from '@/lib/types';
 
@@ -161,11 +162,14 @@ export default function SimulationForm({
           getId={(b) => b.id}
           selectedId={bulletId}
           renderItem={(b) => (
-            <div>
-              <div className="text-sm font-medium text-white">{b.name}</div>
-              <div className="text-xs text-slate-400">
-                {b.manufacturer} - {b.weight_grains}gr - {b.diameter_mm}mm - BC G7: {b.bc_g7 ?? 'N/D'}
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <span className="text-sm font-medium text-white">{b.name}</span>
+                <span className="ml-2 text-xs text-slate-400">
+                  {b.diameter_mm}mm {b.weight_grains}gr
+                </span>
               </div>
+              <QualityBadge score={b.quality_score} level={b.quality_level} tooltip={b.quality_tooltip} />
             </div>
           )}
         />
@@ -211,11 +215,13 @@ export default function SimulationForm({
           getId={(p) => p.id}
           selectedId={powderId}
           renderItem={(p) => (
-            <div>
-              <div className="text-sm font-medium text-white">{p.name}</div>
-              <div className="text-xs text-slate-400">
-                {p.manufacturer} - Burn rate: {p.burn_rate_relative}
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <span className="text-sm font-medium text-white">{p.name}</span>
+                <span className="mx-1.5 text-slate-600">&middot;</span>
+                <span className="text-sm text-slate-400">{p.manufacturer}</span>
               </div>
+              <QualityBadge score={p.quality_score} level={p.quality_level} tooltip={p.quality_tooltip} />
             </div>
           )}
         />
