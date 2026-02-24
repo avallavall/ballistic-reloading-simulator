@@ -74,7 +74,7 @@ Each task was committed atomically:
 1. **Task 1: Update paginated hooks to pass all filter params** - `4823406` (feat)
 2. **Task 2: Wire FilterBar into powders, bullets, and cartridges list pages** - `6596582` (feat)
 
-**Plan metadata:** TBD (docs: complete plan)
+**Plan metadata:** `bc984eb` (docs: complete plan)
 
 ## Files Created/Modified
 - `frontend/src/hooks/usePowders.ts` - usePowdersPaginated with full ListParams destructure and queryKey

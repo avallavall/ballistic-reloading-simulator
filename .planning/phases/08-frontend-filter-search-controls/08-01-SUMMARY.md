@@ -69,7 +69,7 @@ Each task was committed atomically:
 1. **Task 1: Extend ListParams, buildQueryString, and add filter API functions** - `da9c3a6` (feat)
 2. **Task 2: Create useFilterOptions hooks and FilterBar component** - `f8011bb` (feat)
 
-**Plan metadata:** (pending)
+**Plan metadata:** `25a903c` (docs: complete plan)
 
 ## Files Created/Modified
 - `frontend/src/lib/api.ts` - Extended ListParams (8 fields), buildQueryString (all params), 4 new filter API functions
