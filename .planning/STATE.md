@@ -45,7 +45,7 @@ All decisions logged in PROJECT.md Key Decisions table. v1.2 decisions archived.
 
 ### Pending Todos
 
-None.
+1. **Expand validation loads with more calibers and sources** (area: testing) - Add more reference loads to validation_loads.py for a more robust solver benchmark
 
 ### Blockers/Concerns
 
