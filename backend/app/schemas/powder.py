@@ -174,3 +174,4 @@ class GrtImportResult(BaseModel):
     skipped: list[str] = Field(default_factory=list, description="Names skipped (already exist)")
     errors: list[str] = Field(default_factory=list, description="Parse/conversion errors")
     mode: str = "skip"
+    aliases_linked: int = Field(default=0, description="Number of powders that got alias_group set from powder_aliases.json")

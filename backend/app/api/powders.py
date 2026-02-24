@@ -1,5 +1,7 @@
+import json
 import logging
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile
 from sqlalchemy import select
@@ -22,6 +24,43 @@ from app.services.pagination import paginate
 from app.services.search import apply_fuzzy_search
 
 logger = logging.getLogger(__name__)
+
+# Module-level cache for alias map (loaded once, reused)
+_alias_map_cache: dict[str, str] | None = None
+
+
+def _load_alias_map() -> dict[str, str]:
+    """Load powder alias mapping from powder_aliases.json.
+
+    Returns a dict mapping lowercase powder name -> alias group name.
+    The file is loaded once and cached at module level since it is static.
+    If the file does not exist, returns an empty dict (graceful fallback).
+    """
+    global _alias_map_cache
+    if _alias_map_cache is not None:
+        return _alias_map_cache
+
+    alias_file = Path(__file__).parent.parent / "seed" / "fixtures" / "powder_aliases.json"
+    if not alias_file.exists():
+        _alias_map_cache = {}
+        return _alias_map_cache
+
+    try:
+        with open(alias_file, encoding="utf-8") as f:
+            aliases_data = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        logger.warning("Failed to load powder_aliases.json: %s", e)
+        _alias_map_cache = {}
+        return _alias_map_cache
+
+    # Invert: {group_name: [name1, name2]} -> {name.lower(): group_name}
+    result: dict[str, str] = {}
+    for group_name, names in aliases_data.items():
+        for name in names:
+            result[name.lower()] = group_name
+
+    _alias_map_cache = result
+    return _alias_map_cache
 
 router = APIRouter(prefix="/powders", tags=["powders"])
 
@@ -227,13 +266,22 @@ async def import_grt(
             existing_powders[name.lower()] = powder
             created.append(powder)
 
+    # Apply alias groups from powder_aliases.json to created + updated powders
+    alias_map = _load_alias_map()
+    aliases_linked = 0
+    for powder in created + updated:
+        group = alias_map.get(powder.name.lower())
+        if group:
+            powder.alias_group = group
+            aliases_linked += 1
+
     if created or updated:
         await db.commit()
         for p in created + updated:
             await db.refresh(p)
 
-    logger.info("GRT import (mode=%s): %d created, %d updated, %d skipped, %d errors",
-                mode.value, len(created), len(updated), len(skipped), len(parse_errors))
+    logger.info("GRT import (mode=%s): %d created, %d updated, %d skipped, %d errors, %d aliases linked",
+                mode.value, len(created), len(updated), len(skipped), len(parse_errors), aliases_linked)
 
     return GrtImportResult(
         created=[PowderResponse.model_validate(p) for p in created],
@@ -241,6 +289,7 @@ async def import_grt(
         skipped=skipped,
         errors=parse_errors,
         mode=mode.value,
+        aliases_linked=aliases_linked,
     )
 
 
