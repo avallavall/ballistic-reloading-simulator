@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { FilterBar } from '@/components/filters/FilterBar';
+import { useManufacturers } from '@/hooks/useFilterOptions';
+import { useDebounce } from '@/hooks/useDebounce';
 import Link from 'next/link';
 import { Flame, Plus, Trash2, X, Pencil, ArrowLeftRight, Upload, FileUp, CheckCircle, AlertCircle, ChevronDown, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
@@ -59,7 +62,34 @@ type ThreeCurveKey = typeof THREECURVE_FIELDS[number]['key'];
 export default function PowdersPage() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(20);
-  const { data, isLoading, isError, isPlaceholderData } = usePowdersPaginated({ page, size });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [manufacturer, setManufacturer] = useState('');
+  const [qualityLevel, setQualityLevel] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
+
+  const handleFilterChange = <T,>(setter: (v: T) => void) => (value: T) => {
+    setter(value);
+    setPage(1);
+  };
+
+  const { data, isLoading, isError, isPlaceholderData } = usePowdersPaginated({
+    page,
+    size,
+    q: debouncedSearch || undefined,
+    manufacturer: manufacturer || undefined,
+    quality_level: qualityLevel || undefined,
+  });
+
+  const { data: manufacturers = [] } = useManufacturers('powders');
+
+  const hasActiveFilters = !!(debouncedSearch || manufacturer || qualityLevel);
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setManufacturer('');
+    setQualityLevel('');
+    setPage(1);
+  };
   const powders = data?.items ?? [];
   const totalPages = Math.ceil((data?.total ?? 0) / size);
   const createMutation = useCreatePowder();
@@ -650,7 +680,7 @@ export default function PowdersPage() {
         </Card>
       )}
 
-      {!isLoading && powders.length === 0 && !showForm && (
+      {!isLoading && powders.length === 0 && !showForm && !hasActiveFilters && (
         <Card>
           <CardContent>
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -675,6 +705,30 @@ export default function PowdersPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      <FilterBar
+        searchValue={searchTerm}
+        onSearchChange={handleFilterChange(setSearchTerm)}
+        manufacturers={manufacturers}
+        selectedManufacturer={manufacturer}
+        onManufacturerChange={handleFilterChange(setManufacturer)}
+        selectedQualityLevel={qualityLevel}
+        onQualityLevelChange={handleFilterChange(setQualityLevel)}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={handleClearFilters}
+      />
+
+      {!isLoading && powders.length === 0 && hasActiveFilters && (
+        <div className="flex flex-col items-center py-12 text-center">
+          <p className="text-sm text-slate-400">No se encontraron resultados</p>
+          <button
+            onClick={handleClearFilters}
+            className="mt-2 text-sm text-blue-400 hover:text-blue-300"
+          >
+            Limpiar filtros
+          </button>
+        </div>
       )}
 
       {(isLoading || powders.length > 0) && (

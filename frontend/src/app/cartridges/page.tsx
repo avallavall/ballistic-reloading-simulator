@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { FilterBar } from '@/components/filters/FilterBar';
+import { useCaliberFamilies } from '@/hooks/useFilterOptions';
+import { useDebounce } from '@/hooks/useDebounce';
 import { Box, Plus, Trash2, X, Pencil } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import {
@@ -39,7 +42,34 @@ const emptyForm: CartridgeCreate = {
 export default function CartridgesPage() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(20);
-  const { data, isLoading, isError, isPlaceholderData } = useCartridgesPaginated({ page, size });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [caliberFamily, setCaliberFamily] = useState('');
+  const [qualityLevel, setQualityLevel] = useState('');
+  const debouncedSearch = useDebounce(searchTerm, 300);
+
+  const handleFilterChange = <T,>(setter: (v: T) => void) => (value: T) => {
+    setter(value);
+    setPage(1);
+  };
+
+  const { data, isLoading, isError, isPlaceholderData } = useCartridgesPaginated({
+    page,
+    size,
+    q: debouncedSearch || undefined,
+    caliber_family: caliberFamily || undefined,
+    quality_level: qualityLevel || undefined,
+  });
+
+  const { data: caliberFamilies = [] } = useCaliberFamilies('cartridges');
+
+  const hasActiveFilters = !!(debouncedSearch || caliberFamily || qualityLevel);
+
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setCaliberFamily('');
+    setQualityLevel('');
+    setPage(1);
+  };
   const cartridges = data?.items ?? [];
   const totalPages = Math.ceil((data?.total ?? 0) / size);
   const createMutation = useCreateCartridge();
@@ -270,7 +300,7 @@ export default function CartridgesPage() {
         </Card>
       )}
 
-      {!isLoading && cartridges.length === 0 && !showForm && (
+      {!isLoading && cartridges.length === 0 && !showForm && !hasActiveFilters && (
         <Card>
           <CardContent>
             <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -295,6 +325,30 @@ export default function CartridgesPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      <FilterBar
+        searchValue={searchTerm}
+        onSearchChange={handleFilterChange(setSearchTerm)}
+        caliberFamilies={caliberFamilies}
+        selectedCaliberFamily={caliberFamily}
+        onCaliberFamilyChange={handleFilterChange(setCaliberFamily)}
+        selectedQualityLevel={qualityLevel}
+        onQualityLevelChange={handleFilterChange(setQualityLevel)}
+        hasActiveFilters={hasActiveFilters}
+        onClearFilters={handleClearFilters}
+      />
+
+      {!isLoading && cartridges.length === 0 && hasActiveFilters && (
+        <div className="flex flex-col items-center py-12 text-center">
+          <p className="text-sm text-slate-400">No se encontraron resultados</p>
+          <button
+            onClick={handleClearFilters}
+            className="mt-2 text-sm text-blue-400 hover:text-blue-300"
+          >
+            Limpiar filtros
+          </button>
+        </div>
       )}
 
       {(isLoading || cartridges.length > 0) && (
