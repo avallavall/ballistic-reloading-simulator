@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases so users can simulate immediately without manual data entry.
-**Current focus:** Phase 8 - Frontend Filter/Search Controls -- COMPLETE
+**Current focus:** Phase 9 - Powder Alias UI, Import & Cache Fix
 
 ## Current Position
 
-Phase: 8 of 10 (Frontend Filter/Search Controls) -- COMPLETE
-Plan: 2 of 2 in current phase (all complete)
-Status: Phase 08 complete. All filter infrastructure and page integration done.
-Last activity: 2026-02-24 — Completed 08-02-PLAN.md (FilterBar wired into powders, bullets, cartridges pages)
+Phase: 9 of 10 (Powder Alias UI, Import & Cache Fix)
+Plan: 1 of 2 in current phase (09-01 complete)
+Status: 09-01 complete. GRT import alias mapping and tests done.
+Last activity: 2026-02-24 — Completed 09-01-PLAN.md (GRT import alias mapping with case-insensitive matching)
 
-Progress: [================] 100% (21 plans complete across all milestones)
+Progress: [================] 100% (22 plans complete across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
-- Average duration: 4.8min
-- Total execution time: 1.68 hours
+- Total plans completed: 22
+- Average duration: 4.6min
+- Total execution time: 1.71 hours
 
 **By Phase:**
 
@@ -35,12 +35,14 @@ Progress: [================] 100% (21 plans complete across all milestones)
 | 6 - Frontend Integration | 3/3 | 9min | 3min |
 | 7 - Cross-Phase Integration Fixes | 1/1 | 6min | 6min |
 | 8 - Frontend Filter/Search Controls | 2/2 | 4min | 2min |
+| 9 - Powder Alias UI, Import & Cache Fix | 1/2 | 2min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 3, 3, 3, 2, 2 min
+- Last 5 plans: 3, 3, 2, 2, 2 min
 - Trend: Accelerating
 | Phase 08 P01 | 2min | 2 tasks | 3 files |
 | Phase 08 P02 | 2min | 2 tasks | 6 files |
+| Phase 09 P01 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -87,6 +89,9 @@ Recent decisions affecting current work:
 - [08-02]: handleFilterChange generic helper resets page to 1 on any filter/search change
 - [08-02]: Pass undefined (not empty string) for inactive filter params to avoid sending empty query strings
 - [08-02]: FilterBar always rendered regardless of data length so users can always search/filter
+- [09-01]: Module-level _alias_map_cache loaded once from powder_aliases.json, reused across requests
+- [09-01]: Case-insensitive matching via .lower() for alias lookup to handle GRT naming inconsistencies
+- [09-01]: Alias application runs before db.commit() so powder data and alias_group persisted atomically
 
 ### Pending Todos
 
@@ -102,5 +107,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-24
-Stopped at: Completed 08-02-PLAN.md (FilterBar wired into powders, bullets, cartridges pages - Phase 08 complete)
-Resume file: .planning/phases/08-frontend-filter-search-controls/08-02-SUMMARY.md
+Stopped at: Completed 09-01-PLAN.md (GRT import alias mapping with case-insensitive matching and 3 new tests)
+Resume file: .planning/phases/09-powder-alias-ui-import-cache-fix/09-01-SUMMARY.md

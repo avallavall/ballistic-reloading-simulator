@@ -13,7 +13,7 @@ Requirements for v1.2 Component Databases + Search milestone. Each maps to roadm
 - [x] **PWD-02**: User sees red/yellow/green quality badges on each powder based on GRT Qlty field and data completeness
 - [x] **PWD-03**: User can view computed quality score (0-100) with breakdown tooltip showing data completeness and source reliability
 - [x] **PWD-04**: Powder records track data source provenance (grt_community, manufacturer, manual, estimated)
-- [ ] **PWD-05**: Powder aliases are resolved so duplicate entries across markets are linked (e.g., ADI AR2208 = Hodgdon Varget)
+- [x] **PWD-05**: Powder aliases are resolved so duplicate entries across markets are linked (e.g., ADI AR2208 = Hodgdon Varget)
 
 ### Bullet Database
 
@@ -84,7 +84,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PWD-02 | Phase 3 | Complete |
 | PWD-03 | Phase 3 | Complete |
 | PWD-04 | Phase 3 | Complete |
-| PWD-05 | Phase 9 | Pending |
+| PWD-05 | Phase 9 | Complete |
 | BUL-01 | Phase 5 | Complete |
 | BUL-02 | Phase 5 | Complete |
 | BUL-03 | Phase 5 | Complete |
