@@ -12,10 +12,10 @@ export function usePowders() {
 }
 
 export function usePowdersPaginated(params: ListParams = {}) {
-  const { page = 1, size = 20, q } = params;
+  const { page = 1, size = 20, q, manufacturer, caliber_family, quality_level, sort, order } = params;
   return useQuery({
-    queryKey: ['powders', 'list', { page, size, q }],
-    queryFn: () => getPowders({ page, size, q }),
+    queryKey: ['powders', 'list', { page, size, q, manufacturer, caliber_family, quality_level, sort, order }],
+    queryFn: () => getPowders({ page, size, q, manufacturer, caliber_family, quality_level, sort, order }),
     placeholderData: keepPreviousData,
   });
 }

@@ -12,10 +12,10 @@ export function useCartridges() {
 }
 
 export function useCartridgesPaginated(params: ListParams = {}) {
-  const { page = 1, size = 20, q } = params;
+  const { page = 1, size = 20, q, caliber_family, quality_level, sort, order } = params;
   return useQuery({
-    queryKey: ['cartridges', 'list', { page, size, q }],
-    queryFn: () => getCartridges({ page, size, q }),
+    queryKey: ['cartridges', 'list', { page, size, q, caliber_family, quality_level, sort, order }],
+    queryFn: () => getCartridges({ page, size, q, caliber_family, quality_level, sort, order }),
     placeholderData: keepPreviousData,
   });
 }

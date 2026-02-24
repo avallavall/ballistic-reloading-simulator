@@ -12,10 +12,10 @@ export function useBullets() {
 }
 
 export function useBulletsPaginated(params: ListParams = {}) {
-  const { page = 1, size = 20, q } = params;
+  const { page = 1, size = 20, q, manufacturer, caliber_family, quality_level, sort, order } = params;
   return useQuery({
-    queryKey: ['bullets', 'list', { page, size, q }],
-    queryFn: () => getBullets({ page, size, q }),
+    queryKey: ['bullets', 'list', { page, size, q, manufacturer, caliber_family, quality_level, sort, order }],
+    queryFn: () => getBullets({ page, size, q, manufacturer, caliber_family, quality_level, sort, order }),
     placeholderData: keepPreviousData,
   });
 }
