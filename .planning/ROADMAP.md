@@ -50,12 +50,12 @@
   2. Cartridge edit form shows 5 new optional fields (shoulder angle, neck length, body length, rim thickness, case type) and saves them to the database
   3. Bullet edit form shows 4 new optional rendering fields (bearing surface, boat tail length, meplat diameter, ogive type) and saves them to the database
   4. Geometry engine produces SVG path data and Three.js profile points from cartridge/bullet dimensions, with documented fallbacks when optional fields are null
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 11-01: TBD
-- [ ] 11-02: TBD
-- [ ] 11-03: TBD
+- [ ] 11-01-PLAN.md — Schema extensions (models, schemas, migration, quality, frontend types, cartridge backfill)
+- [ ] 11-02-PLAN.md — Geometry engine + npm dependencies (R3F v8, drei v9, Three.js)
+- [ ] 11-03-PLAN.md — 500+ bullet seed data (7 manufacturer JSON files) + updated seed loader + tests
 
 ### Phase 12: 2D SVG Technical Drawings
 **Goal**: Users can view accurate technical drawings of their cartridge, chamber, and full assembly with harmonics overlay
@@ -123,7 +123,7 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14
 | 8. Frontend Filter & Search Controls | v1.2 | 2/2 | Complete | 2026-02-24 |
 | 9. Powder Alias UI + Import Cache Fix | v1.2 | 2/2 | Complete | 2026-02-24 |
 | 10. Tech Debt Cleanup | v1.2 | 2/2 | Complete | 2026-02-24 |
-| 11. Foundation and Data Expansion | v1.3 | 0/? | Not started | - |
+| 11. Foundation and Data Expansion | v1.3 | 0/3 | In progress | - |
 | 12. 2D SVG Technical Drawings | v1.3 | 0/? | Not started | - |
 | 13. 3D Parametric Cartridge Viewer | v1.3 | 0/? | Not started | - |
 | 14. Browser Upload and Caliber-Scoped Search | v1.3 | 0/? | Not started | - |
