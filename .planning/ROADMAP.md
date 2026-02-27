@@ -34,7 +34,7 @@
 
 **Milestone Goal:** Expand component databases to 500+ bullets with community contribution support, add 2D technical SVG drawings (3-tab: cross-section, chamber, full assembly with harmonics), and build an interactive 3D parametric cartridge viewer.
 
-- [ ] **Phase 11: Foundation and Data Expansion** - Schema extensions, geometry engine, bullet seed data, npm dependencies
+- [x] **Phase 11: Foundation and Data Expansion** - Schema extensions, geometry engine, bullet seed data, npm dependencies (completed 2026-02-27)
 - [ ] **Phase 12: 2D SVG Technical Drawings** - Three-tab SVG viewer with cross-section, chamber, and assembly drawings
 - [ ] **Phase 13: 3D Parametric Cartridge Viewer** - Interactive React Three Fiber model with cutaway and orbit controls
 - [ ] **Phase 14: Browser Upload and Caliber-Scoped Search** - File upload UI with safety gates and caliber-filtered parametric search
@@ -53,9 +53,9 @@
 **Plans**: 3 plans
 
 Plans:
-- [ ] 11-01-PLAN.md — Schema extensions (models, schemas, migration, quality, frontend types, cartridge backfill)
-- [ ] 11-02-PLAN.md — Geometry engine + npm dependencies (R3F v8, drei v9, Three.js)
-- [ ] 11-03-PLAN.md — 500+ bullet seed data (7 manufacturer JSON files) + updated seed loader + tests
+- [x] 11-01-PLAN.md — Schema extensions (models, schemas, migration, quality, frontend types, cartridge backfill)
+- [x] 11-02-PLAN.md — Geometry engine + npm dependencies (R3F v8, drei v9, Three.js)
+- [x] 11-03-PLAN.md — 506 bullet seed data (7 manufacturer JSON files) + updated seed loader + 19 new tests
 
 ### Phase 12: 2D SVG Technical Drawings
 **Goal**: Users can view accurate technical drawings of their cartridge, chamber, and full assembly with harmonics overlay
@@ -123,7 +123,7 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14
 | 8. Frontend Filter & Search Controls | v1.2 | 2/2 | Complete | 2026-02-24 |
 | 9. Powder Alias UI + Import Cache Fix | v1.2 | 2/2 | Complete | 2026-02-24 |
 | 10. Tech Debt Cleanup | v1.2 | 2/2 | Complete | 2026-02-24 |
-| 11. Foundation and Data Expansion | 2/3 | In Progress|  | - |
+| 11. Foundation and Data Expansion | v1.3 | 3/3 | Complete | 2026-02-27 |
 | 12. 2D SVG Technical Drawings | v1.3 | 0/? | Not started | - |
 | 13. 3D Parametric Cartridge Viewer | v1.3 | 0/? | Not started | - |
 | 14. Browser Upload and Caliber-Scoped Search | v1.3 | 0/? | Not started | - |

@@ -9,7 +9,7 @@ Requirements for milestone v1.3: Data Expansion + Visual Viewers. Each maps to r
 
 ### Data Expansion
 
-- [ ] **DATA-01**: User can browse 500+ bullets covering Sierra, Hornady, Berger, Nosler, Lapua, Barnes, Speer
+- [x] **DATA-01**: User can browse 500+ bullets covering Sierra, Hornady, Berger, Nosler, Lapua, Barnes, Speer
 - [ ] **DATA-02**: User can upload bullet data via JSON file with preview and collision handling
 - [ ] **DATA-03**: User can upload cartridge data via JSON file with preview and collision handling
 - [ ] **DATA-04**: User can upload bullet/cartridge data via CSV file (strict format) with preview
@@ -74,7 +74,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 11 | Pending |
+| DATA-01 | Phase 11 | Complete |
 | DATA-02 | Phase 14 | Pending |
 | DATA-03 | Phase 14 | Pending |
 | DATA-04 | Phase 14 | Pending |
