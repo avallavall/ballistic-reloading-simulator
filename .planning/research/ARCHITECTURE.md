@@ -1,745 +1,911 @@
-# Architecture: Component Database Integration
+# Architecture Patterns: v1.3 Data Expansion + Visual Viewers
 
-**Domain:** Internal ballistics simulator -- component database expansion
-**Researched:** 2026-02-21
-**Confidence:** HIGH (based on direct codebase analysis + established PostgreSQL/SQLAlchemy patterns)
+**Domain:** Internal ballistics simulator -- data expansion, 2D/3D visualization, community contributions, file upload
+**Researched:** 2026-02-27
+**Confidence:** HIGH (core patterns verified against official docs and existing codebase)
 
-## System Overview: Current vs Target
+---
 
-### Current State
+## Executive Summary
 
-```
-Frontend (Next.js 14)                    Backend (FastAPI)                Database (PostgreSQL 16)
-+-----------------------+     REST      +---------------------------+    +---------------------+
-| /powders  (flat list) | ----------->  | GET /api/v1/powders       | -> | powders (22 rows)   |
-| /bullets  (flat list) | ----------->  | GET /api/v1/bullets       | -> | bullets (10 rows)   |
-| /cartridges (flat)    | ----------->  | GET /api/v1/cartridges    | -> | cartridges (5 rows) |
-+-----------------------+               | POST /powders/import-grt  |    +---------------------+
-                                        +---------------------------+
-```
+This document defines how six new feature areas integrate with the existing FastAPI + Next.js 14 architecture: (1) 3D parametric cartridge viewer, (2) 2D SVG technical drawings, (3) browser file upload/parsing, (4) community JSON contributions, (5) caliber-scoped parametric search, and (6) bullet database expansion. The architecture maximizes reuse of existing patterns (ChartTile, ComponentPicker, batch import endpoints, quality scoring) while introducing two new rendering subsystems (R3F Canvas and SVG drawing engine) that are purely frontend concerns with zero backend changes needed for rendering.
 
-**Problems at scale:**
-- `GET /powders` returns `list[PowderResponse]` with no pagination (loads ALL)
-- No search/filter query params on any list endpoint
-- Seed data is Python dicts in `initial_data.py` (10 powders, 10 bullets, 5 cartridges)
-- No data provenance tracking (who added it, when, from what source)
-- No quality/confidence metadata on records
-- Frontend `usePowders()` fetches entire list into memory on every mount
-- `unique=True` constraint on `name` is good for dedup but insufficient for fuzzy matching
+The critical architectural insight is that **all geometric data required for both 2D and 3D visualization already exists in the Cartridge and Bullet models**. The cartridge model has `case_length_mm`, `overall_length_mm`, `shoulder_diameter_mm`, `neck_diameter_mm`, `base_diameter_mm`, `rim_diameter_mm`, `bore_diameter_mm`, and `groove_diameter_mm`. The bullet model has `diameter_mm`, `length_mm`, and `weight_grains`. No new database columns are required for rendering -- only a frontend geometry engine that converts these dimensions to SVG paths and Three.js Vector2 profiles.
 
-### Target State
+---
+
+## Recommended Architecture
+
+### High-Level Component Map
 
 ```
-Frontend (Next.js 14)                       Backend (FastAPI)                      Database (PostgreSQL 16)
-+-----------------------------+   REST     +-------------------------------+      +--------------------------+
-| /powders                    | -------->  | GET /powders?q=&mfg=&page=   | ---> | powders (200+ rows)      |
-|   Search bar + filters      |            |   pg_trgm fuzzy + pagination |      |   + data_source          |
-|   Paginated table           |            |                              |      |   + quality_score        |
-|   Quality badge per row     |            | POST /powders/import/grt     |      |   + GIN trigram index    |
-| /bullets                    | -------->  | GET /bullets?q=&cal=&page=   | ---> | bullets (500+ rows)      |
-|   Search + caliber filter   |            |   pg_trgm fuzzy + pagination |      |   + data_source          |
-|   Manufacturer facets       |            |                              |      |   + bullet_type          |
-| /cartridges                 | -------->  | GET /cartridges?q=&page=     | ---> | cartridges (50+ rows)    |
-|   Search + filter           |            |   pg_trgm fuzzy + pagination |      |   + parent_cartridge     |
-+-----------------------------+            +-------------------------------+      +--------------------------+
-                                           | POST /admin/import/bullets   |
-                                           | POST /admin/import/cartridges|
-                                           +-------------------------------+
+EXISTING (unchanged)                    NEW (v1.3)
+================================       ================================
+Backend:                                Backend:
+  models/ (Bullet, Cartridge, ...)        (no new models)
+  api/bullets.py (CRUD + import)          api/upload.py (CSV/JSON upload endpoint)
+  api/cartridges.py (CRUD + import)       (extends existing import endpoints)
+  api/simulate.py (/parametric)           (add cartridge_id filter to parametric)
+  services/search.py                      (add cartridge_id->caliber_family join)
+  core/quality.py                         (unchanged)
+
+Frontend:                               Frontend:
+  components/charts/ChartTile.tsx         components/viewers/CartridgeSvg.tsx
+  components/pickers/ComponentPicker      components/viewers/ChamberSvg.tsx
+  components/forms/SimulationForm         components/viewers/AssemblySvg.tsx
+  components/ui/QualityBadge              components/viewers/CartridgeViewer3D.tsx
+  hooks/useBullets.ts                     components/upload/FileDropzone.tsx
+  hooks/useCartridges.ts                  components/upload/ImportPreview.tsx
+  lib/api.ts                              lib/cartridge-geometry.ts
+  lib/types.ts                            lib/bullet-geometry.ts
+                                          hooks/useFileUpload.ts
+                                          app/viewers/page.tsx
+                                          app/import/page.tsx
 ```
 
-## Component Boundaries: New vs Modified
+### Component Boundaries
 
-### Modified Components (Existing Files)
+| Component | Responsibility | Communicates With |
+|-----------|---------------|-------------------|
+| `lib/cartridge-geometry.ts` | Pure math: converts Cartridge dimensions to SVG path data and R3F Vector2 profile points | CartridgeSvg, ChamberSvg, AssemblySvg, CartridgeViewer3D |
+| `lib/bullet-geometry.ts` | Pure math: converts Bullet dimensions to SVG ogive path and R3F profile | CartridgeSvg (seated bullet outline), CartridgeViewer3D |
+| `CartridgeSvg.tsx` | Tab 1: SVG cross-section with dimension annotations | cartridge-geometry.ts, Cartridge data from API |
+| `ChamberSvg.tsx` | Tab 2: Cartridge inside chamber with headspace/freebore annotations | cartridge-geometry.ts, Rifle/Cartridge data from API |
+| `AssemblySvg.tsx` | Tab 3: Full assembly (cartridge + chamber + barrel) with harmonics overlay | cartridge-geometry.ts, SimulationResult (harmonics data) |
+| `CartridgeViewer3D.tsx` | Interactive 3D model using React Three Fiber LatheGeometry | cartridge-geometry.ts, @react-three/fiber, @react-three/drei |
+| `FileDropzone.tsx` | Drag-and-drop + file picker, client-side parsing, validation preview | useFileUpload hook, Papa Parse (CSV), JSON.parse |
+| `ImportPreview.tsx` | Table preview of parsed rows with validation errors highlighted | FileDropzone (parsed data), existing import API |
+| `useFileUpload.ts` | Hook: parse file, validate schema, call existing batch import endpoints | api.ts (importBullets, importCartridges) |
+| `api/upload.py` | Backend: accepts multipart CSV/JSON, parses server-side, delegates to existing import logic | bullets.py/import, cartridges.py/import |
 
-| Component | File | Changes Required |
-|-----------|------|-----------------|
-| Powder model | `backend/app/models/powder.py` | Add `data_source`, `quality_score`, `quality_detail`, `created_at`, `updated_at` columns |
-| Bullet model | `backend/app/models/bullet.py` | Add `bullet_type`, `data_source`, `quality_score`, `caliber_family`, `bearing_surface_mm`, timestamps |
-| Cartridge model | `backend/app/models/cartridge.py` | Add `data_source`, `parent_cartridge_id` (self-FK), extra CIP/SAAMI dims, timestamps |
-| Powder schema | `backend/app/schemas/powder.py` | Add quality/source fields to Response, pagination wrapper |
-| Bullet schema | `backend/app/schemas/bullet.py` | Add quality/source/type fields, pagination wrapper |
-| Cartridge schema | `backend/app/schemas/cartridge.py` | Add source/relationship fields, pagination wrapper |
-| Powders API | `backend/app/api/powders.py` | Add pagination, search, filter query params to `list_powders()` |
-| Bullets API | `backend/app/api/bullets.py` | Add pagination, search, filter query params to `list_bullets()` |
-| Cartridges API | `backend/app/api/cartridges.py` | Add pagination, search, filter query params |
-| Seed data | `backend/app/seed/initial_data.py` | Replace Python dicts with JSON fixture loader |
-| Frontend types | `frontend/src/lib/types.ts` | Add quality/source/pagination fields to interfaces |
-| Frontend API | `frontend/src/lib/api.ts` | Add search/filter/pagination params to get functions |
-| usePowders hook | `frontend/src/hooks/usePowders.ts` | Paginated queries with search params |
-| useBullets hook | `frontend/src/hooks/useBullets.ts` | Paginated queries with search params |
-| Powders page | `frontend/src/app/powders/page.tsx` | Search bar, filter dropdowns, paginated table, quality badges |
-| Bullets page | `frontend/src/app/bullets/page.tsx` | Search bar, caliber filter, paginated table |
-| Cartridges page | `frontend/src/app/cartridges/page.tsx` | Search bar, filter, paginated table |
+### Data Flow
 
-### New Components
+#### 2D SVG Drawing Data Flow
 
-| Component | File | Purpose |
-|-----------|------|---------|
-| Bullet import endpoint | `backend/app/api/import_bullets.py` | Batch JSON import with validation and dedup |
-| Cartridge import endpoint | `backend/app/api/import_cartridges.py` | Batch JSON import for CIP/SAAMI specs |
-| Import service | `backend/app/services/import_service.py` | Shared batch processing: validate, dedup, score, insert |
-| Quality scorer | `backend/app/services/quality_scorer.py` | Compute quality_score from data completeness + source reliability |
-| Search helpers | `backend/app/services/search.py` | Reusable pg_trgm search query builder |
-| Pagination helper | `backend/app/services/pagination.py` | Offset/limit pagination with total count |
-| Bullet JSON fixtures | `backend/app/seed/fixtures/bullets.json` | 500+ bullets from manufacturer specs |
-| Cartridge JSON fixtures | `backend/app/seed/fixtures/cartridges.json` | 50+ cartridges with CIP/SAAMI specs |
-| Powder JSON fixtures | `backend/app/seed/fixtures/powders.json` | 200+ powders (converted from GRT community DB) |
-| Alembic migration 005 | `backend/app/db/migrations/versions/005_component_db_expansion.py` | Schema changes + pg_trgm extension + GIN indexes |
-| SearchInput component | `frontend/src/components/ui/SearchInput.tsx` | Debounced search input with clear button |
-| QualityBadge component | `frontend/src/components/ui/QualityBadge.tsx` | Red/yellow/green confidence badge |
-| Pagination component | `frontend/src/components/ui/Pagination.tsx` | Page navigation controls |
-| FilterDropdown component | `frontend/src/components/ui/FilterDropdown.tsx` | Multi-select filter for manufacturer/caliber |
-
-## Architectural Patterns
-
-### Pattern 1: Server-Side Paginated Search
-
-**What:** All list endpoints gain `?q=`, `?page=`, `?size=`, and entity-specific filter params. Backend does the filtering/pagination, frontend only holds one page of data.
-
-**Why this over client-side filtering:** At 500+ bullets the current approach of fetching all records and rendering them in a flat `<Table>` will cause noticeable lag. At 200+ powders it is already borderline. Server-side filtering is the correct architecture for datasets that grow continuously.
-
-**Trade-offs:** More complex API (query params, total count), but eliminates frontend memory/rendering bottlenecks. Existing small datasets (rifles, loads) keep their simple list endpoints unchanged.
-
-**Example backend pattern:**
-
-```python
-# backend/app/services/pagination.py
-from dataclasses import dataclass
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-@dataclass
-class PaginatedResult:
-    items: list
-    total: int
-    page: int
-    size: int
-
-async def paginate(
-    db: AsyncSession,
-    query,
-    page: int = 1,
-    size: int = 50,
-) -> PaginatedResult:
-    # Count total
-    count_q = select(func.count()).select_from(query.subquery())
-    total = (await db.execute(count_q)).scalar() or 0
-
-    # Fetch page
-    offset = (page - 1) * size
-    result = await db.execute(query.offset(offset).limit(size))
-    items = result.scalars().all()
-
-    return PaginatedResult(items=items, total=total, page=page, size=size)
+```
+[User selects cartridge in CRUD page or simulation result]
+  |
+  v
+[Frontend fetches CartridgeResponse from GET /api/v1/cartridges/{id}]
+  |
+  v
+[cartridge-geometry.ts: generateProfile(cartridge)]
+  |  Input: { case_length_mm, base_diameter_mm, shoulder_diameter_mm,
+  |           neck_diameter_mm, rim_diameter_mm, overall_length_mm,
+  |           bore_diameter_mm }
+  |  Output: { outerPath: SVGPathData, innerPath: SVGPathData,
+  |            dimensions: DimensionLine[], viewBox: string }
+  |
+  v
+[CartridgeSvg renders <svg> with <path> + dimension <line> + <text>]
 ```
 
-**Example endpoint:**
+**Key insight:** The geometry engine is a pure function with no side effects. Given cartridge dimensions, it produces deterministic SVG path data. This means the same engine serves both the standalone viewer page and the simulation results page (Assembly tab).
 
-```python
-# Modified GET /powders
-@router.get("", response_model=PaginatedPowderResponse)
-async def list_powders(
-    q: str | None = None,
-    manufacturer: str | None = None,
-    has_3curve: bool | None = None,
-    min_quality: int | None = None,
-    sort_by: str = "name",
-    page: int = Query(1, ge=1),
-    size: int = Query(50, ge=1, le=200),
-    db: AsyncSession = Depends(get_db),
-):
-    query = select(Powder)
-    if q:
-        query = query.where(Powder.name.op("%")(q))  # pg_trgm similarity
-    if manufacturer:
-        query = query.where(Powder.manufacturer.ilike(f"%{manufacturer}%"))
-    if has_3curve is True:
-        query = query.where(Powder.ba.isnot(None))
-    if min_quality is not None:
-        query = query.where(Powder.quality_score >= min_quality)
-    query = query.order_by(getattr(Powder, sort_by, Powder.name))
-    return await paginate(db, query, page, size)
+#### 3D Viewer Data Flow
+
+```
+[Same CartridgeResponse data as SVG]
+  |
+  v
+[cartridge-geometry.ts: generateLatheProfile(cartridge)]
+  |  Output: THREE.Vector2[] (profile points for revolution)
+  |
+  v
+[CartridgeViewer3D: <Canvas><latheGeometry args={[points, 64]} /></Canvas>]
+  |
+  v
+[OrbitControls for rotation/zoom, Drei helpers for lighting]
 ```
 
-**Example frontend hook:**
+**Why LatheGeometry:** A cartridge is a body of revolution -- its cross-section rotated 360 degrees around the central axis produces the 3D shape. LatheGeometry takes an array of Vector2 points defining the half-profile and revolves them. This is computationally trivial (no mesh loading, no external assets, sub-millisecond generation) and produces perfectly parametric geometry that updates instantly when dimensions change.
+
+#### File Upload Data Flow
+
+```
+[User drops CSV/JSON file on FileDropzone]
+  |
+  v
+[Client-side: Papa Parse (CSV) or JSON.parse (JSON)]
+  |  Validates schema: required columns present, types correct
+  |  Shows preview table with row-level validation highlights
+  |
+  v
+[User clicks "Importar" -> POST /api/v1/bullets/import]
+  |  Body: BulletImportRequest { bullets: BulletCreate[] }
+  |  Query: ?mode=skip|overwrite|merge
+  |
+  v
+[Existing import_bullets() handler processes batch]
+  |  Returns: ImportResult { created, updated, skipped, errors }
+  |
+  v
+[ImportPreview shows results, TanStack Query invalidates cache]
+```
+
+**Why client-side parsing:** The existing import endpoints (`POST /bullets/import`, `POST /cartridges/import`) already accept JSON arrays. The browser can parse CSV to JSON client-side using Papa Parse, validate field names/types, and show the user a preview before sending. This means NO new backend endpoint is needed -- only a new frontend component. For very large files (10k+ rows), a server-side CSV parser endpoint could be added later, but the initial scope (500 bullets) is trivially handled client-side.
+
+#### Community JSON Contribution Format
+
+```
+[Contributor creates JSON file following schema]
+  |  Example: sierra_matchking_308.json
+  |  {
+  |    "format_version": "1.0",
+  |    "contributor": "username",
+  |    "source": "Sierra catalog 2025",
+  |    "bullets": [
+  |      {
+  |        "name": "Sierra MatchKing 168gr HPBT",
+  |        "manufacturer": "Sierra",
+  |        "weight_grains": 168,
+  |        "diameter_mm": 7.823,
+  |        "length_mm": 31.39,
+  |        "bc_g1": 0.462,
+  |        "bc_g7": 0.223,
+  |        "sectional_density": 0.253,
+  |        "material": "copper_jacketed_lead",
+  |        "bullet_type": "match",
+  |        "base_type": "hollow_point_boat_tail",
+  |        "model_number": "2200",
+  |        "data_source": "manufacturer"
+  |      }
+  |    ]
+  |  }
+  |
+  v
+[User uploads via Import page OR submits PR to data/ directory]
+  |
+  v
+[Validated against BulletCreate Pydantic schema on import]
+```
+
+**Why JSON over YAML/TOML:** The existing import pipeline already validates `BulletCreate` Pydantic schemas from JSON. Adding a wrapper format with metadata (format_version, contributor, source) is trivial. The browser can validate the schema client-side before upload. No new serialization library needed.
+
+#### Caliber-Scoped Parametric Search
+
+```
+[Current: POST /simulate/parametric iterates ALL 208 powders]
+  |
+  v
+[v1.3: Add cartridge_id to ParametricSearchRequest]
+  |  cartridge_id is already a required field
+  |  BUT currently iterates ALL powders regardless of cartridge
+  |
+  v
+[New: Filter powders by caliber compatibility BEFORE simulation loop]
+  |  SELECT * FROM powders WHERE caliber_families @> '{.308}'
+  |  OR: use burn_rate_relative ranges appropriate for caliber bore volume
+  |
+  v
+[Result: 30-50 powders instead of 208 -> 4-7x speedup]
+```
+
+**Architectural choice:** The filter should be a query parameter (`caliber_filter=true`) on the existing endpoint, not a new endpoint. This preserves backward compatibility -- omitting the parameter gives the existing behavior. The filtering logic belongs in a new service function `filter_powders_for_caliber(cartridge, powders) -> filtered_powders` that uses bore volume and charge density heuristics to exclude obviously incompatible powders (e.g., pistol powders for .300 Win Mag).
+
+---
+
+## New Components: Detailed Specifications
+
+### 1. Cartridge Geometry Engine (`lib/cartridge-geometry.ts`)
+
+This is the architectural cornerstone -- a pure TypeScript module with zero dependencies that converts database dimensions to renderable geometry.
 
 ```typescript
-// Modified usePowders with search params
-export function usePowders(params: PowderSearchParams = {}) {
-  return useQuery({
-    queryKey: ['powders', params],
-    queryFn: () => getPowders(params),
-    placeholderData: keepPreviousData,  // Smooth pagination transitions
+// lib/cartridge-geometry.ts
+
+interface CartridgeDimensions {
+  case_length_mm: number;
+  overall_length_mm: number;
+  base_diameter_mm: number | null;     // fallback: groove_diameter_mm + 2
+  shoulder_diameter_mm: number | null;  // fallback: linear interpolation
+  neck_diameter_mm: number | null;      // fallback: bore_diameter_mm + 0.5
+  rim_diameter_mm: number | null;       // fallback: base_diameter_mm
+  bore_diameter_mm: number;
+  groove_diameter_mm: number;
+}
+
+interface BulletDimensions {
+  diameter_mm: number;
+  length_mm: number | null;  // fallback: estimate from weight + density
+  weight_grains: number;
+}
+
+interface SVGProfileResult {
+  outerPath: string;       // SVG path "d" attribute for case exterior
+  innerPath: string;       // SVG path "d" attribute for case interior (powder chamber)
+  bulletPath: string;      // SVG path "d" attribute for seated bullet ogive
+  dimensions: DimensionLine[];  // annotation lines with values
+  viewBox: string;         // computed viewBox for proper scaling
+  centerX: number;         // axis of symmetry X position
+}
+
+interface DimensionLine {
+  x1: number; y1: number;
+  x2: number; y2: number;
+  label: string;           // e.g., "51.18 mm"
+  side: 'top' | 'bottom' | 'left' | 'right';
+}
+
+// For 3D: generates Vector2 profile for LatheGeometry
+interface LatheProfile {
+  points: [number, number][];  // [radius, height] pairs for revolution
+  segments: number;            // recommended segment count (64 default)
+}
+
+export function generateSvgProfile(
+  cartridge: CartridgeDimensions,
+  bullet?: BulletDimensions,
+  options?: { showBullet?: boolean; scale?: number }
+): SVGProfileResult;
+
+export function generateLatheProfile(
+  cartridge: CartridgeDimensions,
+  bullet?: BulletDimensions
+): LatheProfile;
+
+// Fallback estimation for missing dimensions
+export function estimateMissingDimensions(
+  partial: Partial<CartridgeDimensions>
+): CartridgeDimensions;
+```
+
+**Why fallbacks matter:** Of the 53 cartridges in the database, not all have `shoulder_diameter_mm`, `neck_diameter_mm`, `base_diameter_mm`, and `rim_diameter_mm` populated. The geometry engine must gracefully degrade: if shoulder diameter is missing, assume a straight-walled case; if neck diameter is missing, estimate from bore diameter + typical brass thickness (0.3-0.4mm). This means every cartridge can render *something*, but cartridges with complete data render accurately. The quality badge system already signals data completeness.
+
+### 2. SVG Technical Drawings (3 Tab Components)
+
+#### Tab 1: CartridgeSvg -- Cross-Section
+
+Renders the cartridge case in half-section (cut along axis of symmetry) with dimension annotations.
+
+```typescript
+// components/viewers/CartridgeSvg.tsx
+interface CartridgeSvgProps {
+  cartridge: Cartridge;
+  bullet?: Bullet;
+  showBullet?: boolean;     // toggle seated bullet
+  showDimensions?: boolean; // toggle dimension lines
+  className?: string;
+  expanded?: boolean;       // full-page modal mode
+}
+```
+
+Visual elements:
+- Case exterior outline (solid stroke, fill with brass-colored gradient)
+- Case interior (dashed line showing powder chamber)
+- Seated bullet (if provided, with ogive and base)
+- Dimension lines: case length, overall length, base diameter, shoulder diameter, neck diameter, rim diameter
+- Color scheme: matches dark theme (slate background, white/blue dimension lines, amber fill for brass)
+
+**SVG generation approach:** Inline SVG with React (not an external library). The cartridge profile is a simple polygon: rim -> base -> body -> shoulder taper -> neck -> mouth -> (bullet ogive) -> return. Each segment is a line or quadratic bezier. SVG is the right choice over Canvas because:
+1. DOM elements are individually inspectable and styleable with Tailwind
+2. Dimension annotations are native `<text>` elements (crisp at any zoom)
+3. Dark mode theming via CSS variables
+4. Export to PNG via the existing html2canvas pipeline in ChartTile
+
+#### Tab 2: ChamberSvg -- Cartridge in Chamber
+
+Adds the chamber (rifle) context around the cartridge:
+
+```typescript
+interface ChamberSvgProps {
+  cartridge: Cartridge;
+  rifle: Rifle;
+  bullet?: Bullet;
+  showFreebore?: boolean;
+  showHeadspace?: boolean;
+}
+```
+
+Visual elements:
+- Steel chamber walls (darker fill)
+- Cartridge seated inside chamber
+- Headspace gap annotation
+- Freebore region annotation (gap between bullet and rifling)
+- Leade angle indication
+- Barrel bore extending right
+
+#### Tab 3: AssemblySvg -- Full Assembly with Harmonics
+
+Extends Tab 2 with simulation data overlay:
+
+```typescript
+interface AssemblySvgProps {
+  cartridge: Cartridge;
+  rifle: Rifle;
+  bullet?: Bullet;
+  simulationResult?: SimulationResult;  // for harmonics overlay
+  showHarmonics?: boolean;
+}
+```
+
+Visual elements:
+- Full barrel length (scaled appropriately)
+- Cartridge in chamber (from Tab 2)
+- If simulation result available:
+  - Barrel deflection curve (exaggerated sine wave along barrel)
+  - OBT node markers
+  - Muzzle position indicator
+  - Color-coded by OBT match status
+
+### 3. 3D Cartridge Viewer (`CartridgeViewer3D.tsx`)
+
+```typescript
+interface CartridgeViewer3DProps {
+  cartridge: Cartridge;
+  bullet?: Bullet;
+  showBullet?: boolean;
+  showCutaway?: boolean;   // half-section view
+  showWireframe?: boolean;
+}
+```
+
+**Implementation approach:**
+
+```tsx
+'use client';
+
+import dynamic from 'next/dynamic';
+
+// CRITICAL: R3F Canvas must not render on server
+const CartridgeViewer3DInner = dynamic(
+  () => import('./CartridgeViewer3DInner'),
+  { ssr: false }
+);
+
+export default function CartridgeViewer3D(props: CartridgeViewer3DProps) {
+  return <CartridgeViewer3DInner {...props} />;
+}
+```
+
+Inner component:
+
+```tsx
+// components/viewers/CartridgeViewer3DInner.tsx
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import { useMemo } from 'react';
+import * as THREE from 'three';
+import { generateLatheProfile } from '@/lib/cartridge-geometry';
+
+function CartridgeMesh({ cartridge, bullet, showCutaway }: {...}) {
+  const profile = useMemo(
+    () => generateLatheProfile(cartridge, bullet),
+    [cartridge, bullet]
+  );
+
+  const points = useMemo(
+    () => profile.points.map(([r, h]) => new THREE.Vector2(r, h)),
+    [profile]
+  );
+
+  // Full revolution or half for cutaway
+  const phiLength = showCutaway ? Math.PI : Math.PI * 2;
+
+  return (
+    <mesh>
+      <latheGeometry args={[points, 64, 0, phiLength]} />
+      <meshStandardMaterial
+        color="#c4a35a"    // brass
+        metalness={0.6}
+        roughness={0.3}
+        side={showCutaway ? THREE.DoubleSide : THREE.FrontSide}
+      />
+    </mesh>
+  );
+}
+
+export default function CartridgeViewer3DInner({ cartridge, bullet, showCutaway }) {
+  return (
+    <Canvas
+      camera={{ position: [0, 0, 120], fov: 45 }}
+      style={{ height: 400, background: '#0f172a' }}
+    >
+      <ambientLight intensity={0.4} />
+      <directionalLight position={[5, 5, 5]} intensity={0.8} />
+      <CartridgeMesh cartridge={cartridge} bullet={bullet} showCutaway={showCutaway} />
+      <OrbitControls enablePan enableZoom enableRotate />
+    </Canvas>
+  );
+}
+```
+
+**Why LatheGeometry over ExtrudeGeometry or loaded models:**
+1. Cartridges are bodies of revolution -- LatheGeometry is the mathematically correct primitive
+2. Zero external assets (no GLTF/OBJ files to load or host)
+3. Parametric: changing any dimension re-renders instantly (useMemo recalculates profile)
+4. Sub-1ms generation time for 64-segment revolution
+5. Tiny bundle footprint (no model loading code needed)
+
+**SSR handling:** React Three Fiber Canvas MUST use `dynamic import` with `ssr: false` in Next.js. The Canvas accesses `window` and `document` directly. The existing codebase uses `'use client'` directives but does not have any components that require `ssr: false`, so this is a new pattern. Wrap the import in a single `CartridgeViewer3D.tsx` facade component.
+
+**next.config.js change required:**
+
+```js
+// next.config.js
+const nextConfig = {
+  transpilePackages: ['three'],
+  // ... existing config
+};
+```
+
+### 4. File Upload Components
+
+#### FileDropzone
+
+```typescript
+interface FileDropzoneProps {
+  accept: '.csv' | '.json' | '.csv,.json';
+  onParsed: (data: ParsedImportData) => void;
+  entityType: 'bullet' | 'cartridge';
+}
+
+interface ParsedImportData {
+  rows: Record<string, unknown>[];
+  headers: string[];
+  errors: ValidationError[];
+  sourceFormat: 'csv' | 'json';
+  fileName: string;
+}
+```
+
+**Implementation pattern:**
+- Native HTML5 drag-and-drop (no library needed for simple drop zone)
+- `<input type="file" accept=".csv,.json" />` as hidden element
+- `FileReader.readAsText()` for client-side reading
+- Papa Parse for CSV: `Papa.parse(text, { header: true, dynamicTyping: true })`
+- JSON: `JSON.parse(text)` with try/catch
+- Schema validation: map column names to BulletCreate/CartridgeCreate fields
+- Show validation errors per-row before upload
+
+**Why not react-dropzone:** The drop zone here is simple (single file, known types). Adding a library for a `<div onDragOver onDrop>` wrapper is unnecessary. HTML5 drag-and-drop events are sufficient.
+
+**Why Papa Parse for CSV:** It is the established standard (11k+ GitHub stars), handles edge cases (quoted fields, escaped commas, BOM markers), and has zero dependencies. The alternative (manual CSV parsing) is error-prone.
+
+#### ImportPreview
+
+```typescript
+interface ImportPreviewProps {
+  data: ParsedImportData;
+  onImport: (mode: 'skip' | 'overwrite' | 'merge') => void;
+  isImporting: boolean;
+  result?: ImportResult;
+}
+```
+
+Renders a preview table showing:
+- Parsed rows with validated fields
+- Red highlighting on rows with validation errors
+- Column mapping indicators (detected vs expected)
+- Import mode selector (Skip / Overwrite / Merge)
+- Summary: "X filas validas, Y con errores"
+- Import button and result feedback
+
+### 5. Community JSON Contribution Format
+
+#### Schema Definition
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["format_version", "type", "items"],
+  "properties": {
+    "format_version": { "const": "1.0" },
+    "type": { "enum": ["bullets", "cartridges"] },
+    "contributor": { "type": "string" },
+    "source": { "type": "string" },
+    "source_url": { "type": "string", "format": "uri" },
+    "items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/bullet_or_cartridge" }
+    }
+  }
+}
+```
+
+**Integration with existing pipeline:**
+The community JSON format wraps the existing `BulletCreate` / `CartridgeCreate` schemas. The `items` array contains objects that match the existing Pydantic schemas exactly. This means:
+1. Frontend: strips the wrapper metadata, sends `items` to existing `POST /bullets/import`
+2. Backend: zero changes needed for the import logic
+3. Validation: existing Pydantic schema validation catches bad data
+4. Quality scoring: existing `compute_bullet_quality_score()` auto-computes quality
+
+**Contribution workflow (no auth needed):**
+1. User creates JSON file following the schema
+2. Uploads via Import page in the browser
+3. Client-side validates against JSON Schema before send
+4. `POST /bullets/import?mode=skip` processes the batch
+5. Result shows created/skipped/errors
+
+Alternative for GitHub-native contributions:
+1. Place JSON files in `backend/seed/community/bullets/` directory
+2. Backend seed script auto-imports on startup
+3. Contributors can submit PRs adding their JSON files
+
+### 6. Caliber-Scoped Parametric Search
+
+**Current bottleneck:** The parametric search iterates all 208 powders, running ~10 simulations per powder (2,080 total simulations). With 500+ bullets and caliber-specific search, this is fine but could be faster.
+
+**Scoping strategy:**
+
+```python
+# In simulate.py run_parametric_search():
+
+# NEW: optional caliber filter
+if req.caliber_filter:
+    # Heuristic: filter by burn rate appropriateness for bore volume
+    case_volume_cm3 = cartridge_row.case_capacity_grains_h2o * _GRAINS_H2O_TO_CM3
+    bore_area_m2 = (cartridge_row.bore_diameter_mm * 0.001) ** 2 * 3.14159 / 4
+
+    # Small bore (< 6.5mm) -> exclude slowest powders
+    # Large bore (> 8mm) -> exclude fastest powders
+    # Filter by relative burn rate range
+    if cartridge_row.bore_diameter_mm < 6.5:
+        all_powders = [p for p in all_powders if p.burn_rate_relative > 30]
+    elif cartridge_row.bore_diameter_mm > 8.0:
+        all_powders = [p for p in all_powders if p.burn_rate_relative < 180]
+```
+
+**Schema change:**
+
+```python
+class ParametricSearchRequest(BaseModel):
+    # ... existing fields ...
+    caliber_filter: bool = Field(
+        default=False,
+        description="Filter powders by caliber appropriateness"
+    )
+```
+
+This is a minor, backward-compatible extension. Frontend sends `caliber_filter: true` from the search page.
+
+---
+
+## Integration Points with Existing Components
+
+### Existing Components Reused (No Modifications)
+
+| Component | How Reused in v1.3 |
+|-----------|-------------------|
+| `ChartTile.tsx` | Wraps SVG viewers -- provides PNG export, expand-to-modal, dark theme border |
+| `ChartModal.tsx` | Full-screen modal for expanded SVG/3D views |
+| `ComponentPicker.tsx` | Used in viewer page to select cartridge/bullet/rifle for visualization |
+| `QualityBadge.tsx` | Shows data quality on imported records in ImportPreview |
+| `api.ts` request() | HTTP client for upload API calls |
+| `quality.py` | Auto-scores uploaded bullet/cartridge records |
+| `search.py` | Fuzzy search on expanded bullet database (no changes needed) |
+| `pagination.py` | Server-side pagination for 500+ bullets (already works) |
+
+### Existing Components Modified
+
+| Component | Modification | Reason |
+|-----------|-------------|--------|
+| `Sidebar.tsx` | Add 2 nav items: "Visor Tecnico" (viewers page), "Importar Datos" (upload page) | Navigation to new features |
+| `types.ts` | Add `CommunityContribution` interface, extend `ParametricSearchInput` with `caliber_filter` | TypeScript types for new features |
+| `api.ts` | Add `uploadBulletFile()`, `uploadCartridgeFile()` functions that wrap existing import endpoints | Upload convenience functions |
+| `package.json` | Add `three`, `@react-three/fiber`, `@react-three/drei`, `papaparse`, `@types/three`, `@types/papaparse` | New dependencies |
+| `next.config.js` | Add `transpilePackages: ['three']` | Three.js SSR transpilation |
+| `ParametricSearchRequest` (backend schema) | Add `caliber_filter: bool = False` | Caliber scoping |
+
+### New Pages
+
+| Page Route | Purpose | Key Components |
+|------------|---------|----------------|
+| `/viewers` | Technical drawing viewer with tabs + 3D model | CartridgeSvg, ChamberSvg, AssemblySvg, CartridgeViewer3D, ComponentPicker |
+| `/import` | File upload page for CSV/JSON bullet/cartridge data | FileDropzone, ImportPreview |
+
+### New Backend Files
+
+| File | Purpose |
+|------|---------|
+| `backend/app/api/upload.py` (optional) | Server-side CSV parsing endpoint for large files. Not needed for MVP -- client-side parsing handles 500 rows trivially |
+| `backend/seed/community/` | Directory for community-contributed JSON data files |
+| `backend/seed/community/schema.json` | JSON Schema for community contribution format validation |
+| `backend/seed/bullets/expanded/` | 500+ bullet seed data organized by manufacturer |
+
+### New Frontend Files
+
+| File | Purpose |
+|------|---------|
+| `frontend/src/lib/cartridge-geometry.ts` | Pure geometry engine: cartridge dimensions -> SVG paths + R3F profiles |
+| `frontend/src/lib/bullet-geometry.ts` | Pure geometry engine: bullet dimensions -> ogive SVG path + R3F profile |
+| `frontend/src/components/viewers/CartridgeSvg.tsx` | Tab 1: SVG cross-section |
+| `frontend/src/components/viewers/ChamberSvg.tsx` | Tab 2: Cartridge in chamber |
+| `frontend/src/components/viewers/AssemblySvg.tsx` | Tab 3: Full assembly + harmonics |
+| `frontend/src/components/viewers/CartridgeViewer3D.tsx` | Facade with `ssr: false` dynamic import |
+| `frontend/src/components/viewers/CartridgeViewer3DInner.tsx` | Actual R3F Canvas + LatheGeometry |
+| `frontend/src/components/viewers/ViewerTabs.tsx` | Tab navigation: Seccion / Recamara / Ensamblaje / 3D |
+| `frontend/src/components/upload/FileDropzone.tsx` | Drag-and-drop file upload zone |
+| `frontend/src/components/upload/ImportPreview.tsx` | Preview table with validation |
+| `frontend/src/components/upload/ColumnMapper.tsx` | CSV column to schema field mapping UI |
+| `frontend/src/hooks/useFileUpload.ts` | Upload hook with parsing and API mutation |
+| `frontend/src/app/viewers/page.tsx` | Viewer page with tab layout |
+| `frontend/src/app/import/page.tsx` | Import page with dropzone + preview |
+
+---
+
+## Patterns to Follow
+
+### Pattern 1: Pure Geometry Engine (Separation of Concerns)
+
+**What:** All coordinate math lives in pure TypeScript functions in `lib/`. Components only render; they never compute geometry.
+
+**When:** Always, for all SVG and 3D geometry generation.
+
+**Why:** Testable without React, reusable across SVG and 3D, no coupling to rendering framework.
+
+```typescript
+// lib/cartridge-geometry.ts
+export function generateSvgProfile(dims: CartridgeDimensions): SVGProfileResult {
+  const scale = 5; // 1mm = 5px
+  const centerY = 0;
+
+  // Base to shoulder taper
+  const baseR = (dims.base_diameter_mm ?? dims.groove_diameter_mm + 2) / 2 * scale;
+  const shoulderR = (dims.shoulder_diameter_mm ?? baseR * 0.9) / 2 * scale;
+  const neckR = (dims.neck_diameter_mm ?? dims.bore_diameter_mm + 0.5) / 2 * scale;
+
+  // Build SVG path
+  const pathParts: string[] = [];
+  // ... coordinate calculations ...
+
+  return {
+    outerPath: pathParts.join(' '),
+    innerPath: '...',
+    bulletPath: '...',
+    dimensions: [],
+    viewBox: `0 0 ${dims.overall_length_mm * scale + 80} ${baseR * 2 + 60}`,
+    centerX: baseR + 30,
+  };
+}
+```
+
+### Pattern 2: Dynamic Import for Heavy Client Components
+
+**What:** Use `next/dynamic` with `ssr: false` for any component that imports Three.js or accesses browser-only APIs.
+
+**When:** CartridgeViewer3D, any future WebGL components.
+
+```typescript
+// components/viewers/CartridgeViewer3D.tsx
+import dynamic from 'next/dynamic';
+import Spinner from '@/components/ui/Spinner';
+
+const CartridgeViewer3DInner = dynamic(
+  () => import('./CartridgeViewer3DInner'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[400px] items-center justify-center bg-slate-900 rounded-lg">
+        <Spinner size="lg" />
+      </div>
+    ),
+  }
+);
+```
+
+### Pattern 3: Reuse Existing Import Pipeline
+
+**What:** Browser upload parses files client-side, then sends the same JSON shape that the existing batch import endpoints accept.
+
+**When:** All file upload features (bullets, cartridges, community JSON).
+
+**Why:** Zero new backend validation code. All Pydantic validators, quality scoring, and collision handling already work.
+
+```typescript
+// hooks/useFileUpload.ts
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import Papa from 'papaparse';
+
+export function useFileUpload(entityType: 'bullet' | 'cartridge') {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      file,
+      mode,
+    }: {
+      file: File;
+      mode: 'skip' | 'overwrite' | 'merge';
+    }) => {
+      const text = await file.text();
+      let items: Record<string, unknown>[];
+
+      if (file.name.endsWith('.csv')) {
+        const result = Papa.parse(text, { header: true, dynamicTyping: true });
+        items = result.data;
+      } else {
+        const parsed = JSON.parse(text);
+        // Support both community format (items) and raw arrays
+        items = parsed.items ?? parsed.bullets ?? parsed.cartridges ?? parsed;
+      }
+
+      // Send to existing import endpoint
+      const key = entityType === 'bullet' ? 'bullets' : 'cartridges';
+      const endpoint = `/${key}/import`;
+      const response = await fetch(`${API_PREFIX}${endpoint}?mode=${mode}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [key]: items }),
+      });
+
+      return response.json();
+    },
+    onSuccess: () => {
+      const key = entityType === 'bullet' ? 'bullets' : 'cartridges';
+      queryClient.invalidateQueries({ queryKey: [key] });
+    },
   });
 }
 ```
 
-### Pattern 2: pg_trgm Fuzzy Search (Not Full-Text Search)
+### Pattern 4: Graceful Degradation for Incomplete Data
 
-**What:** Use PostgreSQL's `pg_trgm` extension with GIN indexes for fuzzy name/manufacturer matching. NOT the full-text search (`tsvector/tsquery`) system.
+**What:** Render what you can with available dimensions; show "Datos incompletos" badge for estimated geometry.
 
-**Why pg_trgm over full-text search:** Component names are short strings ("Hodgdon Varget", "Sierra 168gr HPBT MK"), not documents. pg_trgm excels at partial string matching, typo tolerance, and "contains" queries on short text. Full-text search is designed for stemming/ranking natural language documents -- overkill and wrong tool here.
-
-**Why pg_trgm over application-level:** Pushing search to PostgreSQL uses GIN indexes for sub-millisecond response on 500+ rows. Application-level filtering loads all data into Python memory on every request.
-
-**Trade-offs:** Requires `CREATE EXTENSION pg_trgm` in migration. GIN indexes add ~10% storage overhead. Worth it for the search quality.
-
-**Implementation:**
-
-```python
-# In Alembic migration 005
-def upgrade() -> None:
-    # Enable trigram extension
-    op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
-
-    # GIN indexes for fuzzy search
-    op.execute(
-        "CREATE INDEX ix_powders_name_trgm ON powders USING gin (name gin_trgm_ops)"
-    )
-    op.execute(
-        "CREATE INDEX ix_bullets_name_trgm ON bullets USING gin (name gin_trgm_ops)"
-    )
-    op.execute(
-        "CREATE INDEX ix_cartridges_name_trgm ON cartridges USING gin (name gin_trgm_ops)"
-    )
-```
-
-**Query pattern:**
-
-```python
-# backend/app/services/search.py
-from sqlalchemy import or_, func
-
-def apply_fuzzy_search(query, model, search_term: str):
-    """Apply pg_trgm similarity search on name and manufacturer."""
-    return query.where(
-        or_(
-            model.name.op("%")(search_term),
-            model.manufacturer.op("%")(search_term),
-        )
-    ).order_by(
-        func.similarity(model.name, search_term).desc()
-    )
-```
-
-### Pattern 3: Quality Scoring Model
-
-**What:** Each component record carries a `quality_score` (0-100 integer) and `data_source` enum. The score is computed deterministically from data completeness and source reliability.
-
-**Why a computed score, not manual curation:** With 200+ powders and 500+ bullets, manual quality assignment does not scale. A deterministic formula based on field completeness + source tier is reproducible and auditable.
-
-**Quality tiers (for UI badge display):**
-
-| Score Range | Badge | Color | Meaning |
-|-------------|-------|-------|---------|
-| 80-100 | Alta | GREEN | High confidence: manufacturer data + 3-curve params + community validated |
-| 50-79 | Media | YELLOW | Moderate: has core params but missing some optional data or single source |
-| 0-49 | Baja | RED | Low: estimated/derived params, unverified, significant gaps |
-
-**Scoring formula for powders:**
-
-```python
-# backend/app/services/quality_scorer.py
-def score_powder(powder_data: dict) -> int:
-    score = 0
-
-    # Source tier (40 points max)
-    source = powder_data.get("data_source", "manual")
-    source_scores = {
-        "grt_community": 30,   # GRT community DB (crowd-validated)
-        "manufacturer": 40,     # Manufacturer tech sheet
-        "manual": 10,           # User-entered
-        "estimated": 5,         # Derived/estimated values
-    }
-    score += source_scores.get(source, 5)
-
-    # 3-curve completeness (30 points)
-    three_curve_fields = ["ba", "bp", "br", "brp", "z1", "z2"]
-    present = sum(1 for f in three_curve_fields if powder_data.get(f) is not None)
-    score += int((present / len(three_curve_fields)) * 30)
-
-    # Core thermodynamic completeness (20 points)
-    core_fields = ["force_constant_j_kg", "covolume_m3_kg", "flame_temp_k",
-                   "gamma", "density_g_cm3"]
-    core_present = sum(1 for f in core_fields
-                       if powder_data.get(f) and powder_data[f] > 0)
-    score += int((core_present / len(core_fields)) * 20)
-
-    # Has GRT raw params stored (10 points)
-    if powder_data.get("grt_params"):
-        score += 10
-
-    return min(100, score)
-```
-
-**Scoring formula for bullets:**
-
-```python
-def score_bullet(bullet_data: dict) -> int:
-    score = 0
-
-    # Source tier (40 points)
-    source = bullet_data.get("data_source", "manual")
-    source_scores = {
-        "manufacturer": 40, "community": 25, "manual": 10, "estimated": 5
-    }
-    score += source_scores.get(source, 5)
-
-    # Has both G1 and G7 BC (20 points)
-    if bullet_data.get("bc_g1") and bullet_data.get("bc_g7"):
-        score += 20
-    elif bullet_data.get("bc_g1") or bullet_data.get("bc_g7"):
-        score += 10
-
-    # Physical dimensions complete (20 points)
-    dim_fields = ["weight_grains", "diameter_mm", "length_mm", "sectional_density"]
-    dims = sum(1 for f in dim_fields
-               if bullet_data.get(f) and bullet_data[f] > 0)
-    score += int((dims / len(dim_fields)) * 20)
-
-    # Material specified (10 points)
-    if bullet_data.get("material") and bullet_data["material"] != "unknown":
-        score += 10
-
-    # Bullet type classified (10 points)
-    if bullet_data.get("bullet_type"):
-        score += 10
-
-    return min(100, score)
-```
-
-### Pattern 4: JSON Fixture Seed Data
-
-**What:** Replace the current Python dict arrays in `initial_data.py` with JSON fixture files loaded from `backend/app/seed/fixtures/`. The seed function reads JSON, validates through Pydantic schemas, runs quality scoring, and bulk-inserts.
-
-**Why JSON over Python dicts:** JSON fixtures can be generated programmatically (GRT XML parser output, web scraper output), version-controlled as data files, and validated independently. Python dicts require code changes to add data. With 500+ bullets, embedding data in Python source is unmaintainable.
-
-**Why fixtures over migration-based seed:** Migrations are for schema changes. Data seeding is a separate concern that should be idempotent and re-runnable. The current `seed_initial_data()` pattern in the lifespan event is correct -- it checks if data exists and skips if so. JSON fixtures extend this pattern cleanly.
-
-**Structure:**
-
-```
-backend/app/seed/
-  fixtures/
-    powders.json       # 200+ powders (initially from GRT community DB conversion)
-    bullets.json       # 500+ bullets (from manufacturer spec sheets)
-    cartridges.json    # 50+ cartridges (from CIP/SAAMI standards)
-  initial_data.py      # Modified to load from fixtures/
-```
-
-**Fixture format (bullets.json example):**
-
-```json
-[
-  {
-    "name": "Sierra 168gr HPBT MatchKing .308",
-    "manufacturer": "Sierra",
-    "weight_grains": 168.0,
-    "diameter_mm": 7.82,
-    "length_mm": 31.2,
-    "bc_g1": 0.462,
-    "bc_g7": 0.218,
-    "sectional_density": 0.253,
-    "material": "copper",
-    "bullet_type": "HPBT",
-    "data_source": "manufacturer"
-  }
-]
-```
-
-### Pattern 5: Batch Import Pipeline
-
-**What:** A shared import service handles batch operations for all component types: parse input, validate each record, check for duplicates, score quality, bulk-insert.
-
-**Why a shared service, not per-endpoint logic:** The GRT import endpoint in `powders.py` already has 70 lines of inline import logic (pre-fetch existing, loop, convert, dedup, commit). Duplicating this for bullets and cartridges creates maintenance burden. Extract to a reusable service.
-
-**Pipeline stages:**
-
-```
-Input (JSON/XML/CSV)
-    |
-    v
-1. Parse -> list[dict]           # Format-specific parser (GRT XML, JSON fixture, CSV)
-    |
-    v
-2. Validate -> list[SchemaType]  # Pydantic schema validation, reject invalid
-    |
-    v
-3. Dedup -> list[SchemaType]     # Match on name (case-insensitive), report collisions
-    |
-    v
-4. Score -> list[SchemaType]     # Compute quality_score for each record
-    |
-    v
-5. Insert -> ImportResult        # Bulk insert, return created/skipped/errors
-```
-
-**Implementation:**
-
-```python
-# backend/app/services/import_service.py
-from dataclasses import dataclass
-
-@dataclass
-class ImportResult:
-    created: int
-    updated: int
-    skipped: list[str]
-    errors: list[str]
-
-async def batch_import(
-    db: AsyncSession,
-    model_class,
-    records: list[dict],
-    scorer_fn,
-    overwrite: bool = False,
-    match_field: str = "name",
-) -> ImportResult:
-    """Generic batch import with dedup and quality scoring."""
-    # 1. Pre-fetch existing by match_field for O(1) lookup
-    existing_query = select(model_class)
-    existing_result = await db.execute(existing_query)
-    existing_map = {
-        getattr(r, match_field).lower(): r
-        for r in existing_result.scalars().all()
-    }
-
-    created, updated, skipped, errors = 0, 0, [], []
-
-    for record in records:
-        # 2. Score quality
-        record["quality_score"] = scorer_fn(record)
-
-        # 3. Check duplicate
-        key = record.get(match_field, "").lower()
-        if key in existing_map:
-            if overwrite:
-                existing = existing_map[key]
-                for k, v in record.items():
-                    setattr(existing, k, v)
-                updated += 1
-            else:
-                skipped.append(record.get(match_field, "unknown"))
-            continue
-
-        # 4. Insert
-        obj = model_class(**record)
-        db.add(obj)
-        existing_map[key] = obj
-        created += 1
-
-    if created or updated:
-        await db.commit()
-
-    return ImportResult(
-        created=created, updated=updated, skipped=skipped, errors=errors
-    )
-```
-
-## Data Flow Changes
-
-### Current: Simple CRUD Flow
-
-```
-User -> Page Mount -> useQuery(['powders']) -> GET /powders
-  -> SELECT * FROM powders ORDER BY name -> All rows -> Render full table
-```
-
-### Target: Paginated Search Flow
-
-```
-User types in search box -> Debounce 300ms -> useQuery(['powders', {q, page, filters}])
-  -> GET /powders?q=varget&page=1&size=50
-  -> SELECT * FROM powders
-       WHERE name % 'varget'
-       ORDER BY similarity(name, 'varget') DESC
-       LIMIT 50 OFFSET 0
-  -> Page of rows + total count
-  -> Render table + pagination controls + quality badges
-```
-
-### Import Flow
-
-```
-User uploads .zip / .json -> POST /powders/import-grt (or /admin/import/bullets)
-  -> Parse file (GRT XML parser, or JSON loader)
-  -> Validate each record through Pydantic schema
-  -> Pre-fetch existing names for O(1) dedup
-  -> Score quality for each record
-  -> Bulk insert (skip or overwrite duplicates)
-  -> Return ImportResult {created, updated, skipped, errors}
-  -> Frontend shows summary dialog (reuses existing pattern from powders page)
-  -> Invalidate query cache -> Re-fetch current page
-```
-
-## Database Schema Changes
-
-### Migration 005: Component DB Expansion
-
-```sql
--- Enable trigram extension
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-
--- === POWDERS: Add metadata columns ===
-ALTER TABLE powders ADD COLUMN data_source VARCHAR(20) DEFAULT 'manual';
-ALTER TABLE powders ADD COLUMN quality_score INTEGER DEFAULT 50;
-ALTER TABLE powders ADD COLUMN quality_detail JSONB;
-ALTER TABLE powders ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
-ALTER TABLE powders ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
-
--- === BULLETS: Add metadata + type columns ===
-ALTER TABLE bullets ADD COLUMN bullet_type VARCHAR(30);
-ALTER TABLE bullets ADD COLUMN bearing_surface_mm FLOAT;
-ALTER TABLE bullets ADD COLUMN data_source VARCHAR(20) DEFAULT 'manual';
-ALTER TABLE bullets ADD COLUMN quality_score INTEGER DEFAULT 50;
-ALTER TABLE bullets ADD COLUMN caliber_family VARCHAR(20);
-ALTER TABLE bullets ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
-ALTER TABLE bullets ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
-
--- === CARTRIDGES: Add metadata + relationship columns ===
-ALTER TABLE cartridges ADD COLUMN data_source VARCHAR(20) DEFAULT 'manual';
-ALTER TABLE cartridges ADD COLUMN quality_score INTEGER DEFAULT 50;
-ALTER TABLE cartridges ADD COLUMN shoulder_angle_deg FLOAT;
-ALTER TABLE cartridges ADD COLUMN neck_diameter_mm FLOAT;
-ALTER TABLE cartridges ADD COLUMN base_diameter_mm FLOAT;
-ALTER TABLE cartridges ADD COLUMN rim_diameter_mm FLOAT;
-ALTER TABLE cartridges ADD COLUMN cartridge_type VARCHAR(20);
-ALTER TABLE cartridges ADD COLUMN parent_cartridge_id UUID REFERENCES cartridges(id);
-ALTER TABLE cartridges ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
-ALTER TABLE cartridges ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
-
--- === GIN INDEXES for pg_trgm fuzzy search ===
-CREATE INDEX ix_powders_name_trgm ON powders USING gin (name gin_trgm_ops);
-CREATE INDEX ix_powders_mfg_trgm ON powders USING gin (manufacturer gin_trgm_ops);
-CREATE INDEX ix_bullets_name_trgm ON bullets USING gin (name gin_trgm_ops);
-CREATE INDEX ix_bullets_mfg_trgm ON bullets USING gin (manufacturer gin_trgm_ops);
-CREATE INDEX ix_cartridges_name_trgm ON cartridges USING gin (name gin_trgm_ops);
-
--- === B-tree indexes for filtered queries ===
-CREATE INDEX ix_powders_quality ON powders (quality_score);
-CREATE INDEX ix_bullets_caliber ON bullets (caliber_family);
-CREATE INDEX ix_bullets_quality ON bullets (quality_score);
-CREATE INDEX ix_bullets_mfg ON bullets (manufacturer);
-CREATE INDEX ix_cartridges_quality ON cartridges (quality_score);
-
--- === Backfill existing data ===
-UPDATE powders SET data_source = 'manual', quality_score = 50
-  WHERE data_source IS NULL;
-UPDATE bullets SET data_source = 'manual', quality_score = 50
-  WHERE data_source IS NULL;
-UPDATE cartridges SET data_source = 'manual', quality_score = 50
-  WHERE data_source IS NULL;
-
--- Backfill caliber_family for existing bullets based on diameter
-UPDATE bullets SET caliber_family = '.224'
-  WHERE diameter_mm BETWEEN 5.5 AND 5.8;
-UPDATE bullets SET caliber_family = '.264'
-  WHERE diameter_mm BETWEEN 6.5 AND 6.8;
-UPDATE bullets SET caliber_family = '.308'
-  WHERE diameter_mm BETWEEN 7.7 AND 7.9;
-UPDATE bullets SET caliber_family = '.338'
-  WHERE diameter_mm BETWEEN 8.5 AND 8.7;
-```
-
-### Backward Compatibility
-
-All new columns are nullable or have defaults. No existing data is lost. No API contract changes for existing fields. The list endpoints gain optional query params but still work with no params (returning paginated results with default page=1, size=50).
-
-The `PaginatedResponse<T>` type already exists in `frontend/src/lib/types.ts` (line 267-273) but is unused. It becomes the standard response wrapper for all list endpoints.
-
-## New Column Summary Per Model
-
-### Powder (5 new columns)
-
-| Column | Type | Default | Purpose |
-|--------|------|---------|---------|
-| `data_source` | VARCHAR(20) | 'manual' | Provenance: manual, grt_community, manufacturer, estimated |
-| `quality_score` | INTEGER | 50 | Computed 0-100 confidence |
-| `quality_detail` | JSONB | null | Breakdown of score components for tooltip |
-| `created_at` | TIMESTAMPTZ | NOW() | Record creation timestamp |
-| `updated_at` | TIMESTAMPTZ | NOW() | Last modification timestamp |
-
-### Bullet (7 new columns)
-
-| Column | Type | Default | Purpose |
-|--------|------|---------|---------|
-| `bullet_type` | VARCHAR(30) | null | HPBT, FMJ, OTM, VLD, SP, etc. |
-| `bearing_surface_mm` | FLOAT | null | Bearing surface length for engraving calc |
-| `data_source` | VARCHAR(20) | 'manual' | Provenance tracking |
-| `quality_score` | INTEGER | 50 | Computed 0-100 confidence |
-| `caliber_family` | VARCHAR(20) | null | Grouping: .224, .264, .308, .338 etc. |
-| `created_at` | TIMESTAMPTZ | NOW() | Record creation timestamp |
-| `updated_at` | TIMESTAMPTZ | NOW() | Last modification timestamp |
-
-### Cartridge (10 new columns)
-
-| Column | Type | Default | Purpose |
-|--------|------|---------|---------|
-| `data_source` | VARCHAR(20) | 'manual' | Provenance tracking |
-| `quality_score` | INTEGER | 50 | Computed 0-100 confidence |
-| `shoulder_angle_deg` | FLOAT | null | CIP/SAAMI spec dimension |
-| `neck_diameter_mm` | FLOAT | null | CIP/SAAMI spec dimension |
-| `base_diameter_mm` | FLOAT | null | CIP/SAAMI spec dimension |
-| `rim_diameter_mm` | FLOAT | null | CIP/SAAMI spec dimension |
-| `cartridge_type` | VARCHAR(20) | null | rimless, belted, rimmed, rebated |
-| `parent_cartridge_id` | UUID FK | null | Self-referencing for wildcat lineage |
-| `created_at` | TIMESTAMPTZ | NOW() | Record creation timestamp |
-| `updated_at` | TIMESTAMPTZ | NOW() | Last modification timestamp |
-
-## Frontend Architecture Changes
-
-### Pagination Strategy: Server-Side with keepPreviousData
-
-Do NOT use TanStack Virtual / windowed scrolling. At 500 bullets with server-side pagination (50 per page = 10 pages), standard DOM rendering is fast. Virtualization adds complexity (TanStack Virtual dependency, row height management, scroll position) that is not justified at this scale.
-
-Use TanStack Query's `keepPreviousData` (via `placeholderData: keepPreviousData`) for smooth page transitions where the previous page's data stays visible while the next page loads.
-
-### Search UX: Debounced Input with URL Sync
-
-```
-SearchInput (300ms debounce) -> URL query params (?q=&page=&mfg=)
-  -> useQuery(['powders', params]) re-fetches
-  -> Table re-renders with server results
-  -> Pagination resets to page 1 on new search
-```
-
-URL-synced search means users can bookmark/share filtered views and browser back/forward works correctly.
-
-### Quality Badge Component
+**When:** SVG and 3D viewers when cartridge has null dimension fields.
 
 ```typescript
-// frontend/src/components/ui/QualityBadge.tsx
-function QualityBadge({ score }: { score: number }) {
-  if (score >= 80) return <Badge variant="success">Alta</Badge>;
-  if (score >= 50) return <Badge variant="warning">Media</Badge>;
-  return <Badge variant="danger">Baja</Badge>;
+// Fallback estimates for common missing fields
+const TYPICAL_BRASS_THICKNESS_MM = 0.35;
+const TYPICAL_RIM_OVERSIZE_MM = 1.0;
+
+export function estimateMissingDimensions(
+  cart: Partial<CartridgeDimensions>
+): CartridgeDimensions {
+  const bore = cart.bore_diameter_mm!;
+  const groove = cart.groove_diameter_mm!;
+
+  return {
+    ...cart,
+    base_diameter_mm: cart.base_diameter_mm
+      ?? groove + 2 * TYPICAL_BRASS_THICKNESS_MM + 1.0,
+    neck_diameter_mm: cart.neck_diameter_mm
+      ?? bore + 2 * TYPICAL_BRASS_THICKNESS_MM,
+    shoulder_diameter_mm: cart.shoulder_diameter_mm ?? null,
+    rim_diameter_mm: cart.rim_diameter_mm
+      ?? (cart.base_diameter_mm ?? groove + 3.0),
+  } as CartridgeDimensions;
 }
 ```
 
-Reuses existing `<Badge>` component (already has success/warning/danger variants). No new UI library needed.
-
-### No New Frontend Dependencies Required
-
-| Need | Solution | Why Not Add Library |
-|------|----------|---------------------|
-| Pagination UI | Custom `<Pagination>` component | Simple prev/next/page buttons with Tailwind |
-| Search input | Custom `<SearchInput>` with `setTimeout` debounce | 10 lines of code vs adding lodash/use-debounce |
-| Filter dropdowns | Custom `<FilterDropdown>` | Existing Tailwind dropdown patterns |
-| Quality badges | Existing `<Badge>` component | Already has success/warning/danger variants |
+---
 
 ## Anti-Patterns to Avoid
 
-### Anti-Pattern 1: Client-Side Search on Large Lists
+### Anti-Pattern 1: Server-Side SVG Generation
 
-**What people do:** Fetch all 500 bullets, filter with `array.filter()` in the component.
-**Why it is wrong:** Every keystroke re-renders 500 rows. Initial fetch sends 500 objects over the wire. Memory grows linearly with database.
-**Do this instead:** Server-side search with pg_trgm. Frontend only ever holds one page (50 items).
+**What:** Generating SVG on the backend (e.g., with svgwrite/cairo in Python) and sending it to the frontend as a string.
 
-### Anti-Pattern 2: Separate Quality Table
+**Why bad:** Introduces server load for a purely presentational concern, prevents React state management (hover, toggle dimensions, animation), makes the SVG non-interactive, and couples rendering to API latency.
 
-**What people do:** Create a `component_quality` join table with FK to powder/bullet/cartridge.
-**Why it is wrong:** Adds a JOIN to every list query. Quality is 1:1 with the component, not a separate entity. Complicates the import pipeline.
-**Do this instead:** Inline `quality_score` INTEGER column directly on each component table. Recompute on import/update. Store breakdown in `quality_detail` JSONB for debugging.
+**Instead:** Generate SVG entirely client-side from the cartridge dimension data that already comes from the API. The geometry engine runs in the browser with zero network overhead.
 
-### Anti-Pattern 3: Overwriting User Data on Bulk Import
+### Anti-Pattern 2: Loading External 3D Model Files
 
-**What people do:** Bulk import blindly overwrites all matching records.
-**Why it is wrong:** Users may have manually corrected values (custom covolume, calibrated burn rate). Overwriting destroys their work.
-**Do this instead:** Default to skip-if-exists. Offer explicit overwrite option with collision list UI (the existing GRT import pattern in `powders.py` already does this correctly -- extend to all import types).
+**What:** Creating GLTF/OBJ models for each cartridge and loading them from the server.
 
-### Anti-Pattern 4: Using Full-Text Search for Component Names
+**Why bad:** Requires a 3D modeling pipeline, hosting static assets, per-cartridge model files (53+ files and growing), and load times for model download. The models would not be parametric -- changing a dimension requires re-modeling.
 
-**What people do:** Set up `tsvector` columns, `to_tsquery`, and text search configurations.
-**Why it is wrong:** Component names are short identifiers, not natural language documents. Full-text search applies stemming ("bullets" matches "bullet" but "168gr" does not match "168 grain"). Trigram search handles partial matches ("168" matches "168gr HPBT") and typo tolerance ("hodgon" matches "Hodgdon").
-**Do this instead:** pg_trgm with GIN indexes. Simpler setup, better results for this data shape.
+**Instead:** Use LatheGeometry with parametric Vector2 profiles. The geometry is generated from database dimensions in sub-1ms, zero network requests, zero static assets.
 
-### Anti-Pattern 5: Virtualizing Tables at This Scale
+### Anti-Pattern 3: New Backend Endpoints for Rendering Data
 
-**What people do:** Add TanStack Virtual or react-window for 500-row tables.
-**Why it is wrong:** Server-side pagination means the DOM never holds more than 50 rows. Virtualization adds scroll-position management complexity, makes Ctrl+F unreliable, and breaks accessibility for screen readers.
-**Do this instead:** Server-side pagination with 50 items per page. Standard DOM rendering handles 50 table rows trivially.
+**What:** Creating `/api/v1/cartridges/{id}/geometry` or `/api/v1/cartridges/{id}/svg` endpoints.
 
-## Build Order (Dependency-Driven)
+**Why bad:** The existing `GET /api/v1/cartridges/{id}` already returns ALL the dimensions needed. Adding rendering-specific endpoints couples the API to the frontend's rendering implementation.
 
-### Phase 1: Backend Foundation (no frontend changes)
+**Instead:** Frontend reads the standard CartridgeResponse and computes geometry client-side.
 
-**Dependencies: None (pure backend, can be deployed independently)**
+### Anti-Pattern 4: Separate Upload API from Import API
 
-1. **Alembic migration 005** -- schema changes, pg_trgm extension, GIN indexes, backfill existing data
-2. **Pagination service** -- `backend/app/services/pagination.py`
-3. **Search service** -- `backend/app/services/search.py`
-4. **Quality scorer** -- `backend/app/services/quality_scorer.py`
-5. **Update models** -- Add new columns to powder.py, bullet.py, cartridge.py
-6. **Update schemas** -- Add new fields to response schemas, add paginated response wrappers
-7. **Update list endpoints** -- Add pagination + search + filter params to GET /powders, /bullets, /cartridges
+**What:** Creating `POST /api/v1/upload/bullets` separately from the existing `POST /api/v1/bullets/import`.
 
-**Verification:** Existing tests pass. New endpoints return paginated JSON. `curl` with `?q=varget` returns filtered results. Default (no params) returns first page of 50.
+**Why bad:** Duplicates validation logic, collision handling, quality scoring. Two code paths to maintain.
 
-### Phase 2: Import Pipeline + Seed Data
+**Instead:** Client-side parsing produces the same JSON shape, sends to the existing import endpoint. If server-side CSV parsing is needed later, the CSV parser endpoint should transform to `BulletImportRequest` and delegate to the existing import function internally.
 
-**Dependencies: Phase 1 (schema must have new columns for data_source, quality_score)**
+---
 
-1. **Import service** -- `backend/app/services/import_service.py` (shared batch validate/dedup/insert)
-2. **Create fixtures directory** -- `backend/app/seed/fixtures/`
-3. **Generate powder fixtures** -- Convert GRT community DB XML to JSON using existing `grt_parser.py` + `grt_converter.py`
-4. **Curate bullet fixtures** -- Compile 500+ bullets from manufacturer spec PDFs into JSON
-5. **Curate cartridge fixtures** -- Compile 50+ cartridges from CIP/SAAMI specs into JSON
-6. **Update seed loader** -- Modify `initial_data.py` to load from fixtures + score quality
-7. **Bullet import endpoint** -- POST /admin/import/bullets
-8. **Cartridge import endpoint** -- POST /admin/import/cartridges
-9. **Refactor GRT import** -- Move inline logic from `powders.py` to use shared import service
+## Dependency Graph and Build Order
 
-**Verification:** Fresh `docker-compose up` seeds 200+ powders, 500+ bullets, 50+ cartridges. All have quality scores. Import endpoints handle collisions correctly.
+```
+Phase 1: Foundation (no visual output yet)
+  [1a] cartridge-geometry.ts ---- Pure math, testable independently
+  [1b] bullet-geometry.ts ------- Pure math, testable independently
+  [1c] Bullet seed data expansion (500+ JSON files)
+  [1d] next.config.js + package.json deps (three, papaparse, R3F)
 
-### Phase 3: Frontend Integration
+Phase 2: 2D SVG Drawings (depends on 1a, 1b)
+  [2a] CartridgeSvg.tsx ---------- Tab 1: cross-section
+  [2b] ChamberSvg.tsx ------------ Tab 2: chamber (depends on 2a)
+  [2c] AssemblySvg.tsx ----------- Tab 3: assembly (depends on 2b)
+  [2d] ViewerTabs.tsx ------------ Tab container
+  [2e] /viewers page.tsx --------- Viewer page with component picker
 
-**Dependencies: Phase 1 (paginated API must exist for hooks to consume)**
+Phase 3: 3D Viewer (depends on 1a, 1b, 1d)
+  [3a] CartridgeViewer3DInner.tsx - R3F Canvas + LatheGeometry
+  [3b] CartridgeViewer3D.tsx ------ Dynamic import wrapper
+  [3c] Add 3D tab to ViewerTabs --- (depends on 2d, 3b)
 
-1. **Update types.ts** -- Add quality/source fields, update PaginatedResponse usage
-2. **Update api.ts** -- Add search/filter/pagination params to get functions
-3. **SearchInput component** -- Debounced input with clear button
-4. **QualityBadge component** -- Score-to-badge mapping (uses existing Badge)
-5. **Pagination component** -- Page navigation controls
-6. **FilterDropdown component** -- Multi-select for manufacturer/caliber
-7. **Update hooks** -- usePowders/useBullets/useCartridges with parameterized queries
-8. **Update /powders page** -- Search bar, filters, paginated table, quality badges
-9. **Update /bullets page** -- Search bar, caliber filter, paginated table
-10. **Update /cartridges page** -- Search bar, filter, paginated table
+Phase 4: File Upload (depends on 1d for papaparse)
+  [4a] FileDropzone.tsx ---------- Drag-drop + parse
+  [4b] ImportPreview.tsx --------- Preview table + validation
+  [4c] useFileUpload.ts ---------- Hook wrapping existing import API
+  [4d] /import page.tsx ---------- Upload page
+  [4e] Community JSON schema ----- schema.json + documentation
 
-**Verification:** Pages load fast with 500+ items. Search returns results in <200ms. Pagination works. Quality badges display. Browser back/forward preserves search state.
+Phase 5: Caliber-Scoped Search (backend, depends on 1c for data)
+  [5a] Backend: add caliber_filter to ParametricSearchRequest
+  [5b] Backend: powder filtering logic in simulate.py
+  [5c] Frontend: toggle in parametric search form
 
-### Phase 4: Testing and Polish
+Phase 6: Integration + Polish
+  [6a] Sidebar nav updates
+  [6b] Add SVG viewer link on cartridge detail/CRUD pages
+  [6c] Add 3D viewer preview on simulation results page
+  [6d] Seed data import script for 500+ bullets
+```
 
-**Dependencies: Phases 1-3**
+**Critical path:** 1a -> 2a -> 2b -> 2c (SVG viewer) and 1a -> 3a -> 3b (3D viewer) can run in parallel with 4a -> 4b -> 4d (upload) since they share no dependencies.
 
-1. **Backend tests** -- Pagination edge cases, search accuracy, import dedup, quality scoring
-2. **Migration test** -- Verify migration runs cleanly on fresh DB and on existing DB with data
-3. **Import pipeline tests** -- Batch import with collisions, invalid records, overwrite mode
-4. **Frontend smoke tests** -- Search, paginate, filter on each component page
+**Why this order:**
+1. Geometry engine first because both 2D and 3D depend on it
+2. 2D SVG before 3D because SVG is simpler, validates the geometry engine, and provides immediate visual value
+3. Upload before caliber search because upload enables data expansion (500+ bullets) which makes caliber scoping valuable
+4. Caliber search last because it is a minor backend optimization that becomes important only with more data
 
-## Scaling Considerations
+---
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| Current (22 powders, 10 bullets) | No changes needed, current flat list works |
-| Target (200 powders, 500 bullets, 50 cartridges) | Server-side pagination + pg_trgm. This is the sweet spot. |
-| Future (2000+ powders, 5000 bullets via community) | Add cursor-based pagination, consider Elasticsearch if pg_trgm becomes bottleneck. Current GIN indexes handle 10K rows easily. |
+## Scalability Considerations
 
-**First bottleneck:** The parametric search endpoint (`POST /simulate/parametric`) iterates ALL powders. At 200+ powders this could take 20+ seconds. This is pre-existing and not worsened by this milestone, but should be noted. A future optimization would filter to compatible powders before simulating.
+| Concern | At 500 bullets | At 5,000 bullets | At 50,000 bullets |
+|---------|---------------|-----------------|-------------------|
+| List page performance | Server-side pagination handles trivially | Same (pg_trgm index helps) | May need partial index on caliber_family |
+| Import time | < 1s for 500-row JSON batch | ~5s, acceptable | Need streaming/chunked import |
+| Parametric search | ~2s (208 powders x 10 sims) | Same (searches powders, not bullets) | Same |
+| SVG rendering | Instant (single cartridge) | N/A (renders one at a time) | N/A |
+| 3D rendering | Instant (LatheGeometry) | N/A | N/A |
+| Bundle size (3D) | +~200KB (three.js tree-shaken) | Same | Same |
+| Community JSON files | 10-20 files | 50+ files | Need DB migration from seed files |
+
+**Bundle size impact of Three.js:**
+- `three` base: ~150KB gzipped (tree-shaken via Next.js)
+- `@react-three/fiber`: ~30KB gzipped
+- `@react-three/drei` (partial import): ~20KB gzipped
+- Total: ~200KB gzipped, loaded only on `/viewers` page via dynamic import
+- **Not loaded on simulation or CRUD pages** -- code splitting keeps other pages unaffected
+
+---
+
+## New Dependencies
+
+### Frontend
+
+| Package | Version | Purpose | Size Impact |
+|---------|---------|---------|-------------|
+| `three` | ^0.170.0 | 3D rendering engine | ~150KB gz (code-split) |
+| `@react-three/fiber` | ^9.0.0 | React renderer for Three.js | ~30KB gz |
+| `@react-three/drei` | ^10.0.0 | Helpers (OrbitControls, lights) | ~20KB gz (tree-shaken) |
+| `@types/three` | ^0.170.0 | TypeScript types | Dev only |
+| `papaparse` | ^5.4.0 | CSV parsing | ~7KB gz |
+| `@types/papaparse` | ^5.3.0 | TypeScript types | Dev only |
+
+### Backend
+
+No new Python dependencies required. Existing `pydantic`, `sqlalchemy`, and `fastapi` handle all backend changes.
+
+---
 
 ## Sources
 
-- [PostgreSQL pg_trgm documentation](https://www.postgresql.org/docs/12/pgtrgm.html)
-- [Crunchy Data: Postgres Full-Text Search](https://www.crunchydata.com/blog/postgres-full-text-search-a-search-engine-in-a-database)
-- [Performant text searching in PSQL: trigrams vs full text search](https://medium.com/@daniel.tooke/performant-text-searching-and-indexes-in-psql-trigrams-like-and-full-text-search-784c000efaa6)
-- [SQLAlchemy pg_trgm discussion](https://github.com/sqlalchemy/sqlalchemy/discussions/7641)
-- [TanStack Table pagination guide](https://tanstack.com/table/v8/docs/guide/pagination)
-- [TanStack Virtual](https://tanstack.com/virtual/latest) (evaluated but rejected for this scale)
-- [Staging tables for faster bulk upserts with PostgreSQL](https://overflow.no/blog/2025/1/5/using-staging-tables-for-faster-bulk-upserts-with-python-and-postgresql/)
-- [SQLAlchemy 2.0 bulk insert patterns](https://docs.sqlalchemy.org/en/20/_modules/examples/performance/bulk_inserts.html)
-- [GRT propellant file format](https://grtools.de/doku.php?id=en:doku:file_propellant)
-- [GRT community databases on GitHub](https://github.com/zen/grt_databases)
-
----
-*Architecture research for: Component Database Integration into Ballistics Simulator*
-*Researched: 2026-02-21*
+- [React Three Fiber Installation](https://r3f.docs.pmnd.rs/getting-started/installation) -- Official setup guide for Next.js integration (HIGH confidence)
+- [React Three Fiber GitHub](https://github.com/pmndrs/react-three-fiber) -- Source code and examples (HIGH confidence)
+- [@react-three/drei shapes](https://github.com/pmndrs/drei/blob/master/src/core/shapes.tsx) -- LatheGeometry, ExtrudeGeometry wrappers (HIGH confidence)
+- [Three.js LatheGeometry docs](https://threejs.org/docs/#api/en/geometries/LatheGeometry) -- Profile points and segment parameters (HIGH confidence)
+- [react-three-next starter](https://github.com/pmndrs/react-three-next) -- Official Next.js + R3F starter template (HIGH confidence)
+- [Papa Parse](https://react-papaparse.js.org/) -- CSV parser documentation (HIGH confidence)
+- [SVG in React](https://refine.dev/blog/react-svg/) -- Inline SVG component patterns (MEDIUM confidence)
+- [2D Graphics with React and SVG](https://vivekrajagopal.dev/blog/2023/May/react-svg-graphics/) -- Engineering drawing approaches (MEDIUM confidence)
+- Existing codebase analysis (backend models, API endpoints, frontend components) -- PRIMARY source for integration points (HIGH confidence)
