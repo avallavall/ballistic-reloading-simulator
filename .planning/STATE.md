@@ -49,6 +49,8 @@ All decisions logged in PROJECT.md Key Decisions table. Recent:
 - Bezier curves for ogive SVG paths (Q/C commands), 16-sample discrete points for LatheGeometry
 - Dual-output geometry engine: SVG path + ProfilePoint[] from single function call
 - Completeness tiers: full (0 estimated), basic (1-3), insufficient (4+)
+- String(20) for enum-like fields (ogive_type, case_type) instead of native ENUM to avoid Alembic migration complexity
+- Backfilled 53 cartridges with SAAMI/CIP drawing dimensions
 
 ### Pending Todos
 
@@ -61,5 +63,5 @@ None active. All v1.2 blockers resolved.
 ## Session Continuity
 
 Last session: 2026-02-27
-Stopped at: Completed 11-02-PLAN.md (Geometry Engine)
-Resume: Continue with 11-01 (if not done) and then 11-03 (wave 2)
+Stopped at: Completed 11-01-PLAN.md (Schema Extensions) and 11-02-PLAN.md (Geometry Engine)
+Resume: Continue with 11-03 (wave 2, depends on 11-01 + 11-02)
