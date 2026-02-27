@@ -13,7 +13,12 @@
     "neck_diameter_mm": 6.43,
     "base_diameter_mm": 9.6,
     "rim_diameter_mm": 9.6,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 23.0,
+    "neck_length_mm": 4.8,
+    "body_length_mm": 33.9,
+    "rim_thickness_mm": 1.14,
+    "case_type": "rimless"
   },
   {
     "name": "6.5 Creedmoor",
@@ -29,7 +34,12 @@
     "neck_diameter_mm": 7.54,
     "base_diameter_mm": 11.95,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 7.52,
+    "body_length_mm": 35.25,
+    "rim_thickness_mm": 1.22,
+    "case_type": "rimless"
   },
   {
     "name": ".308 Winchester",
@@ -45,7 +55,12 @@
     "neck_diameter_mm": 8.72,
     "base_diameter_mm": 11.96,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 20.0,
+    "neck_length_mm": 7.8,
+    "body_length_mm": 37.38,
+    "rim_thickness_mm": 1.27,
+    "case_type": "rimless"
   },
   {
     "name": ".30-06 Springfield",
@@ -61,7 +76,12 @@
     "neck_diameter_mm": 8.63,
     "base_diameter_mm": 11.96,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 17.5,
+    "neck_length_mm": 8.13,
+    "body_length_mm": 49.22,
+    "rim_thickness_mm": 1.24,
+    "case_type": "rimless"
   },
   {
     "name": ".338 Lapua Magnum",
@@ -77,7 +97,12 @@
     "neck_diameter_mm": 9.46,
     "base_diameter_mm": 14.91,
     "rim_diameter_mm": 14.93,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 40.0,
+    "neck_length_mm": 9.7,
+    "body_length_mm": 53.5,
+    "rim_thickness_mm": 1.6,
+    "case_type": "rimless"
   },
   {
     "name": ".204 Ruger",
@@ -93,7 +118,12 @@
     "neck_diameter_mm": 5.87,
     "base_diameter_mm": 9.6,
     "rim_diameter_mm": 9.6,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 5.0,
+    "body_length_mm": 36.72,
+    "rim_thickness_mm": 1.14,
+    "case_type": "rimless"
   },
   {
     "name": ".22 Nosler",
@@ -109,7 +139,12 @@
     "neck_diameter_mm": 6.27,
     "base_diameter_mm": 10.69,
     "rim_diameter_mm": 11.2,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 5.56,
+    "body_length_mm": 31.34,
+    "rim_thickness_mm": 1.14,
+    "case_type": "rebated"
   },
   {
     "name": ".22-250 Remington",
@@ -125,7 +160,12 @@
     "neck_diameter_mm": 6.35,
     "base_diameter_mm": 11.76,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 28.0,
+    "neck_length_mm": 5.56,
+    "body_length_mm": 36.75,
+    "rim_thickness_mm": 1.24,
+    "case_type": "rimless"
   },
   {
     "name": ".220 Swift",
@@ -141,7 +181,12 @@
     "neck_diameter_mm": 6.48,
     "base_diameter_mm": 12.32,
     "rim_diameter_mm": 12.7,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 21.0,
+    "neck_length_mm": 5.56,
+    "body_length_mm": 43.18,
+    "rim_thickness_mm": 1.32,
+    "case_type": "semi_rimmed"
   },
   {
     "name": ".224 Valkyrie",
@@ -157,7 +202,12 @@
     "neck_diameter_mm": 6.4,
     "base_diameter_mm": 10.69,
     "rim_diameter_mm": 11.2,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 5.56,
+    "body_length_mm": 31.24,
+    "rim_thickness_mm": 1.14,
+    "case_type": "rebated"
   },
   {
     "name": "5.56x45mm NATO",
@@ -173,7 +223,12 @@
     "neck_diameter_mm": 6.43,
     "base_diameter_mm": 9.6,
     "rim_diameter_mm": 9.6,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 23.0,
+    "neck_length_mm": 4.8,
+    "body_length_mm": 33.9,
+    "rim_thickness_mm": 1.14,
+    "case_type": "rimless"
   },
   {
     "name": ".243 Winchester",
@@ -189,7 +244,12 @@
     "neck_diameter_mm": 7.01,
     "base_diameter_mm": 11.96,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 20.0,
+    "neck_length_mm": 6.73,
+    "body_length_mm": 39.21,
+    "rim_thickness_mm": 1.27,
+    "case_type": "rimless"
   },
   {
     "name": "6mm Creedmoor",
@@ -205,7 +265,12 @@
     "neck_diameter_mm": 6.97,
     "base_diameter_mm": 11.95,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 6.4,
+    "body_length_mm": 36.37,
+    "rim_thickness_mm": 1.22,
+    "case_type": "rimless"
   },
   {
     "name": "6mm BR Norma",
@@ -221,7 +286,12 @@
     "neck_diameter_mm": 6.78,
     "base_diameter_mm": 11.96,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 6.0,
+    "body_length_mm": 27.62,
+    "rim_thickness_mm": 1.27,
+    "case_type": "rimless"
   },
   {
     "name": "6mm ARC",
@@ -237,7 +307,12 @@
     "neck_diameter_mm": 6.81,
     "base_diameter_mm": 11.2,
     "rim_diameter_mm": 11.2,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 6.0,
+    "body_length_mm": 30.8,
+    "rim_thickness_mm": 1.14,
+    "case_type": "rimless"
   },
   {
     "name": ".25-06 Remington",
@@ -253,7 +328,12 @@
     "neck_diameter_mm": 7.19,
     "base_diameter_mm": 11.96,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 17.5,
+    "neck_length_mm": 7.19,
+    "body_length_mm": 50.16,
+    "rim_thickness_mm": 1.24,
+    "case_type": "rimless"
   },
   {
     "name": ".257 Roberts",
@@ -269,7 +349,12 @@
     "neck_diameter_mm": 7.32,
     "base_diameter_mm": 11.71,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 20.75,
+    "neck_length_mm": 7.32,
+    "body_length_mm": 43.2,
+    "rim_thickness_mm": 1.24,
+    "case_type": "rimless"
   },
   {
     "name": "6.5x47 Lapua",
@@ -285,7 +370,12 @@
     "neck_diameter_mm": 7.37,
     "base_diameter_mm": 11.95,
     "rim_diameter_mm": 12.01,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 7.37,
+    "body_length_mm": 34.13,
+    "rim_thickness_mm": 1.22,
+    "case_type": "rimless"
   },
   {
     "name": "6.5x55 Swedish Mauser",
@@ -301,7 +391,12 @@
     "neck_diameter_mm": 7.52,
     "base_diameter_mm": 12.17,
     "rim_diameter_mm": 12.17,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 20.0,
+    "neck_length_mm": 8.5,
+    "body_length_mm": 40.5,
+    "rim_thickness_mm": 1.27,
+    "case_type": "rimless"
   },
   {
     "name": ".260 Remington",
@@ -317,7 +412,12 @@
     "neck_diameter_mm": 7.44,
     "base_diameter_mm": 11.96,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 20.0,
+    "neck_length_mm": 7.44,
+    "body_length_mm": 37.74,
+    "rim_thickness_mm": 1.27,
+    "case_type": "rimless"
   },
   {
     "name": "6.5 PRC",
@@ -333,7 +433,12 @@
     "neck_diameter_mm": 7.6,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 7.6,
+    "body_length_mm": 38.09,
+    "rim_thickness_mm": 1.32,
+    "case_type": "rimless"
   },
   {
     "name": "6.5-284 Norma",
@@ -349,7 +454,12 @@
     "neck_diameter_mm": 7.47,
     "base_diameter_mm": 13.46,
     "rim_diameter_mm": 11.96,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 7.47,
+    "body_length_mm": 41.5,
+    "rim_thickness_mm": 1.27,
+    "case_type": "rebated"
   },
   {
     "name": ".264 Winchester Magnum",
@@ -365,7 +475,12 @@
     "neck_diameter_mm": 7.52,
     "base_diameter_mm": 13.03,
     "rim_diameter_mm": 13.51,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 25.0,
+    "neck_length_mm": 7.52,
+    "body_length_mm": 50.84,
+    "rim_thickness_mm": 1.32,
+    "case_type": "belted"
   },
   {
     "name": ".270 Winchester",
@@ -381,7 +496,12 @@
     "neck_diameter_mm": 7.8,
     "base_diameter_mm": 11.96,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 17.5,
+    "neck_length_mm": 8.28,
+    "body_length_mm": 50.24,
+    "rim_thickness_mm": 1.24,
+    "case_type": "rimless"
   },
   {
     "name": ".270 WSM",
@@ -397,7 +517,12 @@
     "neck_diameter_mm": 7.8,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 7.8,
+    "body_length_mm": 39.54,
+    "rim_thickness_mm": 1.37,
+    "case_type": "rimless"
   },
   {
     "name": "7mm-08 Remington",
@@ -413,7 +538,12 @@
     "neck_diameter_mm": 7.95,
     "base_diameter_mm": 11.96,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 20.0,
+    "neck_length_mm": 7.95,
+    "body_length_mm": 37.23,
+    "rim_thickness_mm": 1.27,
+    "case_type": "rimless"
   },
   {
     "name": "7mm Remington Magnum",
@@ -429,7 +559,12 @@
     "neck_diameter_mm": 8.05,
     "base_diameter_mm": 13.03,
     "rim_diameter_mm": 13.51,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 25.0,
+    "neck_length_mm": 8.05,
+    "body_length_mm": 49.45,
+    "rim_thickness_mm": 1.32,
+    "case_type": "belted"
   },
   {
     "name": "7mm WSM",
@@ -445,7 +580,12 @@
     "neck_diameter_mm": 7.95,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 7.95,
+    "body_length_mm": 39.39,
+    "rim_thickness_mm": 1.37,
+    "case_type": "rimless"
   },
   {
     "name": "7mm PRC",
@@ -461,7 +601,12 @@
     "neck_diameter_mm": 8.05,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 8.05,
+    "body_length_mm": 37.64,
+    "rim_thickness_mm": 1.32,
+    "case_type": "rimless"
   },
   {
     "name": ".280 Remington",
@@ -477,7 +622,12 @@
     "neck_diameter_mm": 7.95,
     "base_diameter_mm": 11.96,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 17.5,
+    "neck_length_mm": 7.95,
+    "body_length_mm": 49.4,
+    "rim_thickness_mm": 1.24,
+    "case_type": "rimless"
   },
   {
     "name": ".280 Ackley Improved",
@@ -493,7 +643,12 @@
     "neck_diameter_mm": 7.95,
     "base_diameter_mm": 11.96,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 40.0,
+    "neck_length_mm": 7.95,
+    "body_length_mm": 49.4,
+    "rim_thickness_mm": 1.24,
+    "case_type": "rimless"
   },
   {
     "name": ".284 Winchester",
@@ -509,7 +664,12 @@
     "neck_diameter_mm": 7.95,
     "base_diameter_mm": 13.46,
     "rim_diameter_mm": 11.96,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 7.95,
+    "body_length_mm": 41.17,
+    "rim_thickness_mm": 1.27,
+    "case_type": "rebated"
   },
   {
     "name": ".30-30 Winchester",
@@ -525,7 +685,12 @@
     "neck_diameter_mm": 8.38,
     "base_diameter_mm": 10.4,
     "rim_diameter_mm": 12.06,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 16.0,
+    "neck_length_mm": 8.38,
+    "body_length_mm": 37.44,
+    "rim_thickness_mm": 1.65,
+    "case_type": "rimmed"
   },
   {
     "name": ".300 Savage",
@@ -541,7 +706,12 @@
     "neck_diameter_mm": 8.55,
     "base_diameter_mm": 11.71,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 8.55,
+    "body_length_mm": 32.95,
+    "rim_thickness_mm": 1.27,
+    "case_type": "rimless"
   },
   {
     "name": ".300 Winchester Magnum",
@@ -557,7 +727,12 @@
     "neck_diameter_mm": 8.64,
     "base_diameter_mm": 13.03,
     "rim_diameter_mm": 13.51,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 25.0,
+    "neck_length_mm": 8.64,
+    "body_length_mm": 51.91,
+    "rim_thickness_mm": 1.32,
+    "case_type": "belted"
   },
   {
     "name": ".300 WSM",
@@ -573,7 +748,12 @@
     "neck_diameter_mm": 8.64,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 8.64,
+    "body_length_mm": 38.7,
+    "rim_thickness_mm": 1.37,
+    "case_type": "rimless"
   },
   {
     "name": ".300 Norma Magnum",
@@ -589,7 +769,12 @@
     "neck_diameter_mm": 8.71,
     "base_diameter_mm": 13.97,
     "rim_diameter_mm": 13.97,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 8.71,
+    "body_length_mm": 51.33,
+    "rim_thickness_mm": 1.37,
+    "case_type": "rimless"
   },
   {
     "name": ".300 Ruger Compact Magnum",
@@ -605,7 +790,12 @@
     "neck_diameter_mm": 8.64,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 8.64,
+    "body_length_mm": 37.05,
+    "rim_thickness_mm": 1.32,
+    "case_type": "rimless"
   },
   {
     "name": ".300 Remington Ultra Magnum",
@@ -621,7 +811,12 @@
     "neck_diameter_mm": 8.64,
     "base_diameter_mm": 13.97,
     "rim_diameter_mm": 13.97,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 8.64,
+    "body_length_mm": 57.75,
+    "rim_thickness_mm": 1.37,
+    "case_type": "rimless"
   },
   {
     "name": ".300 PRC",
@@ -637,7 +832,12 @@
     "neck_diameter_mm": 8.64,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 8.64,
+    "body_length_mm": 40.99,
+    "rim_thickness_mm": 1.32,
+    "case_type": "rimless"
   },
   {
     "name": ".300 Blackout",
@@ -653,7 +853,12 @@
     "neck_diameter_mm": 8.38,
     "base_diameter_mm": 9.6,
     "rim_diameter_mm": 9.6,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 18.0,
+    "neck_length_mm": 8.38,
+    "body_length_mm": 20.32,
+    "rim_thickness_mm": 1.14,
+    "case_type": "rimless"
   },
   {
     "name": ".26 Nosler",
@@ -669,7 +874,12 @@
     "neck_diameter_mm": 7.45,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 7.45,
+    "body_length_mm": 51.32,
+    "rim_thickness_mm": 1.32,
+    "case_type": "rimless"
   },
   {
     "name": ".27 Nosler",
@@ -685,7 +895,12 @@
     "neck_diameter_mm": 7.8,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 7.8,
+    "body_length_mm": 50.97,
+    "rim_thickness_mm": 1.32,
+    "case_type": "rimless"
   },
   {
     "name": ".28 Nosler",
@@ -701,7 +916,12 @@
     "neck_diameter_mm": 8.0,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 8.0,
+    "body_length_mm": 50.77,
+    "rim_thickness_mm": 1.32,
+    "case_type": "rimless"
   },
   {
     "name": ".30 Nosler",
@@ -717,7 +937,12 @@
     "neck_diameter_mm": 8.64,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 8.64,
+    "body_length_mm": 50.13,
+    "rim_thickness_mm": 1.32,
+    "case_type": "rimless"
   },
   {
     "name": ".33 Nosler",
@@ -733,7 +958,12 @@
     "neck_diameter_mm": 9.46,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 9.46,
+    "body_length_mm": 49.31,
+    "rim_thickness_mm": 1.32,
+    "case_type": "rimless"
   },
   {
     "name": ".338 Federal",
@@ -749,7 +979,12 @@
     "neck_diameter_mm": 9.22,
     "base_diameter_mm": 11.96,
     "rim_diameter_mm": 12.01,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 20.0,
+    "neck_length_mm": 9.22,
+    "body_length_mm": 35.96,
+    "rim_thickness_mm": 1.27,
+    "case_type": "rimless"
   },
   {
     "name": ".338 Winchester Magnum",
@@ -765,7 +1000,12 @@
     "neck_diameter_mm": 9.3,
     "base_diameter_mm": 13.03,
     "rim_diameter_mm": 13.51,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 25.0,
+    "neck_length_mm": 9.3,
+    "body_length_mm": 49.47,
+    "rim_thickness_mm": 1.32,
+    "case_type": "belted"
   },
   {
     "name": ".338 Norma Magnum",
@@ -781,7 +1021,12 @@
     "neck_diameter_mm": 9.5,
     "base_diameter_mm": 13.97,
     "rim_diameter_mm": 13.97,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 35.0,
+    "neck_length_mm": 9.5,
+    "body_length_mm": 49.78,
+    "rim_thickness_mm": 1.37,
+    "case_type": "rimless"
   },
   {
     "name": ".375 H&H Magnum",
@@ -797,7 +1042,12 @@
     "neck_diameter_mm": 10.24,
     "base_diameter_mm": 13.03,
     "rim_diameter_mm": 13.51,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 8.5,
+    "neck_length_mm": 10.24,
+    "body_length_mm": 56.15,
+    "rim_thickness_mm": 1.32,
+    "case_type": "belted"
   },
   {
     "name": ".375 Ruger",
@@ -813,7 +1063,12 @@
     "neck_diameter_mm": 10.24,
     "base_diameter_mm": 13.51,
     "rim_diameter_mm": 13.51,
-    "data_source": "manufacturer"
+    "data_source": "manufacturer",
+    "shoulder_angle_deg": 30.0,
+    "neck_length_mm": 10.24,
+    "body_length_mm": 46.5,
+    "rim_thickness_mm": 1.32,
+    "case_type": "rimless"
   },
   {
     "name": ".416 Rigby",
@@ -829,7 +1084,12 @@
     "neck_diameter_mm": 11.1,
     "base_diameter_mm": 13.97,
     "rim_diameter_mm": 13.97,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 27.0,
+    "neck_length_mm": 11.1,
+    "body_length_mm": 56.56,
+    "rim_thickness_mm": 1.6,
+    "case_type": "rimless"
   },
   {
     "name": ".458 Winchester Magnum",
@@ -845,6 +1105,11 @@
     "neck_diameter_mm": 12.24,
     "base_diameter_mm": 13.03,
     "rim_diameter_mm": 13.51,
-    "data_source": "saami"
+    "data_source": "saami",
+    "shoulder_angle_deg": 25.0,
+    "neck_length_mm": 12.24,
+    "body_length_mm": 45.26,
+    "rim_thickness_mm": 1.32,
+    "case_type": "belted"
   }
 ]
