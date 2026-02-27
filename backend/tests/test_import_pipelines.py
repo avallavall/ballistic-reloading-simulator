@@ -45,7 +45,7 @@ from app.db.session import get_db  # noqa: E402
 from app.models.powder import Powder
 from app.models.bullet import Bullet
 from app.models.cartridge import Cartridge
-from app.seed.initial_data import _load_fixture, seed_initial_data
+from app.seed.initial_data import _load_fixture, seed_initial_data, BULLET_MANUFACTURERS
 
 
 async def _override_get_db():
@@ -518,11 +518,14 @@ async def test_seed_initial_data_loads_fixtures(db_session):
     powders_fixture = _load_fixture("powders.json")
     assert len(powders) == len(powders_fixture), f"Expected {len(powders_fixture)} powders, got {len(powders)}"
 
-    # Count bullets
+    # Count bullets (now loaded from per-manufacturer files)
     result = await db_session.execute(select(Bullet))
     bullets = list(result.scalars().all())
-    bullets_fixture = _load_fixture("bullets.json")
-    assert len(bullets) == len(bullets_fixture), f"Expected {len(bullets_fixture)} bullets, got {len(bullets)}"
+    expected_bullet_count = sum(
+        len(_load_fixture(f"bullets/{mfg}.json"))
+        for mfg in BULLET_MANUFACTURERS
+    )
+    assert len(bullets) == expected_bullet_count, f"Expected {expected_bullet_count} bullets, got {len(bullets)}"
 
     # Count cartridges
     result = await db_session.execute(select(Cartridge))

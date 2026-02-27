@@ -448,3 +448,86 @@ class TestParametricSearchRequestValidation:
                 cartridge_id=VALID_UUID,
                 coal_mm=250,  # > 200
             )
+
+
+# ---------------------------------------------------------------------------
+# Schema Extension Tests (11-01/11-03: SCHM-01 and SCHM-02)
+# ---------------------------------------------------------------------------
+
+
+class TestBulletSchemaExtensions:
+    """Tests for bullet schema rendering and velocity-banded BC fields."""
+
+    def test_bullet_schema_new_rendering_fields(self):
+        """BulletCreate accepts bearing_surface_mm, boat_tail_length_mm, meplat_diameter_mm, ogive_type."""
+        data = valid_bullet_data()
+        data.update(
+            bearing_surface_mm=18.5,
+            boat_tail_length_mm=5.0,
+            meplat_diameter_mm=1.8,
+            ogive_type="tangent",
+        )
+        b = BulletCreate(**data)
+        assert b.bearing_surface_mm == 18.5
+        assert b.boat_tail_length_mm == 5.0
+        assert b.meplat_diameter_mm == 1.8
+        assert b.ogive_type == "tangent"
+
+    def test_bullet_schema_new_bc_fields(self):
+        """BulletCreate accepts bc_g1_high, bc_g1_mid, bc_g1_low, bc_g1_high_vel, bc_g1_mid_vel."""
+        data = valid_bullet_data()
+        data.update(
+            bc_g1_high=0.505,
+            bc_g1_mid=0.496,
+            bc_g1_low=0.485,
+            bc_g1_high_vel=2800,
+            bc_g1_mid_vel=1800,
+        )
+        b = BulletCreate(**data)
+        assert b.bc_g1_high == 0.505
+        assert b.bc_g1_mid == 0.496
+        assert b.bc_g1_low == 0.485
+        assert b.bc_g1_high_vel == 2800
+        assert b.bc_g1_mid_vel == 1800
+
+    def test_bullet_schema_rejects_invalid_bc(self):
+        """bc_g1_high=3.0 (> 2.0 limit) raises ValidationError."""
+        data = valid_bullet_data()
+        data["bc_g1_high"] = 3.0
+        with pytest.raises(ValidationError):
+            BulletCreate(**data)
+
+    def test_bullet_schema_rejects_invalid_ogive(self):
+        """ogive_type with > 20 chars raises ValidationError."""
+        data = valid_bullet_data()
+        data["ogive_type"] = "a" * 21  # exceeds max_length=20
+        with pytest.raises(ValidationError):
+            BulletCreate(**data)
+
+
+class TestCartridgeSchemaExtensions:
+    """Tests for cartridge schema drawing dimension fields."""
+
+    def test_cartridge_schema_new_drawing_fields(self):
+        """CartridgeCreate accepts shoulder_angle_deg, neck_length_mm, body_length_mm, rim_thickness_mm, case_type."""
+        data = valid_cartridge_data()
+        data.update(
+            shoulder_angle_deg=20.0,
+            neck_length_mm=8.0,
+            body_length_mm=39.0,
+            rim_thickness_mm=1.5,
+            case_type="rimless",
+        )
+        c = CartridgeCreate(**data)
+        assert c.shoulder_angle_deg == 20.0
+        assert c.neck_length_mm == 8.0
+        assert c.body_length_mm == 39.0
+        assert c.rim_thickness_mm == 1.5
+        assert c.case_type == "rimless"
+
+    def test_cartridge_schema_rejects_invalid_angle(self):
+        """shoulder_angle_deg=100 (> 90 limit) raises ValidationError."""
+        data = valid_cartridge_data()
+        data["shoulder_angle_deg"] = 100
+        with pytest.raises(ValidationError):
+            CartridgeCreate(**data)

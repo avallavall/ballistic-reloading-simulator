@@ -937,3 +937,103 @@ async def test_web_thickness_mm_validation_bounds(client):
     resp2 = await client.post("/api/v1/powders", json=good_data)
     assert resp2.status_code == 201
     assert resp2.json()["web_thickness_mm"] == 0.4
+
+
+# ---------------------------------------------------------------------------
+# Tests: Schema Extension CRUD (11-01/11-03)
+# ---------------------------------------------------------------------------
+
+
+BULLET_DATA_EXTENDED = {
+    **BULLET_DATA,
+    "name": "Extended 168gr HPBT",
+    "bearing_surface_mm": 18.5,
+    "boat_tail_length_mm": 5.0,
+    "meplat_diameter_mm": 1.8,
+    "ogive_type": "tangent",
+    "bc_g1_high": 0.505,
+    "bc_g1_mid": 0.496,
+    "bc_g1_low": 0.485,
+    "bc_g1_high_vel": 2800,
+    "bc_g1_mid_vel": 1800,
+}
+
+CARTRIDGE_DATA_EXTENDED = {
+    **CARTRIDGE_DATA,
+    "name": ".308 Win Extended Test",
+    "shoulder_angle_deg": 20.0,
+    "neck_length_mm": 8.0,
+    "body_length_mm": 39.0,
+    "rim_thickness_mm": 1.5,
+    "case_type": "rimless",
+}
+
+
+@pytest.mark.asyncio
+async def test_bullet_create_with_new_fields(client):
+    """POST /bullets with rendering and BC fields returns 201 with fields saved."""
+    resp = await client.post("/api/v1/bullets", json=BULLET_DATA_EXTENDED)
+    assert resp.status_code == 201
+    data = resp.json()
+
+    assert data["bearing_surface_mm"] == 18.5
+    assert data["boat_tail_length_mm"] == 5.0
+    assert data["meplat_diameter_mm"] == 1.8
+    assert data["ogive_type"] == "tangent"
+    assert data["bc_g1_high"] == 0.505
+    assert data["bc_g1_mid"] == 0.496
+    assert data["bc_g1_low"] == 0.485
+    assert data["bc_g1_high_vel"] == 2800
+    assert data["bc_g1_mid_vel"] == 1800
+
+
+@pytest.mark.asyncio
+async def test_bullet_update_new_fields(client):
+    """PUT /bullets/{id} with bc_g1_high, bc_g1_mid returns 200 with updated fields."""
+    created = await _create_bullet(client)
+    resp = await client.put(
+        f"/api/v1/bullets/{created['id']}",
+        json={
+            "bc_g1_high": 0.510,
+            "bc_g1_mid": 0.500,
+            "ogive_type": "secant",
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["bc_g1_high"] == 0.510
+    assert data["bc_g1_mid"] == 0.500
+    assert data["ogive_type"] == "secant"
+
+
+@pytest.mark.asyncio
+async def test_cartridge_create_with_drawing_fields(client):
+    """POST /cartridges with drawing dimension fields returns 201."""
+    resp = await client.post("/api/v1/cartridges", json=CARTRIDGE_DATA_EXTENDED)
+    assert resp.status_code == 201
+    data = resp.json()
+
+    assert data["shoulder_angle_deg"] == 20.0
+    assert data["neck_length_mm"] == 8.0
+    assert data["body_length_mm"] == 39.0
+    assert data["rim_thickness_mm"] == 1.5
+    assert data["case_type"] == "rimless"
+
+
+@pytest.mark.asyncio
+async def test_cartridge_update_drawing_fields(client):
+    """PUT /cartridges/{id} with neck_length_mm, body_length_mm returns 200."""
+    created = await _create_cartridge(client)
+    resp = await client.put(
+        f"/api/v1/cartridges/{created['id']}",
+        json={
+            "neck_length_mm": 9.5,
+            "body_length_mm": 40.0,
+            "case_type": "belted",
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["neck_length_mm"] == 9.5
+    assert data["body_length_mm"] == 40.0
+    assert data["case_type"] == "belted"
