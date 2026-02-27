@@ -20,6 +20,13 @@ class CartridgeCreate(BaseModel):
     base_diameter_mm: float | None = Field(None, gt=0, le=20)
     rim_diameter_mm: float | None = Field(None, gt=0, le=20)
 
+    # Drawing dimension fields
+    shoulder_angle_deg: float | None = Field(None, gt=0, le=90, description="Shoulder angle (degrees)")
+    neck_length_mm: float | None = Field(None, gt=0, le=50, description="Neck length (mm)")
+    body_length_mm: float | None = Field(None, gt=0, le=100, description="Body length (mm)")
+    rim_thickness_mm: float | None = Field(None, gt=0, le=5, description="Rim thickness (mm)")
+    case_type: str | None = Field(None, max_length=20, description="Case type: rimless, belted, rimmed, rebated, semi_rimmed, straight_wall")
+
     # Data provenance
     data_source: str = Field(default="manual", description="Data source provenance")
 
@@ -40,6 +47,13 @@ class CartridgeUpdate(BaseModel):
     neck_diameter_mm: float | None = Field(None, gt=0, le=20)
     base_diameter_mm: float | None = Field(None, gt=0, le=20)
     rim_diameter_mm: float | None = Field(None, gt=0, le=20)
+
+    # Drawing dimension fields
+    shoulder_angle_deg: float | None = Field(None, gt=0, le=90, description="Shoulder angle (degrees)")
+    neck_length_mm: float | None = Field(None, gt=0, le=50, description="Neck length (mm)")
+    body_length_mm: float | None = Field(None, gt=0, le=100, description="Body length (mm)")
+    rim_thickness_mm: float | None = Field(None, gt=0, le=5, description="Rim thickness (mm)")
+    case_type: str | None = Field(None, max_length=20, description="Case type: rimless, belted, rimmed, rebated, semi_rimmed, straight_wall")
 
     # Data provenance (optional on update)
     data_source: str | None = None
@@ -62,6 +76,13 @@ class CartridgeResponse(BaseModel):
     neck_diameter_mm: float | None = None
     base_diameter_mm: float | None = None
     rim_diameter_mm: float | None = None
+
+    # Drawing dimension fields
+    shoulder_angle_deg: float | None = None
+    neck_length_mm: float | None = None
+    body_length_mm: float | None = None
+    rim_thickness_mm: float | None = None
+    case_type: str | None = None
 
     # Data provenance and quality
     data_source: str = "manual"

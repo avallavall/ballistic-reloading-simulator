@@ -19,6 +19,19 @@ class BulletCreate(BaseModel):
     bullet_type: str | None = Field(None, max_length=30, description="Type: match, hunting, target")
     base_type: str | None = Field(None, max_length=50, description="Base type: hollow_point_boat_tail, polymer_tip, flat_base, etc.")
 
+    # Rendering dimension fields
+    bearing_surface_mm: float | None = Field(None, gt=0, le=50, description="Bearing surface length (mm)")
+    boat_tail_length_mm: float | None = Field(None, gt=0, le=20, description="Boat tail length (mm)")
+    meplat_diameter_mm: float | None = Field(None, gt=0, le=15, description="Meplat (tip) diameter (mm)")
+    ogive_type: str | None = Field(None, max_length=20, description="Ogive type: tangent, secant, hybrid, flat_nose, round_nose, spitzer")
+
+    # Velocity-banded BC fields (Sierra-style)
+    bc_g1_high: float | None = Field(None, gt=0, le=2.0, description="BC G1 at high velocity")
+    bc_g1_mid: float | None = Field(None, gt=0, le=2.0, description="BC G1 at mid velocity")
+    bc_g1_low: float | None = Field(None, gt=0, le=2.0, description="BC G1 at low velocity")
+    bc_g1_high_vel: float | None = Field(None, gt=0, le=5000, description="High BC velocity threshold (fps)")
+    bc_g1_mid_vel: float | None = Field(None, gt=0, le=5000, description="Mid BC velocity threshold (fps)")
+
     # Data provenance
     data_source: str = Field(default="manual", description="Data source provenance")
 
@@ -38,6 +51,19 @@ class BulletUpdate(BaseModel):
     model_number: str | None = Field(None, max_length=50, description="Manufacturer part number")
     bullet_type: str | None = Field(None, max_length=30, description="Type: match, hunting, target")
     base_type: str | None = Field(None, max_length=50, description="Base type: hollow_point_boat_tail, polymer_tip, flat_base, etc.")
+
+    # Rendering dimension fields
+    bearing_surface_mm: float | None = Field(None, gt=0, le=50, description="Bearing surface length (mm)")
+    boat_tail_length_mm: float | None = Field(None, gt=0, le=20, description="Boat tail length (mm)")
+    meplat_diameter_mm: float | None = Field(None, gt=0, le=15, description="Meplat (tip) diameter (mm)")
+    ogive_type: str | None = Field(None, max_length=20, description="Ogive type: tangent, secant, hybrid, flat_nose, round_nose, spitzer")
+
+    # Velocity-banded BC fields (Sierra-style)
+    bc_g1_high: float | None = Field(None, gt=0, le=2.0, description="BC G1 at high velocity")
+    bc_g1_mid: float | None = Field(None, gt=0, le=2.0, description="BC G1 at mid velocity")
+    bc_g1_low: float | None = Field(None, gt=0, le=2.0, description="BC G1 at low velocity")
+    bc_g1_high_vel: float | None = Field(None, gt=0, le=5000, description="High BC velocity threshold (fps)")
+    bc_g1_mid_vel: float | None = Field(None, gt=0, le=5000, description="Mid BC velocity threshold (fps)")
 
     # Data provenance (optional on update)
     data_source: str | None = None
@@ -59,6 +85,19 @@ class BulletResponse(BaseModel):
     model_number: str | None = None
     bullet_type: str | None = None
     base_type: str | None = None
+
+    # Rendering dimension fields
+    bearing_surface_mm: float | None = None
+    boat_tail_length_mm: float | None = None
+    meplat_diameter_mm: float | None = None
+    ogive_type: str | None = None
+
+    # Velocity-banded BC fields
+    bc_g1_high: float | None = None
+    bc_g1_mid: float | None = None
+    bc_g1_low: float | None = None
+    bc_g1_high_vel: float | None = None
+    bc_g1_mid_vel: float | None = None
 
     # Data provenance and quality
     data_source: str = "manual"

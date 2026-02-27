@@ -22,6 +22,13 @@ class Cartridge(UUIDMixin, Base):
     base_diameter_mm = Column(Float, nullable=True)
     rim_diameter_mm = Column(Float, nullable=True)
 
+    # Drawing dimension fields (geometry engine / SVG / 3D)
+    shoulder_angle_deg = Column(Float, nullable=True)
+    neck_length_mm = Column(Float, nullable=True)
+    body_length_mm = Column(Float, nullable=True)
+    rim_thickness_mm = Column(Float, nullable=True)
+    case_type = Column(String(20), nullable=True)  # rimless, belted, rimmed, rebated, semi_rimmed, straight_wall
+
     # Data provenance and quality scoring
     data_source = Column(String(20), nullable=False, default="manual")
     quality_score = Column(Integer, nullable=False, default=0)

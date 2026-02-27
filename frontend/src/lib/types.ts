@@ -104,6 +104,17 @@ export interface Bullet {
   model_number: string | null;
   bullet_type: string | null;
   base_type: string | null;
+  // Rendering dimension fields
+  bearing_surface_mm: number | null;
+  boat_tail_length_mm: number | null;
+  meplat_diameter_mm: number | null;
+  ogive_type: string | null;
+  // Velocity-banded BC fields
+  bc_g1_high: number | null;
+  bc_g1_mid: number | null;
+  bc_g1_low: number | null;
+  bc_g1_high_vel: number | null;
+  bc_g1_mid_vel: number | null;
   data_source?: string;
   quality_score?: number;
   caliber_family?: string | null;
@@ -121,6 +132,17 @@ export interface BulletCreate {
   bc_g7?: number | null;
   sectional_density: number;
   material: string;
+  // Rendering dimension fields
+  bearing_surface_mm?: number | null;
+  boat_tail_length_mm?: number | null;
+  meplat_diameter_mm?: number | null;
+  ogive_type?: string | null;
+  // Velocity-banded BC fields
+  bc_g1_high?: number | null;
+  bc_g1_mid?: number | null;
+  bc_g1_low?: number | null;
+  bc_g1_high_vel?: number | null;
+  bc_g1_mid_vel?: number | null;
 }
 
 // ============================================================
@@ -142,6 +164,12 @@ export interface Cartridge {
   neck_diameter_mm: number | null;
   base_diameter_mm: number | null;
   rim_diameter_mm: number | null;
+  // Drawing dimension fields
+  shoulder_angle_deg: number | null;
+  neck_length_mm: number | null;
+  body_length_mm: number | null;
+  rim_thickness_mm: number | null;
+  case_type: string | null;
   data_source?: string;
   quality_score?: number;
   caliber_family?: string | null;
@@ -158,6 +186,12 @@ export interface CartridgeCreate {
   overall_length_mm: number;
   bore_diameter_mm: number;
   groove_diameter_mm: number;
+  // Drawing dimension fields
+  shoulder_angle_deg?: number | null;
+  neck_length_mm?: number | null;
+  body_length_mm?: number | null;
+  rim_thickness_mm?: number | null;
+  case_type?: string | null;
 }
 
 // ============================================================

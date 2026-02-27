@@ -106,6 +106,15 @@ BULLET_BONUS_FIELDS = [
     "model_number",
     "bullet_type",
     "base_type",
+    "bearing_surface_mm",
+    "boat_tail_length_mm",
+    "meplat_diameter_mm",
+    "ogive_type",
+    "bc_g1_high",
+    "bc_g1_mid",
+    "bc_g1_low",
+    "bc_g1_high_vel",
+    "bc_g1_mid_vel",
 ]
 
 
@@ -163,6 +172,11 @@ CARTRIDGE_BONUS_FIELDS = [
     "neck_diameter_mm",
     "base_diameter_mm",
     "rim_diameter_mm",
+    "shoulder_angle_deg",
+    "neck_length_mm",
+    "body_length_mm",
+    "rim_thickness_mm",
+    "case_type",
 ]
 
 
