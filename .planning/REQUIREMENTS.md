@@ -74,33 +74,33 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | — | Pending |
-| DATA-02 | — | Pending |
-| DATA-03 | — | Pending |
-| DATA-04 | — | Pending |
-| DATA-05 | — | Pending |
-| DATA-06 | — | Pending |
-| SCHM-01 | — | Pending |
-| SCHM-02 | — | Pending |
-| SCHM-03 | — | Pending |
-| VIS2-01 | — | Pending |
-| VIS2-02 | — | Pending |
-| VIS2-03 | — | Pending |
-| VIS2-04 | — | Pending |
-| VIS2-05 | — | Pending |
-| VIS3-01 | — | Pending |
-| VIS3-02 | — | Pending |
-| VIS3-03 | — | Pending |
-| VIS3-04 | — | Pending |
-| VIS3-05 | — | Pending |
-| SRCH-01 | — | Pending |
-| SRCH-02 | — | Pending |
+| DATA-01 | Phase 11 | Pending |
+| DATA-02 | Phase 14 | Pending |
+| DATA-03 | Phase 14 | Pending |
+| DATA-04 | Phase 14 | Pending |
+| DATA-05 | Phase 14 | Pending |
+| DATA-06 | Phase 14 | Pending |
+| SCHM-01 | Phase 11 | Pending |
+| SCHM-02 | Phase 11 | Pending |
+| SCHM-03 | Phase 11 | Pending |
+| VIS2-01 | Phase 12 | Pending |
+| VIS2-02 | Phase 12 | Pending |
+| VIS2-03 | Phase 12 | Pending |
+| VIS2-04 | Phase 12 | Pending |
+| VIS2-05 | Phase 12 | Pending |
+| VIS3-01 | Phase 13 | Pending |
+| VIS3-02 | Phase 13 | Pending |
+| VIS3-03 | Phase 13 | Pending |
+| VIS3-04 | Phase 13 | Pending |
+| VIS3-05 | Phase 13 | Pending |
+| SRCH-01 | Phase 14 | Pending |
+| SRCH-02 | Phase 14 | Pending |
 
 **Coverage:**
 - v1.3 requirements: 21 total
-- Mapped to phases: 0
-- Unmapped: 21 ⚠️
+- Mapped to phases: 21/21
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-27*
-*Last updated: 2026-02-27 after initial definition*
+*Last updated: 2026-02-27 after roadmap creation*
