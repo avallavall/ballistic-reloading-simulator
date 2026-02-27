@@ -5,13 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases so users can simulate immediately without manual data entry.
-**Current focus:** Planning next milestone
+**Current focus:** v1.3 Data Expansion + Visual Viewers
 
 ## Current Position
 
-Phase: None — v1.2 milestone archived
-Status: All milestones shipped. Ready for `/gsd:new-milestone`.
-Last activity: 2026-02-24 — Archived v1.2 milestone
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-27 — Milestone v1.3 started
 
 Progress: v1.0 (base) + v1.1 (7 plans) + v1.2 (17 plans) = 24+ plans shipped
 
@@ -53,6 +54,6 @@ None active. All v1.2 blockers resolved.
 
 ## Session Continuity
 
-Last session: 2026-02-24
-Stopped at: Archived v1.2 milestone
-Resume: `/gsd:new-milestone` to start next milestone
+Last session: 2026-02-27
+Stopped at: Defining v1.3 requirements
+Resume: Continue with requirements and roadmap
