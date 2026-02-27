@@ -123,7 +123,7 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14
 | 8. Frontend Filter & Search Controls | v1.2 | 2/2 | Complete | 2026-02-24 |
 | 9. Powder Alias UI + Import Cache Fix | v1.2 | 2/2 | Complete | 2026-02-24 |
 | 10. Tech Debt Cleanup | v1.2 | 2/2 | Complete | 2026-02-24 |
-| 11. Foundation and Data Expansion | v1.3 | 0/3 | In progress | - |
+| 11. Foundation and Data Expansion | 2/3 | In Progress|  | - |
 | 12. 2D SVG Technical Drawings | v1.3 | 0/? | Not started | - |
 | 13. 3D Parametric Cartridge Viewer | v1.3 | 0/? | Not started | - |
 | 14. Browser Upload and Caliber-Scoped Search | v1.3 | 0/? | Not started | - |

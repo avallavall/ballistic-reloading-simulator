@@ -20,7 +20,7 @@ Requirements for milestone v1.3: Data Expansion + Visual Viewers. Each maps to r
 
 - [ ] **SCHM-01**: Cartridge model extended with 5 optional drawing fields (shoulder_angle_deg, neck_length_mm, body_length_mm, rim_thickness_mm, case_type)
 - [ ] **SCHM-02**: Bullet model extended with 4 optional rendering fields (bearing_surface_mm, boat_tail_length_mm, meplat_diameter_mm, ogive_type)
-- [ ] **SCHM-03**: Geometry engine estimates missing dimensions from existing data with documented heuristics
+- [x] **SCHM-03**: Geometry engine estimates missing dimensions from existing data with documented heuristics
 
 ### 2D SVG Drawings
 
@@ -82,7 +82,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-06 | Phase 14 | Pending |
 | SCHM-01 | Phase 11 | Pending |
 | SCHM-02 | Phase 11 | Pending |
-| SCHM-03 | Phase 11 | Pending |
+| SCHM-03 | Phase 11 | Complete |
 | VIS2-01 | Phase 12 | Pending |
 | VIS2-02 | Phase 12 | Pending |
 | VIS2-03 | Phase 12 | Pending |
