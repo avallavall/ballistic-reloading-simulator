@@ -127,5 +127,5 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14
 | 10. Tech Debt Cleanup | v1.2 | 2/2 | Complete | 2026-02-24 |
 | 11. Foundation and Data Expansion | v1.3 | Complete    | 2026-02-27 | 2026-02-27 |
 | 12. 2D SVG Technical Drawings | 3/3 | Complete    | 2026-02-28 | - |
-| 13. 3D Parametric Cartridge Viewer | 3/3 | Complete   | 2026-02-28 | - |
+| 13. 3D Parametric Cartridge Viewer | 3/3 | Complete    | 2026-02-28 | - |
 | 14. Browser Upload and Caliber-Scoped Search | v1.3 | 0/? | Not started | - |
