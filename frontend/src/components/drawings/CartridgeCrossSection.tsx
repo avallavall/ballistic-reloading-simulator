@@ -98,9 +98,9 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
     const maxR = Math.max(baseR, rimR, neckR);
 
     // Padding for dimensions (generous to avoid overlap with labels)
-    const padLeft = 35;
-    const padRight = 10;
-    const padTop = 30;
+    const padLeft = 45;
+    const padRight = 15;
+    const padTop = 40;
     const padBottom = 25 + TITLE_BLOCK_HEIGHT;
 
     // viewBox dimensions (in mm) — title block placed below, not to the right

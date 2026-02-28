@@ -7,10 +7,10 @@
 import { DimensionAnnotation } from './types';
 
 /** Spacing between stagger tiers (mm in drawing coordinates) */
-export const TIER_SPACING_MM = 8;
+export const TIER_SPACING_MM = 9;
 
 /** Distance from the outline to the first tier (mm) */
-export const BASE_OFFSET_MM = 10;
+export const BASE_OFFSET_MM = 12;
 
 /** Approximate character width as fraction of font size */
 const CHAR_WIDTH_FACTOR = 0.6;
@@ -87,10 +87,17 @@ export function layoutDimensions(
     const tierOccupied: Interval[][] = []; // tierOccupied[tier] = occupied intervals
 
     for (const ann of group) {
-      // Estimate text width from label length
-      const labelText = ann.label || `${ann.value_mm.toFixed(2)}`;
-      const textWidth = labelText.length * dimFontSize * CHAR_WIDTH_FACTOR;
-      const margin = 1.0; // mm padding on each side
+      // Estimate text width from the RENDERED value text (wider than label)
+      // Value format: "XX.XX mm / X.XXX in" — typically 18-22 chars
+      const valueMm = ann.value_mm;
+      const mmStr = String(valueMm);
+      const mmDecimals = mmStr.includes('.') ? Math.min(mmStr.length - mmStr.indexOf('.') - 1, 3) : 1;
+      const valueText = `${valueMm.toFixed(mmDecimals)} mm / ${(valueMm / 25.4).toFixed(3)} in`;
+      const labelText = ann.label || '';
+      // Use the wider of value text and label for overlap detection
+      const maxChars = Math.max(valueText.length, labelText.length);
+      const textWidth = maxChars * dimFontSize * CHAR_WIDTH_FACTOR;
+      const margin = 1.5; // mm padding on each side
 
       // Compute the interval this annotation occupies
       let intervalStart: number;

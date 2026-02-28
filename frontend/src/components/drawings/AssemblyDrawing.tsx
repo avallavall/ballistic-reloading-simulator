@@ -207,8 +207,6 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
             width={layout.barrel_end_x - layout.barrel_start_x}
             height={layout.barrel_bore_r * 2}
             fill={theme.background}
-            stroke={theme.hiddenEdge}
-            strokeWidth={0.2}
           />
 
           {/* Rifling hash marks at bore entrance */}

@@ -109,9 +109,9 @@ const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
     const chamberMaxR = chamberProfile.reduce((max, p) => Math.max(max, p.y), 0);
     const chamberEndX = chamberProfile[chamberProfile.length - 1]?.x ?? caseLength + 10;
 
-    const padLeft = 30;
-    const padRight = 10;
-    const padTop = 30;
+    const padLeft = 35;
+    const padRight = 15;
+    const padTop = 40;
     const padBottom = 25 + TITLE_BLOCK_HEIGHT;
     const drawingWidth = chamberEndX + padLeft + padRight + 65;
     const drawingHeight = chamberMaxR * 2 + padTop + padBottom;
