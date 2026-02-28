@@ -4,7 +4,7 @@
 
 - ✅ **v1.1 3-Curve Engine + Extended Charts** — Phases 1-2 (shipped 2026-02-21)
 - ✅ **v1.2 Component Databases + Search** — Phases 3-10 (shipped 2026-02-24)
-- 🚧 **v1.3 Data Expansion + Visual Viewers** — Phases 11-14 (in progress)
+- 🚧 **v1.3 Data Expansion + Visual Viewers** — Phases 11-15 (in progress)
 
 ## Phases
 
@@ -38,6 +38,7 @@
 - [x] **Phase 12: 2D SVG Technical Drawings** - Three-tab SVG viewer with cross-section, chamber, and assembly drawings (completed 2026-02-28)
 - [x] **Phase 13: 3D Parametric Cartridge Viewer** - Interactive React Three Fiber model with cutaway and orbit controls (completed 2026-02-28)
 - [ ] **Phase 14: Browser Upload and Caliber-Scoped Search** - File upload UI with safety gates and caliber-filtered parametric search
+- [ ] **Phase 15: Assembly Deep Link Integration Fix** - Pass simulation data through deep link, fix OBT overlay on drawings page, cleanup dead code
 
 ## Phase Details
 
@@ -108,6 +109,20 @@ Plans:
 - [ ] 14-02: TBD
 - [ ] 14-03: TBD
 
+### Phase 15: Assembly Deep Link Integration Fix
+**Goal**: OBT harmonic overlay is visible on the assembly drawing when arriving from simulation results via deep link
+**Depends on**: Phase 12 (2D drawings), Phase 13 (3D viewer integration)
+**Requirements**: VIS2-03 (integration fix)
+**Gap Closure**: Closes integration gap (simulate → drawings data handoff) and flow gap ("View Assembly with OBT Overlay via Deep Link") from v1.3 audit
+**Success Criteria** (what must be TRUE):
+  1. Navigating from simulation results "Ver Dibujo de Conjunto" button to /drawings shows the assembly drawing WITH OBT harmonic node markers and stress zone coloring from the simulation
+  2. Dead `powderChargeGrains` prop removed from CartridgeViewer3D
+  3. Direct navigation to /drawings (without simulation context) still works with graceful degradation (no OBT overlay shown)
+**Plans**: TBD
+
+Plans:
+- [ ] 15-01: TBD
+
 ## Progress
 
 **Execution Order:**
@@ -129,3 +144,4 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14
 | 12. 2D SVG Technical Drawings | 3/3 | Complete    | 2026-02-28 | - |
 | 13. 3D Parametric Cartridge Viewer | 3/3 | Complete    | 2026-02-28 | - |
 | 14. Browser Upload and Caliber-Scoped Search | v1.3 | 0/? | Not started | - |
+| 15. Assembly Deep Link Integration Fix | v1.3 | 0/? | Not started | - |
