@@ -223,8 +223,8 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
 
     // Title block data
     const titleBlockData = useMemo(() => {
-      return computeTitleBlock(cartridge.name, 'Cartridge Cross-Section', 1, style);
-    }, [cartridge.name, style]);
+      return computeTitleBlock(cartridge.name);
+    }, [cartridge.name]);
 
     // Build inner case wall path (inset from outer profile)
     const innerWallPath = useMemo(() => {

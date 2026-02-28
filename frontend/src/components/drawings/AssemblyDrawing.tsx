@@ -152,9 +152,8 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
 
     // Title block
     const titleBlockData = useMemo(() => {
-      const drawingType = simulation ? 'Assembly with Simulation' : 'Barrel Assembly';
-      return computeTitleBlock(cartridge.name, drawingType, 1, style);
-    }, [cartridge.name, simulation, style]);
+      return computeTitleBlock(cartridge.name);
+    }, [cartridge.name]);
 
     return (
       <svg

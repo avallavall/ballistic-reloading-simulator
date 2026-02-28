@@ -196,13 +196,8 @@ const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
 
     // Title block
     const titleBlockData = useMemo(() => {
-      return computeTitleBlock(
-        cartridge.name,
-        'Cartridge in Chamber',
-        1,
-        style
-      );
-    }, [cartridge.name, style]);
+      return computeTitleBlock(cartridge.name);
+    }, [cartridge.name]);
 
     return (
       <svg

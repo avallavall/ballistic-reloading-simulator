@@ -10,7 +10,7 @@ import { TitleBlockData } from './types';
 export const TITLE_BLOCK_WIDTH = 60;
 
 /** Title block height in drawing coordinates (mm) */
-export const TITLE_BLOCK_HEIGHT = 15;
+export const TITLE_BLOCK_HEIGHT = 7;
 
 // ============================================================
 // Title Block Computation
@@ -19,35 +19,9 @@ export const TITLE_BLOCK_HEIGHT = 15;
 /**
  * Compute title block data for rendering.
  *
- * @param name - Drawing name (e.g., ".308 Winchester - Remington 700")
- * @param drawingType - Type label (e.g., "Cross Section", "Chamber Detail", "Assembly")
- * @param scale - Numeric scale factor (e.g., 8 for "8:1")
- * @param style - Drawing style name
+ * @param name - Drawing name (e.g., ".308 Winchester")
  * @returns TitleBlockData ready for rendering
  */
-export function computeTitleBlock(
-  name: string,
-  drawingType: string,
-  scale: number,
-  style: 'blueprint' | 'modern'
-): TitleBlockData {
-  // Format scale text
-  const scaleText = scale >= 1
-    ? `Scale: ${scale}:1`
-    : `Scale: 1:${Math.round(1 / scale)}`;
-
-  // Format date
-  const now = new Date();
-  const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
-
-  // Style display name
-  const styleName = style === 'blueprint' ? 'Blueprint' : 'Modern';
-
-  return {
-    name,
-    drawingType,
-    scale: scaleText,
-    date,
-    style: styleName,
-  };
+export function computeTitleBlock(name: string): TitleBlockData {
+  return { name };
 }

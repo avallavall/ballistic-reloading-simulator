@@ -121,16 +121,8 @@ export interface AssemblyLayout {
 // ============================================================
 
 export interface TitleBlockData {
-  /** Drawing name (e.g., ".308 Winchester - Remington 700") */
+  /** Drawing name (e.g., ".308 Winchester") */
   name: string;
-  /** Drawing type label (e.g., "Cross Section", "Chamber Detail") */
-  drawingType: string;
-  /** Scale text (e.g., "Scale: 8:1") */
-  scale: string;
-  /** Date string */
-  date: string;
-  /** Style name for display */
-  style: string;
 }
 
 // ============================================================

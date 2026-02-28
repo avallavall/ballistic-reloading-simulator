@@ -120,8 +120,8 @@ const BulletProfile = forwardRef<SVGSVGElement, BulletProfileProps>(
     }, [annotations, drawingWidth, drawingHeight]);
 
     const titleBlockData = useMemo(() => {
-      return computeTitleBlock(bullet.name, 'Bullet Profile', 1, style);
-    }, [bullet.name, style]);
+      return computeTitleBlock(bullet.name);
+    }, [bullet.name]);
 
     return (
       <svg
