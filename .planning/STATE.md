@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Data Expansion + Visual Viewers
-status: unknown
-last_updated: "2026-02-27T20:24:44.645Z"
+status: executing
+last_updated: "2026-02-28T06:52:16Z"
 progress:
-  total_phases: 1
+  total_phases: 2
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
 ---
 
 # Project State
@@ -18,23 +18,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases so users can simulate immediately without manual data entry.
-**Current focus:** Phase 11 - Foundation and Data Expansion (v1.3)
+**Current focus:** Phase 12 - 2D SVG Technical Drawings (v1.3)
 
 ## Current Position
 
-Phase: 11 of 14 (Foundation and Data Expansion) -- COMPLETE
-Plan: 3 of 3 in current phase (all complete)
-Status: Phase Complete
-Last activity: 2026-02-27 — Completed 11-03-PLAN.md (Bullet Seed Data)
+Phase: 12 of 14 (2D SVG Technical Drawings)
+Plan: 2 of 3 in current phase
+Status: Executing
+Last activity: 2026-02-28 — Completed 12-01-PLAN.md (Drawing Foundation Library)
 
-Progress: v1.0 (base) + v1.1 (7 plans) + v1.2 (17 plans) = 24 plans shipped | v1.3: [########░░] 75%
+Progress: v1.0 (base) + v1.1 (7 plans) + v1.2 (17 plans) = 24 plans shipped | v1.3: [#########░] 83%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 28
-- Average duration: 4.2min
-- Total execution time: 2.2 hours
+- Total plans completed: 29
+- Average duration: 4.3min
+- Total execution time: 2.3 hours
 
 **By Phase:**
 
@@ -51,6 +51,7 @@ Progress: v1.0 (base) + v1.1 (7 plans) + v1.2 (17 plans) = 24 plans shipped | v1
 | 9 - Powder Alias UI, Import & Cache Fix | 2/2 | 4min | 2min |
 | 10 - Tech Debt Cleanup | 2/2 | 4min | 2min |
 | 11 - Foundation and Data Expansion | 3/3 | 25min | 8.3min |
+| 12 - 2D SVG Technical Drawings | 1/3 | 7min | 7min |
 
 ## Accumulated Context
 
@@ -66,6 +67,10 @@ All decisions logged in PROJECT.md Key Decisions table. Recent:
 - Backfilled 53 cartridges with SAAMI/CIP drawing dimensions
 - 506 bullets across 7 manufacturers with match bullets prioritized
 - Count-based seed threshold: <=127 replace, 128-400 preserve user data, >400 skip
+- Pure computation library pattern for drawing files: zero React imports, consumed by SVG components
+- jsPDF + svg2pdf.js for PDF export with dynamic imports to avoid bundle bloat
+- Greedy interval scheduling for dimension annotation layout
+- userSpaceOnUse for all hatching patterns (required for correct SVG transform scaling)
 
 ### Pending Todos
 
@@ -77,6 +82,6 @@ None active. All v1.2 blockers resolved.
 
 ## Session Continuity
 
-Last session: 2026-02-27
-Stopped at: Completed 11-03-PLAN.md (Bullet Seed Data) -- Phase 11 fully complete
-Resume: Continue with Phase 12 (2D SVG Technical Drawings)
+Last session: 2026-02-28
+Stopped at: Completed 12-01-PLAN.md (Drawing Foundation Library)
+Resume: Continue with 12-02-PLAN.md (SVG Drawing Components)
