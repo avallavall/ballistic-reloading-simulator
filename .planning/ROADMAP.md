@@ -84,11 +84,12 @@ Plans:
   3. User can toggle a cutaway half-section view showing the internal structure (case wall, powder space, bullet seating)
   4. Navigating to and from the 3D viewer page 20+ times does not cause WebGL context loss, black canvas, or memory leaks
   5. Pages that do not use the 3D viewer load with zero Three.js JavaScript in their bundle
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 13-01: TBD
-- [ ] 13-02: TBD
+- [ ] 13-01-PLAN.md — Pure geometry-to-mesh conversion library (mesh-builder.ts, materials.ts) + HDR environment map
+- [ ] 13-02-PLAN.md — R3F 3D scene components (CartridgeViewer3D, CartridgeMesh, BulletMesh, PrimerMesh, CutawayControls, DimensionLabels3D)
+- [ ] 13-03-PLAN.md — Page integration (DrawingTabs 3D tab, dynamic import, WebGL lifecycle, deep linking, simulation results button)
 
 ### Phase 14: Browser Upload and Caliber-Scoped Search
 **Goal**: Users can contribute bullet/cartridge data via file upload and get caliber-relevant parametric search results
