@@ -195,15 +195,6 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
         });
       }
 
-      dims.push({
-        x1: caseLength + 2, y1: -(cartridge.bore_diameter_mm / 2),
-        x2: caseLength + 2, y2: cartridge.bore_diameter_mm / 2,
-        value_mm: cartridge.bore_diameter_mm,
-        label: 'Bore Dia.',
-        side: 'right',
-        offset_tier: 1,
-      });
-
       // Mark estimated dimensions
       return dims.map(d => ({
         ...d,
@@ -297,6 +288,16 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
             stroke={theme.hiddenEdge}
             strokeWidth={theme.thinStrokeWidth}
             strokeDasharray="1.5,0.5"
+          />
+
+          {/* Primer flash hole (small circle at case head center) */}
+          <circle
+            cx={cartridge.rim_thickness_mm ?? 1.3}
+            cy={0}
+            r={1.0}
+            fill={theme.powderFill === 'none' ? 'url(#hatch-powder)' : theme.powderFill}
+            stroke={theme.hiddenEdge}
+            strokeWidth={theme.thinStrokeWidth}
           />
 
           {/* Case web thickness line (hidden edge) */}
