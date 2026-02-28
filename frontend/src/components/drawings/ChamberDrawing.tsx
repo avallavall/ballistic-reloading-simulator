@@ -241,9 +241,9 @@ const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
           {/* Headspace gap indicator */}
           <rect
             x={-clearances.headspace_gap_mm}
-            y={-baseR * 0.5}
+            y={-baseR}
             width={clearances.headspace_gap_mm}
-            height={baseR}
+            height={baseR * 2}
             fill={theme.dimColor}
             opacity={0.15}
           />

@@ -290,15 +290,41 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
             strokeDasharray="1.5,0.5"
           />
 
-          {/* Primer flash hole (small circle at case head center) */}
-          <circle
-            cx={cartridge.rim_thickness_mm ?? 1.3}
-            cy={0}
-            r={1.0}
-            fill={theme.powderFill === 'none' ? 'url(#hatch-powder)' : theme.powderFill}
-            stroke={theme.hiddenEdge}
-            strokeWidth={theme.thinStrokeWidth}
-          />
+          {/* Primer pocket and flash hole (cross-section view) */}
+          {(() => {
+            const rimThick = cartridge.rim_thickness_mm ?? 1.3;
+            const baseDia = cartridge.base_diameter_mm ?? cartridge.groove_diameter_mm;
+            const isLargeRifle = baseDia > 10;
+            const pocketR = isLargeRifle ? 2.5 : 2.25;   // ~5.0mm / ~4.5mm diameter
+            const pocketDepth = isLargeRifle ? 3.3 : 2.9;
+            const flashR = isLargeRifle ? 0.8 : 0.75;     // ~1.6mm / ~1.5mm diameter
+            const flashDepth = 1.2; // web thickness beyond pocket
+            const pocketX = rimThick - pocketDepth; // pocket opens at case head face
+            return (
+              <g>
+                {/* Primer pocket recess */}
+                <rect
+                  x={pocketX < 0 ? 0 : pocketX}
+                  y={-pocketR}
+                  width={pocketDepth - (pocketX < 0 ? -pocketX : 0)}
+                  height={pocketR * 2}
+                  fill={theme.background}
+                  stroke={theme.hiddenEdge}
+                  strokeWidth={theme.thinStrokeWidth}
+                />
+                {/* Flash hole (connects pocket to powder chamber) */}
+                <rect
+                  x={rimThick}
+                  y={-flashR}
+                  width={flashDepth}
+                  height={flashR * 2}
+                  fill={theme.powderFill === 'none' ? 'url(#hatch-powder)' : theme.powderFill}
+                  stroke={theme.hiddenEdge}
+                  strokeWidth={theme.thinStrokeWidth}
+                />
+              </g>
+            );
+          })()}
 
           {/* Case web thickness line (hidden edge) */}
           <line
