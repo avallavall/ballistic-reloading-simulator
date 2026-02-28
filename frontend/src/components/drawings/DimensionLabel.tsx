@@ -11,6 +11,7 @@
 import React from 'react';
 import { DrawingTheme } from '@/lib/drawings/types';
 import { BASE_OFFSET_MM, TIER_SPACING_MM } from '@/lib/drawings/dimension-layout';
+import { useUnits } from '@/lib/unit-context';
 
 interface DimensionLabelProps {
   x1: number;
@@ -52,12 +53,15 @@ export default function DimensionLabel({
   theme,
   isEstimated = false,
 }: DimensionLabelProps) {
+  const { unitSystem } = useUnits();
   const isHorizontal = side === 'top' || side === 'bottom';
   const tierOffset = BASE_OFFSET_MM + (offset_tier - 1) * TIER_SPACING_MM;
   const dimDash = isEstimated ? '1,0.5' : undefined;
   const estSuffix = isEstimated ? ' *' : '';
 
-  const valueText = `${formatMm(value_mm)} mm / ${formatInch(value_mm)} in${estSuffix}`;
+  const valueText = unitSystem === 'metric'
+    ? `${formatMm(value_mm)} mm${estSuffix}`
+    : `${formatInch(value_mm)} in${estSuffix}`;
 
   if (isHorizontal) {
     const sign = side === 'top' ? -1 : 1;

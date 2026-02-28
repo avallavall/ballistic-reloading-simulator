@@ -14,6 +14,7 @@ import {
   Search,
   ShieldCheck,
   PenTool,
+  Settings,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -37,6 +38,7 @@ const navItems: { href: string; label: string; icon: typeof Home; indent?: boole
   { href: '/bullets', label: 'Proyectiles', icon: Target },
   { href: '/cartridges', label: 'Cartuchos', icon: Disc },
   { href: '/rifles', label: 'Rifles', icon: Ruler },
+  { href: '/settings', label: 'Configuracion', icon: Settings },
 ];
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
