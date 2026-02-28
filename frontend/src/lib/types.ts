@@ -208,6 +208,10 @@ export interface Rifle {
   weight_kg: number;
   barrel_condition: string;
   round_count: number;
+  // Chamber drawing fields
+  freebore_mm: number | null;
+  throat_angle_deg: number | null;
+  headspace_mm: number | null;
   cartridge?: Cartridge;
 }
 
@@ -220,6 +224,10 @@ export interface RifleCreate {
   weight_kg: number;
   barrel_condition: string;
   round_count: number;
+  // Chamber drawing fields (optional)
+  freebore_mm?: number | null;
+  throat_angle_deg?: number | null;
+  headspace_mm?: number | null;
 }
 
 // ============================================================

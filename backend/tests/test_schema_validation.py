@@ -295,6 +295,44 @@ class TestRifleValidation:
         with pytest.raises(ValidationError):
             RifleCreate(**data)
 
+    def test_rifle_with_chamber_fields_passes(self):
+        """RifleCreate with all 3 chamber drawing fields set to valid values."""
+        data = valid_rifle_data()
+        data.update(freebore_mm=2.0, throat_angle_deg=1.5, headspace_mm=0.1)
+        r = RifleCreate(**data)
+        assert r.freebore_mm == 2.0
+        assert r.throat_angle_deg == 1.5
+        assert r.headspace_mm == 0.1
+
+    def test_rifle_freebore_too_large(self):
+        """freebore_mm=25 exceeds le=20 limit."""
+        data = valid_rifle_data()
+        data["freebore_mm"] = 25
+        with pytest.raises(ValidationError):
+            RifleCreate(**data)
+
+    def test_rifle_throat_angle_too_large(self):
+        """throat_angle_deg=15 exceeds le=10 limit."""
+        data = valid_rifle_data()
+        data["throat_angle_deg"] = 15
+        with pytest.raises(ValidationError):
+            RifleCreate(**data)
+
+    def test_rifle_headspace_too_large(self):
+        """headspace_mm=10 exceeds le=5 limit."""
+        data = valid_rifle_data()
+        data["headspace_mm"] = 10
+        with pytest.raises(ValidationError):
+            RifleCreate(**data)
+
+    def test_rifle_chamber_fields_nullable(self):
+        """All 3 chamber fields omitted should be valid (default to None)."""
+        data = valid_rifle_data()
+        r = RifleCreate(**data)
+        assert r.freebore_mm is None
+        assert r.throat_angle_deg is None
+        assert r.headspace_mm is None
+
 
 # ---------------------------------------------------------------------------
 # LoadCreate

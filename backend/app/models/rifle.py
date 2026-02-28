@@ -17,4 +17,9 @@ class Rifle(UUIDMixin, Base):
     barrel_condition = Column(String(20), nullable=False, default="new")
     round_count = Column(Integer, nullable=False, default=0)
 
+    # Chamber drawing fields (nullable - optional for technical drawings)
+    freebore_mm = Column(Float, nullable=True)       # Unrifled lead before rifling
+    throat_angle_deg = Column(Float, nullable=True)   # Angle of leade/throat
+    headspace_mm = Column(Float, nullable=True)       # How much case floats in chamber
+
     cartridge = relationship("Cartridge", lazy="selectin")

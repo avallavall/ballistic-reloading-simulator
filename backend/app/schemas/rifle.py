@@ -12,6 +12,10 @@ class RifleCreate(BaseModel):
     weight_kg: float = Field(default=3.5, gt=0, le=30, description="Rifle weight (kg), typical 3-6")
     barrel_condition: str = Field(default="new", max_length=20)
     round_count: int = Field(default=0, ge=0, le=100_000)
+    # Chamber drawing fields (optional)
+    freebore_mm: float | None = Field(None, ge=0, le=20, description="Freebore length (mm), typical 0.05-5")
+    throat_angle_deg: float | None = Field(None, gt=0, le=10, description="Throat/leade angle (deg), typical 1-3")
+    headspace_mm: float | None = Field(None, ge=0, le=5, description="Headspace gap (mm), typical 0.05-0.15")
 
 
 class RifleUpdate(BaseModel):
@@ -23,6 +27,10 @@ class RifleUpdate(BaseModel):
     weight_kg: float | None = Field(None, gt=0, le=30)
     barrel_condition: str | None = Field(None, max_length=20)
     round_count: int | None = Field(None, ge=0, le=100_000)
+    # Chamber drawing fields (optional)
+    freebore_mm: float | None = Field(None, ge=0, le=20)
+    throat_angle_deg: float | None = Field(None, gt=0, le=10)
+    headspace_mm: float | None = Field(None, ge=0, le=5)
 
 
 class RifleResponse(BaseModel):
@@ -35,5 +43,9 @@ class RifleResponse(BaseModel):
     weight_kg: float
     barrel_condition: str
     round_count: int
+    # Chamber drawing fields
+    freebore_mm: float | None = None
+    throat_angle_deg: float | None = None
+    headspace_mm: float | None = None
 
     model_config = {"from_attributes": True}
