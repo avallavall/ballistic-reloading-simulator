@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, CheckCircle, XCircle, Activity, Download, PenTool } from 'lucide-react';
+import { AlertTriangle, CheckCircle, XCircle, Activity, Download, PenTool, Box } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -560,6 +560,14 @@ export default function SimulatePage() {
                     <Button variant="secondary" size="sm">
                       <PenTool size={14} />
                       Ver Dibujo de Conjunto
+                    </Button>
+                  </Link>
+                  <Link
+                    href={`/drawings?cartridge_id=${selectedRifle?.cartridge?.id || ''}&rifle_id=${lastParams?.rifle_id || ''}&bullet_id=${lastParams?.bullet_id || ''}&tab=3d`}
+                  >
+                    <Button variant="secondary" size="sm">
+                      <Box size={14} />
+                      Vista 3D
                     </Button>
                   </Link>
                   <Button

@@ -60,8 +60,8 @@ function DrawingsPageContent() {
     if (bulletIdParam && bullets.some((b: Bullet) => b.id === bulletIdParam)) {
       setSelectedBulletId(bulletIdParam);
     }
-    if (tabParam === 'cross-section' || tabParam === 'chamber' || tabParam === 'assembly') {
-      setInitialTab(tabParam);
+    if (tabParam === 'cross-section' || tabParam === 'chamber' || tabParam === 'assembly' || tabParam === '3d') {
+      setInitialTab(tabParam as DrawingTab);
     }
 
     setParamsApplied(true);
@@ -125,7 +125,7 @@ function DrawingsPageContent() {
         <div>
           <h1 className="text-2xl font-bold text-white">Dibujos Tecnicos</h1>
           <p className="text-sm text-slate-400">
-            Visualiza secciones transversales, recamaras y conjuntos con cotas tecnicas
+            Visualiza secciones transversales, recamaras, conjuntos y modelos 3D interactivos
           </p>
         </div>
       </div>
