@@ -23,8 +23,6 @@ interface CartridgeCrossSectionProps {
   cartridge: Cartridge;
   bullet?: Bullet;
   style: 'blueprint' | 'modern';
-  width?: number;
-  height?: number;
 }
 
 /**
@@ -68,13 +66,9 @@ function toBulletDims(b: Bullet): BulletDimensions {
 /** Case wall thickness for cross-section visualization (mm) */
 const CASE_WALL_THICKNESS = 0.8;
 
-/** Primer pocket dimensions (mm) */
-const PRIMER_POCKET_DIAMETER = 4.0;
-const PRIMER_POCKET_DEPTH = 3.0;
-
 const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionProps>(
   function CartridgeCrossSection(
-    { cartridge, bullet, style, width = 900, height = 500 },
+    { cartridge, bullet, style },
     ref
   ) {
     const theme = getTheme(style);
@@ -103,16 +97,16 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
     const rimR = (cartridge.rim_diameter_mm ?? cartridge.base_diameter_mm ?? cartridge.groove_diameter_mm) / 2;
     const maxR = Math.max(baseR, rimR, neckR);
 
-    // Padding for dimensions and title block
-    const padLeft = 15;
-    const padRight = 5;
-    const padTop = 20;
-    const padBottom = 20 + TITLE_BLOCK_HEIGHT;
+    // Padding for dimensions (generous to avoid overlap with labels)
+    const padLeft = 35;
+    const padRight = 10;
+    const padTop = 30;
+    const padBottom = 25 + TITLE_BLOCK_HEIGHT;
 
-    // viewBox dimensions (in mm)
-    const drawingWidth = oal + padLeft + padRight + TITLE_BLOCK_WIDTH;
+    // viewBox dimensions (in mm) — title block placed below, not to the right
+    const contentWidth = oal + padLeft + padRight;
+    const drawingWidth = Math.max(contentWidth, TITLE_BLOCK_WIDTH + padRight);
     const drawingHeight = maxR * 2 + padTop + padBottom;
-    const centerY = padTop + maxR;
 
     // Build dimension annotations
     const annotations = useMemo(() => {
@@ -229,9 +223,8 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
 
     // Title block data
     const titleBlockData = useMemo(() => {
-      const scale = Math.round(width / drawingWidth);
-      return computeTitleBlock(cartridge.name, 'Cartridge Cross-Section', Math.max(scale, 1), style);
-    }, [cartridge.name, width, drawingWidth, style]);
+      return computeTitleBlock(cartridge.name, 'Cartridge Cross-Section', 1, style);
+    }, [cartridge.name, style]);
 
     // Build inner case wall path (inset from outer profile)
     const innerWallPath = useMemo(() => {
@@ -266,21 +259,13 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
       return pts.join(' ');
     }, [cartridge, baseR, neckR, caseLength]);
 
-    // Primer pocket path
-    const primerPath = useMemo(() => {
-      const pR = PRIMER_POCKET_DIAMETER / 2;
-      const pD = PRIMER_POCKET_DEPTH;
-      return `M 0 ${-pR} L ${pD} ${-pR} L ${pD} ${pR} L 0 ${pR} Z`;
-    }, []);
-
     return (
       <svg
         ref={ref}
-        width={width}
-        height={height}
-        viewBox={`${-padLeft} ${-padTop} ${drawingWidth} ${drawingHeight}`}
+        viewBox={`${-padLeft} ${-(maxR + padTop)} ${drawingWidth} ${drawingHeight}`}
         xmlns="http://www.w3.org/2000/svg"
-        style={{ maxWidth: '100%', height: 'auto' }}
+        preserveAspectRatio="xMidYMid meet"
+        style={{ width: '100%', height: 'auto' }}
       >
         <defs>
           <HatchPatterns theme={theme} />
@@ -289,7 +274,7 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
         {/* Background */}
         <rect
           x={-padLeft}
-          y={-padTop}
+          y={-(maxR + padTop)}
           width={drawingWidth}
           height={drawingHeight}
           fill={theme.background}
@@ -312,14 +297,6 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
             stroke={theme.hiddenEdge}
             strokeWidth={0.3}
             strokeDasharray="1.5,0.5"
-          />
-
-          {/* Primer pocket */}
-          <path
-            d={primerPath}
-            fill={theme.leadColor}
-            stroke={theme.outline}
-            strokeWidth={0.3}
           />
 
           {/* Case web thickness line (hidden edge) */}
@@ -389,8 +366,8 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
 
         {/* Title block */}
         <TitleBlock
-          x={oal + padRight}
-          y={maxR + 5}
+          x={drawingWidth - padLeft - TITLE_BLOCK_WIDTH}
+          y={maxR + padBottom - TITLE_BLOCK_HEIGHT - 3}
           data={titleBlockData}
           theme={theme}
         />

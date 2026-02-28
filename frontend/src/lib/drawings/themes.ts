@@ -15,7 +15,7 @@ export const blueprintTheme: DrawingTheme = {
   background: '#1a1f3a',
   outline: '#e0e8ff',
   hiddenEdge: '#5566aa',
-  dimColor: '#7088cc',
+  dimColor: '#a0c0ff',
   textColor: '#e0e8ff',
   hatchColor: '#7088cc',
   caseFill: 'none',          // Outline only with hatching
@@ -26,7 +26,7 @@ export const blueprintTheme: DrawingTheme = {
   titleBlockBg: '#141830',
   titleBlockBorder: '#7088cc',
   fontFamily: '"Courier New", Courier, monospace',
-  dimFontSize: 2.0,
+  dimFontSize: 2.8,
   titleFontSize: 3.0,
 };
 
@@ -39,7 +39,7 @@ export const modernTheme: DrawingTheme = {
   background: '#ffffff',
   outline: '#333333',
   hiddenEdge: '#bbbbbb',
-  dimColor: '#666666',
+  dimColor: '#444444',
   textColor: '#333333',
   hatchColor: '#999999',
   caseFill: '#d4a94c',       // Gold/amber for brass case
@@ -50,7 +50,7 @@ export const modernTheme: DrawingTheme = {
   titleBlockBg: '#f5f5f5',
   titleBlockBorder: '#333333',
   fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-  dimFontSize: 2.0,
+  dimFontSize: 2.8,
   titleFontSize: 3.0,
 };
 

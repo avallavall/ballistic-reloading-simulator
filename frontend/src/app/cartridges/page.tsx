@@ -5,6 +5,7 @@ import { FilterBar } from '@/components/filters/FilterBar';
 import { useCaliberFamilies } from '@/hooks/useFilterOptions';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Box, Plus, Trash2, X, Pencil } from 'lucide-react';
+import CartridgeCrossSection from '@/components/drawings/CartridgeCrossSection';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import {
   Table,
@@ -80,6 +81,7 @@ export default function CartridgesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<CartridgeCreate>(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const editingCartridge = editingId ? cartridges.find(c => c.id === editingId) ?? null : null;
 
   const handleChange = (field: keyof CartridgeCreate, value: string) => {
     setForm((prev) => ({
@@ -287,6 +289,12 @@ export default function CartridgesPage() {
                 </Button>
               </div>
             </form>
+            {editingCartridge && (
+              <div className="mt-4 border-t border-slate-700 pt-4">
+                <p className="mb-2 text-xs font-medium text-slate-400">Vista previa</p>
+                <CartridgeCrossSection cartridge={editingCartridge} style="modern" />
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

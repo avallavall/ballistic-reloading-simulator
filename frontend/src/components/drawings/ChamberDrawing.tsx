@@ -28,8 +28,6 @@ interface ChamberDrawingProps {
   bullet?: Bullet;
   rifle: Rifle;
   style: 'blueprint' | 'modern';
-  width?: number;
-  height?: number;
 }
 
 function toCartridgeDims(c: Cartridge): CartridgeDimensions {
@@ -72,7 +70,7 @@ function profilePointsToPath(
 
 const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
   function ChamberDrawing(
-    { cartridge, bullet, rifle, style, width = 900, height = 500 },
+    { cartridge, bullet, rifle, style },
     ref
   ) {
     const theme = getTheme(style);
@@ -111,10 +109,10 @@ const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
     const chamberMaxR = chamberProfile.reduce((max, p) => Math.max(max, p.y), 0);
     const chamberEndX = chamberProfile[chamberProfile.length - 1]?.x ?? caseLength + 10;
 
-    const padLeft = 15;
-    const padRight = 5;
-    const padTop = 22;
-    const padBottom = 22 + TITLE_BLOCK_HEIGHT;
+    const padLeft = 30;
+    const padRight = 10;
+    const padTop = 30;
+    const padBottom = 25 + TITLE_BLOCK_HEIGHT;
     const drawingWidth = chamberEndX + padLeft + padRight + 65;
     const drawingHeight = chamberMaxR * 2 + padTop + padBottom;
 
@@ -198,23 +196,21 @@ const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
 
     // Title block
     const titleBlockData = useMemo(() => {
-      const scale = Math.round(width / drawingWidth);
       return computeTitleBlock(
         cartridge.name,
         'Cartridge in Chamber',
-        Math.max(scale, 1),
+        1,
         style
       );
-    }, [cartridge.name, width, drawingWidth, style]);
+    }, [cartridge.name, style]);
 
     return (
       <svg
         ref={ref}
-        width={width}
-        height={height}
-        viewBox={`${-padLeft} ${-padTop} ${drawingWidth} ${drawingHeight}`}
+        viewBox={`${-padLeft} ${-(chamberMaxR + padTop)} ${drawingWidth} ${drawingHeight}`}
         xmlns="http://www.w3.org/2000/svg"
-        style={{ maxWidth: '100%', height: 'auto' }}
+        preserveAspectRatio="xMidYMid meet"
+        style={{ width: '100%', height: 'auto' }}
       >
         <defs>
           <HatchPatterns theme={theme} />
@@ -223,7 +219,7 @@ const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
         {/* Background */}
         <rect
           x={-padLeft}
-          y={-padTop}
+          y={-(chamberMaxR + padTop)}
           width={drawingWidth}
           height={drawingHeight}
           fill={theme.background}

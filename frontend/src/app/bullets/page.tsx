@@ -5,6 +5,7 @@ import { FilterBar } from '@/components/filters/FilterBar';
 import { useManufacturers, useCaliberFamilies } from '@/hooks/useFilterOptions';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Target, Plus, Trash2, X, Pencil } from 'lucide-react';
+import BulletProfile from '@/components/drawings/BulletProfile';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import {
   Table,
@@ -114,6 +115,7 @@ export default function BulletsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<BulletCreate>(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const editingBullet = editingId ? bullets.find(b => b.id === editingId) ?? null : null;
 
   const handleChange = (field: keyof BulletCreate, value: string) => {
     setForm((prev) => ({
@@ -316,6 +318,12 @@ export default function BulletsPage() {
                 </Button>
               </div>
             </form>
+            {editingBullet && (
+              <div className="mt-4 border-t border-slate-700 pt-4">
+                <p className="mb-2 text-xs font-medium text-slate-400">Vista previa</p>
+                <BulletProfile bullet={editingBullet} style="modern" />
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

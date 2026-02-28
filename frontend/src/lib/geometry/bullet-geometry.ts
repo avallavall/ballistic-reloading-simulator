@@ -78,166 +78,27 @@ function normalizeOgiveType(
 }
 
 /**
- * Build SVG path from top-half profile points.
- * Uses bezier curves for ogive sections (marked by indices).
+ * Build SVG path from top-half profile points using polylines.
+ * Uses all intermediate ogive points for accurate, symmetric rendering.
  */
-function buildSvgPath(
-  topPoints: ProfilePoint[],
-  ogiveStartIdx: number,
-  ogiveEndIdx: number,
-  ogiveNormalized: string
-): string {
+function buildSvgPath(topPoints: ProfilePoint[]): string {
   if (topPoints.length < 2) return '';
-
-  const parts: string[] = [];
   const fmt = (n: number) => n.toFixed(3);
+  const parts: string[] = [];
 
-  // Top half (negative y in SVG = top)
+  // Top half: base → tip (negative y for SVG top)
   parts.push(`M ${fmt(topPoints[0].x)} ${fmt(-topPoints[0].y)}`);
-
   for (let i = 1; i < topPoints.length; i++) {
-    if (i === ogiveStartIdx && ogiveEndIdx > ogiveStartIdx) {
-      // Use bezier curve for ogive section
-      const svgOgive = buildOgiveSvgSegment(
-        topPoints, ogiveStartIdx, ogiveEndIdx, ogiveNormalized
-      );
-      parts.push(svgOgive);
-      i = ogiveEndIdx; // Skip to end of ogive
-    } else {
-      parts.push(`L ${fmt(topPoints[i].x)} ${fmt(-topPoints[i].y)}`);
-    }
+    parts.push(`L ${fmt(topPoints[i].x)} ${fmt(-topPoints[i].y)}`);
   }
 
-  // Bottom half: mirror (right to left, positive y in SVG)
+  // Bottom half: tip → base (positive y for SVG bottom) — exact mirror
   for (let i = topPoints.length - 1; i >= 0; i--) {
-    if (i === ogiveEndIdx && ogiveStartIdx < ogiveEndIdx) {
-      // Reverse bezier for bottom half ogive
-      const svgOgiveReverse = buildOgiveSvgSegmentReverse(
-        topPoints, ogiveStartIdx, ogiveEndIdx, ogiveNormalized
-      );
-      parts.push(svgOgiveReverse);
-      i = ogiveStartIdx;
-    } else {
-      parts.push(`L ${fmt(topPoints[i].x)} ${fmt(topPoints[i].y)}`);
-    }
+    parts.push(`L ${fmt(topPoints[i].x)} ${fmt(topPoints[i].y)}`);
   }
 
   parts.push('Z');
   return parts.join(' ');
-}
-
-/**
- * Build SVG bezier segment for ogive (top half, negative y in SVG).
- */
-function buildOgiveSvgSegment(
-  points: ProfilePoint[],
-  startIdx: number,
-  endIdx: number,
-  ogiveType: string
-): string {
-  const start = points[startIdx];
-  const end = points[endIdx];
-  const fmt = (n: number) => n.toFixed(3);
-
-  switch (ogiveType) {
-    case 'tangent':
-    case 'spitzer': {
-      // Quadratic bezier: control point at (midX, startY) for tangent-smooth curve
-      const cpX = start.x + (end.x - start.x) * 0.6;
-      const cpY = start.y * 0.5 + end.y * 0.5;
-      return `Q ${fmt(cpX)} ${fmt(-cpY)} ${fmt(end.x)} ${fmt(-end.y)}`;
-    }
-
-    case 'secant': {
-      // Steeper secant ogive: control point closer to the nose
-      const cpX = start.x + (end.x - start.x) * 0.75;
-      const cpY = start.y * 0.3 + end.y * 0.7;
-      return `Q ${fmt(cpX)} ${fmt(-cpY)} ${fmt(end.x)} ${fmt(-end.y)}`;
-    }
-
-    case 'hybrid': {
-      // Cubic bezier: tangent at body junction, secant toward nose
-      const cp1X = start.x + (end.x - start.x) * 0.35;
-      const cp1Y = start.y; // Tangent at body junction
-      const cp2X = start.x + (end.x - start.x) * 0.75;
-      const cp2Y = start.y * 0.2 + end.y * 0.8; // Secant toward nose
-      return `C ${fmt(cp1X)} ${fmt(-cp1Y)} ${fmt(cp2X)} ${fmt(-cp2Y)} ${fmt(end.x)} ${fmt(-end.y)}`;
-    }
-
-    case 'round_nose': {
-      // Semi-circular arc using SVG arc command
-      const rx = (end.x - start.x);
-      const ry = start.y - end.y;
-      return `A ${fmt(rx)} ${fmt(ry)} 0 0 1 ${fmt(end.x)} ${fmt(-end.y)}`;
-    }
-
-    case 'flat_nose': {
-      // Straight line from body to flat face (wadcutter style)
-      return `L ${fmt(end.x)} ${fmt(-end.y)}`;
-    }
-
-    default: {
-      // Fallback: quadratic bezier (spitzer-like)
-      const cpX = start.x + (end.x - start.x) * 0.6;
-      const cpY = start.y * 0.5 + end.y * 0.5;
-      return `Q ${fmt(cpX)} ${fmt(-cpY)} ${fmt(end.x)} ${fmt(-end.y)}`;
-    }
-  }
-}
-
-/**
- * Build SVG bezier segment for ogive bottom-half mirror (positive y in SVG).
- */
-function buildOgiveSvgSegmentReverse(
-  points: ProfilePoint[],
-  startIdx: number,
-  endIdx: number,
-  ogiveType: string
-): string {
-  const start = points[startIdx]; // body end
-  const end = points[endIdx]; // tip
-  const fmt = (n: number) => n.toFixed(3);
-
-  // Reverse: we go from end (tip) to start (body), with mirrored y
-  switch (ogiveType) {
-    case 'tangent':
-    case 'spitzer': {
-      const cpX = start.x + (end.x - start.x) * 0.6;
-      const cpY = start.y * 0.5 + end.y * 0.5;
-      return `Q ${fmt(cpX)} ${fmt(cpY)} ${fmt(start.x)} ${fmt(start.y)}`;
-    }
-
-    case 'secant': {
-      const cpX = start.x + (end.x - start.x) * 0.75;
-      const cpY = start.y * 0.3 + end.y * 0.7;
-      return `Q ${fmt(cpX)} ${fmt(cpY)} ${fmt(start.x)} ${fmt(start.y)}`;
-    }
-
-    case 'hybrid': {
-      // Reverse cubic: swap control points
-      const cp1X = start.x + (end.x - start.x) * 0.75;
-      const cp1Y = start.y * 0.2 + end.y * 0.8;
-      const cp2X = start.x + (end.x - start.x) * 0.35;
-      const cp2Y = start.y;
-      return `C ${fmt(cp1X)} ${fmt(cp1Y)} ${fmt(cp2X)} ${fmt(cp2Y)} ${fmt(start.x)} ${fmt(start.y)}`;
-    }
-
-    case 'round_nose': {
-      const rx = (end.x - start.x);
-      const ry = start.y - end.y;
-      return `A ${fmt(rx)} ${fmt(ry)} 0 0 1 ${fmt(start.x)} ${fmt(start.y)}`;
-    }
-
-    case 'flat_nose': {
-      return `L ${fmt(start.x)} ${fmt(start.y)}`;
-    }
-
-    default: {
-      const cpX = start.x + (end.x - start.x) * 0.6;
-      const cpY = start.y * 0.5 + end.y * 0.5;
-      return `Q ${fmt(cpX)} ${fmt(cpY)} ${fmt(start.x)} ${fmt(start.y)}`;
-    }
-  }
 }
 
 /**
@@ -313,8 +174,6 @@ export function generateBulletProfile(dims: BulletDimensions): GeometryResult {
 
   // Build profile points (top half, base to tip)
   const points: ProfilePoint[] = [];
-  let ogiveStartIdx = -1;
-  let ogiveEndIdx = -1;
 
   // Section 1: Bullet base
   if (hasBoatTail) {
@@ -335,12 +194,8 @@ export function generateBulletProfile(dims: BulletDimensions): GeometryResult {
     points.push({ x: bearingEnd, y: bodyR });
   }
 
-  // Section 3: Ogive start marker
-  ogiveStartIdx = points.length - 1; // Last body point
-
-  // Section 4: Ogive end / meplat
+  // Section 3: Ogive (sampled as discrete points for smooth rendering)
   if (ogiveLength > 0) {
-    // For profile points (LatheGeometry), we sample the ogive as discrete points
     const ogivePoints = generateOgiveProfilePoints(
       bearingEnd, bodyR, totalLength, meplatR, ogiveNormalized
     );
@@ -348,15 +203,13 @@ export function generateBulletProfile(dims: BulletDimensions): GeometryResult {
     for (let i = 1; i < ogivePoints.length; i++) {
       points.push(ogivePoints[i]);
     }
-    ogiveEndIdx = points.length - 1;
   } else {
     // No ogive section (e.g. wadcutter fully flat)
     points.push({ x: totalLength, y: meplatR });
-    ogiveEndIdx = points.length - 1;
   }
 
-  // Generate SVG path with bezier curves for ogive
-  const svgPath = buildSvgPath(points, ogiveStartIdx, ogiveEndIdx, ogiveNormalized);
+  // Generate SVG path using all profile points (polyline)
+  const svgPath = buildSvgPath(points);
 
   // Classify completeness
   const dataCompleteness = classifyCompleteness(estimatedFields.length);

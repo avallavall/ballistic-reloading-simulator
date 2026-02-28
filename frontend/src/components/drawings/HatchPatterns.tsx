@@ -72,14 +72,14 @@ export default function HatchPatterns({ theme }: HatchPatternsProps) {
       {/* Dimension line arrowhead marker */}
       <marker
         id="dim-arrow"
-        viewBox="0 0 3 3"
-        refX={3}
-        refY={1.5}
-        markerWidth={3}
-        markerHeight={3}
+        viewBox="0 0 4 4"
+        refX={4}
+        refY={2}
+        markerWidth={4}
+        markerHeight={4}
         orient="auto-start-reverse"
       >
-        <polygon points="0,0 3,1.5 0,3" fill={theme.dimColor} />
+        <polygon points="0,0.5 4,2 0,3.5" fill={theme.dimColor} />
       </marker>
     </>
   );

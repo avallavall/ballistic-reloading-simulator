@@ -7,10 +7,10 @@
 import { DimensionAnnotation } from './types';
 
 /** Spacing between stagger tiers (mm in drawing coordinates) */
-export const TIER_SPACING_MM = 4;
+export const TIER_SPACING_MM = 8;
 
 /** Distance from the outline to the first tier (mm) */
-export const BASE_OFFSET_MM = 6;
+export const BASE_OFFSET_MM = 10;
 
 /** Approximate character width as fraction of font size */
 const CHAR_WIDTH_FACTOR = 0.6;

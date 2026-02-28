@@ -29,8 +29,6 @@ interface AssemblyDrawingProps {
   rifle: Rifle;
   simulation?: SimulationResult;
   style: 'blueprint' | 'modern';
-  width?: number;
-  height?: number;
 }
 
 function toCartridgeDims(c: Cartridge): CartridgeDimensions {
@@ -65,7 +63,7 @@ const STRESS_OUTLINE: Record<string, string> = {
 
 const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
   function AssemblyDrawing(
-    { cartridge, bullet, rifle, simulation, style, width = 1200, height = 400 },
+    { cartridge, bullet, rifle, simulation, style },
     ref
   ) {
     const theme = getTheme(style);
@@ -97,9 +95,9 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
 
     // Drawing dimensions
     const padLeft = 15;
-    const padRight = 5;
-    const padTop = 20;
-    const padBottom = 20 + TITLE_BLOCK_HEIGHT;
+    const padRight = 10;
+    const padTop = 25;
+    const padBottom = 25 + TITLE_BLOCK_HEIGHT;
 
     const drawingWidth = layout.total_width_mm + padLeft + padRight + 65;
     const drawingHeight = layout.total_height_mm + padTop + padBottom;
@@ -155,18 +153,16 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
     // Title block
     const titleBlockData = useMemo(() => {
       const drawingType = simulation ? 'Assembly with Simulation' : 'Barrel Assembly';
-      const scale = Math.max(Math.round(width / drawingWidth), 1);
-      return computeTitleBlock(cartridge.name, drawingType, scale, style);
-    }, [cartridge.name, simulation, width, drawingWidth, style]);
+      return computeTitleBlock(cartridge.name, drawingType, 1, style);
+    }, [cartridge.name, simulation, style]);
 
     return (
       <svg
         ref={ref}
-        width={width}
-        height={height}
         viewBox={`${-padLeft} ${-(layout.total_height_mm / 2 + padTop)} ${drawingWidth} ${drawingHeight}`}
         xmlns="http://www.w3.org/2000/svg"
-        style={{ maxWidth: '100%', height: 'auto' }}
+        preserveAspectRatio="xMidYMid meet"
+        style={{ width: '100%', height: 'auto' }}
       >
         <defs>
           <HatchPatterns theme={theme} />
@@ -266,7 +262,7 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
             />
           </g>
 
-          {/* Bullet indicator (simple elongated shape at case mouth to OAL) */}
+          {/* Bullet with ogive curve at case mouth to OAL */}
           {bullet && (
             <g>
               {(() => {
@@ -274,10 +270,24 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
                 const bulletEndX = layout.bullet_tip_x;
                 const bulletR = cartridge.bore_diameter_mm / 2;
                 const meplatR = bulletR * 0.06;
-                // Simple bullet outline
+                const bulletLen = bulletEndX - bulletStartX;
+                // Bearing surface ~40% of bullet length from base
+                const bearingEnd = bulletStartX + bulletLen * 0.4;
+                // Ogive curve from bearing end to tip using quadratic bezier
+                const cpX = bearingEnd + (bulletEndX - bearingEnd) * 0.55;
+                const fmt = (n: number) => n.toFixed(3);
+                const d = [
+                  `M ${fmt(bulletStartX)} ${fmt(-bulletR)}`,
+                  `L ${fmt(bearingEnd)} ${fmt(-bulletR)}`,
+                  `Q ${fmt(cpX)} ${fmt(-bulletR)} ${fmt(bulletEndX)} ${fmt(-meplatR)}`,
+                  `L ${fmt(bulletEndX)} ${fmt(meplatR)}`,
+                  `Q ${fmt(cpX)} ${fmt(bulletR)} ${fmt(bearingEnd)} ${fmt(bulletR)}`,
+                  `L ${fmt(bulletStartX)} ${fmt(bulletR)}`,
+                  'Z',
+                ].join(' ');
                 return (
                   <path
-                    d={`M ${bulletStartX} ${-bulletR} L ${bulletEndX} ${-meplatR} L ${bulletEndX} ${meplatR} L ${bulletStartX} ${bulletR} Z`}
+                    d={d}
                     fill={theme.copperFill === 'none' ? 'url(#hatch-copper)' : theme.copperFill}
                     stroke={theme.outline}
                     strokeWidth={0.4}
