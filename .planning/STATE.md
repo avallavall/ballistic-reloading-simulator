@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Data Expansion + Visual Viewers
 status: unknown
-last_updated: "2026-02-28T14:36:34.830Z"
+last_updated: "2026-02-28T15:23:14.000Z"
 progress:
   total_phases: 2
   completed_phases: 2
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 Phase: 12 of 14 (2D SVG Technical Drawings) -- COMPLETE
 Plan: 3 of 3 in current phase -- ALL COMPLETE
 Status: Phase Complete
-Last activity: 2026-02-28 - Completed quick task 3: Simplify title block, restore primer flash hole, remove bore artifact
+Last activity: 2026-02-28 - Completed quick task 4: Add chamber fields to rifle form + settings page for unit preferences
 
 Progress: v1.0 (base) + v1.1 (7 plans) + v1.2 (17 plans) = 24 plans shipped | v1.3: [############] 100% (6/6 plans)
 
@@ -79,6 +79,7 @@ All decisions logged in PROJECT.md Key Decisions table. Recent:
 - [Phase quick-01]: Wrapped useSearchParams in Suspense boundary for /drawings page (Next.js 14 requirement)
 - [Phase quick-02]: Stroke widths centralized in DrawingTheme (0.35/0.15/0.2), dimension layout uses span-aware overlap detection
 - [Phase quick-03]: Title block simplified to name-only (height 7mm), computeTitleBlock(name) single param, primer flash hole at rim_thickness on centerline
+- [Phase quick-04]: Chamber fields in collapsible section (auto-expand on edit), DimensionLabel uses useUnits() for single-unit display, Settings page with radio-card selector
 
 ### Pending Todos
 
@@ -95,9 +96,10 @@ None active. All v1.2 blockers resolved.
 | 1 | Clean up uncommitted changes, update outdated docs, and verify/fix 2D drawing issues | 2026-02-28 | e01919b | [1-clean-up-uncommitted-changes-update-outd](./quick/1-clean-up-uncommitted-changes-update-outd/) |
 | 2 | Fix drawings responsive sizing, thinner strokes, and dimension overlap | 2026-02-28 | 97089ee | [2-fix-drawings-responsive-sizing-thinner-l](./quick/2-fix-drawings-responsive-sizing-thinner-l/) |
 | 3 | Simplify title block to name-only, restore primer flash hole, remove bore diameter artifact | 2026-02-28 | 20aac0e | [3-simplify-title-block-to-cartridge-name-o](./quick/3-simplify-title-block-to-cartridge-name-o/) |
+| 4 | Add chamber fields to rifle form + settings page for unit preferences | 2026-02-28 | ecbee18 | [4-add-missing-rifle-chamber-fields-to-edit](./quick/4-add-missing-rifle-chamber-fields-to-edit/) |
 
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed quick task 3 - title blocks simplified to name-only, primer flash hole restored, bore diameter artifact removed (20aac0e)
+Stopped at: Completed quick task 4 - chamber fields in rifle form, /settings page, single-unit DimensionLabel (ecbee18)
 Resume: Continue with Phase 13 or next milestone
