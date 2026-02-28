@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 Phase: 12 of 14 (2D SVG Technical Drawings) -- COMPLETE
 Plan: 3 of 3 in current phase -- ALL COMPLETE
 Status: Phase Complete
-Last activity: 2026-02-28 - Completed quick task 1: Clean up uncommitted changes, update outdated docs, and verify/fix 2D drawing issues
+Last activity: 2026-02-28 - Completed quick task 2: Fix drawings responsive sizing, thinner strokes, and dimension overlap
 
 Progress: v1.0 (base) + v1.1 (7 plans) + v1.2 (17 plans) = 24 plans shipped | v1.3: [############] 100% (6/6 plans)
 
@@ -77,6 +77,7 @@ All decisions logged in PROJECT.md Key Decisions table. Recent:
 - Hidden alt-style SVG for dual-export: invisible copy rendered alongside visible drawing for serialization
 - Deep link from simulation results to /drawings via query params (cartridge_id, rifle_id, bullet_id, tab)
 - [Phase quick-01]: Wrapped useSearchParams in Suspense boundary for /drawings page (Next.js 14 requirement)
+- [Phase quick-02]: Stroke widths centralized in DrawingTheme (0.35/0.15/0.2), dimension layout uses span-aware overlap detection
 
 ### Pending Todos
 
@@ -91,9 +92,10 @@ None active. All v1.2 blockers resolved.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 1 | Clean up uncommitted changes, update outdated docs, and verify/fix 2D drawing issues | 2026-02-28 | e01919b | [1-clean-up-uncommitted-changes-update-outd](./quick/1-clean-up-uncommitted-changes-update-outd/) |
+| 2 | Fix drawings responsive sizing, thinner strokes, and dimension overlap | 2026-02-28 | 97089ee | [2-fix-drawings-responsive-sizing-thinner-l](./quick/2-fix-drawings-responsive-sizing-thinner-l/) |
 
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Fixed drawing dimension overlap and bore rect artifact (7be980b). Remaining: Case Length/Neck Length value text still overlaps on same tier in cross-section — needs dimension interval to also account for dimension line span, not just text center.
-Resume: Fine-tune dimension layout overlap for cross-section, then continue with Phase 13 or next milestone
+Stopped at: Completed quick task 2 - drawings now responsive (70vh max), thinner strokes via theme, span-aware dimension overlap fixed (97089ee)
+Resume: Continue with Phase 13 or next milestone
