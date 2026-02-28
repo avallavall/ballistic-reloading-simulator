@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** The most accurate internal ballistics simulation available, validated against published load data, with comprehensive pre-loaded databases so users can simulate immediately without manual data entry.
-**Current focus:** Phase 12 - 2D SVG Technical Drawings (v1.3)
+**Current focus:** Phase 13 - 3D Parametric Cartridge Viewer (v1.3)
 
 ## Current Position
 
-Phase: 12 of 14 (2D SVG Technical Drawings) -- COMPLETE
-Plan: 3 of 3 in current phase -- ALL COMPLETE
-Status: Phase Complete
-Last activity: 2026-02-28 - Completed quick task 4: Add chamber fields to rifle form + settings page for unit preferences
+Phase: 13 of 14 (3D Parametric Cartridge Viewer) -- Context gathered
+Plan: 0 of TBD in current phase
+Status: Ready for planning
+Last activity: 2026-02-28 - Phase 13 context gathered
 
 Progress: v1.0 (base) + v1.1 (7 plans) + v1.2 (17 plans) = 24 plans shipped | v1.3: [############] 100% (6/6 plans)
 
@@ -101,5 +101,6 @@ None active. All v1.2 blockers resolved.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed quick task 4 - chamber fields in rifle form, /settings page, single-unit DimensionLabel (ecbee18)
-Resume: Continue with Phase 13 or next milestone
+Stopped at: Phase 13 context gathered
+Resume file: .planning/phases/13-3d-parametric-cartridge-viewer/13-CONTEXT.md
+Resume: /gsd:plan-phase 13
