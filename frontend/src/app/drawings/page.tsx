@@ -7,7 +7,7 @@
  * Reads query params to support deep linking from simulation results.
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { Suspense, useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PenTool } from 'lucide-react';
 import { useCartridges } from '@/hooks/useCartridges';
@@ -19,6 +19,14 @@ import type { Cartridge, Rifle, Bullet } from '@/lib/types';
 import type { DrawingTab } from '@/lib/drawings/types';
 
 export default function DrawingsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center py-12"><Spinner size="lg" /></div>}>
+      <DrawingsPageContent />
+    </Suspense>
+  );
+}
+
+function DrawingsPageContent() {
   const searchParams = useSearchParams();
 
   // Data fetching
