@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Data Expansion + Visual Viewers
 status: unknown
-last_updated: "2026-02-28T14:31:00Z"
+last_updated: "2026-02-28T14:36:34.830Z"
 progress:
   total_phases: 2
   completed_phases: 2
@@ -76,6 +76,7 @@ All decisions logged in PROJECT.md Key Decisions table. Recent:
 - Dimension annotations auto-tiered via layoutDimensions() to prevent overlap
 - Hidden alt-style SVG for dual-export: invisible copy rendered alongside visible drawing for serialization
 - Deep link from simulation results to /drawings via query params (cartridge_id, rifle_id, bullet_id, tab)
+- [Phase quick-01]: Wrapped useSearchParams in Suspense boundary for /drawings page (Next.js 14 requirement)
 
 ### Pending Todos
 
