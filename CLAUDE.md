@@ -63,6 +63,7 @@ simulador_balistica/
         │   ├── page.tsx           # Dashboard
         │   ├── simulate/page.tsx  # Simulacion (P(t), V(x), structural, harmonics, CSV export)
         │   ├── ladder/page.tsx    # Ladder Test (vel vs carga, presion vs carga)
+        │   ├── drawings/page.tsx  # 2D SVG technical drawings (assembly, cross-section, chamber)
         │   ├── powders/page.tsx   # CRUD con edicion inline
         │   ├── bullets/page.tsx   # CRUD con edicion inline
         │   ├── cartridges/page.tsx # CRUD con edicion inline
@@ -72,6 +73,14 @@ simulador_balistica/
         │   ├── ui/               # Badge, Button, Card, Input, Select, Spinner, Table
         │   ├── layout/           # Header, Sidebar (con Cartuchos + Ladder Test), AppShell
         │   ├── forms/            # SimulationForm, LoadForm
+        │   ├── drawings/          # SVG technical drawings (Phase 12)
+        │   │   ├── AssemblyDrawing.tsx      # Barrel+cartridge+bullet assembly
+        │   │   ├── BulletProfile.tsx        # Standalone bullet profile drawing
+        │   │   ├── CartridgeCrossSection.tsx # Cartridge cross-section with hatching
+        │   │   ├── ChamberDrawing.tsx       # Chamber dimensions drawing
+        │   │   ├── DimensionLabel.tsx       # Reusable dimension annotation
+        │   │   ├── HatchPatterns.tsx        # SVG hatch pattern definitions
+        │   │   └── TitleBlock.tsx           # Drawing title block
         │   └── charts/
         │       ├── PressureTimeChart.tsx    # P(t) con linea SAAMI
         │       ├── VelocityDistanceChart.tsx # V(x)
@@ -81,7 +90,15 @@ simulador_balistica/
         └── lib/
             ├── api.ts        # Cliente HTTP (CRUD + simulate + ladder + chrono)
             ├── types.ts      # Interfaces TS (incluye campos structural/harmonics)
-            └── utils.ts      # Conversiones, safety levels, formateo
+            ├── utils.ts      # Conversiones, safety levels, formateo
+            ├── drawings/          # Drawing computation (pure, no React)
+            │   ├── dimension-layout.ts  # Greedy interval scheduling for dim placement
+            │   ├── themes.ts           # Blueprint and modern theme definitions
+            │   ├── title-block.ts      # Title block data computation
+            │   └── types.ts            # DimensionAnnotation, DrawingTheme types
+            └── geometry/          # Bullet/cartridge geometry engines
+                ├── bullet-geometry.ts   # SVG path + ProfilePoint[] generation
+                └── types.ts            # BulletDimensions, ProfilePoint types
 
 ```
 
@@ -218,6 +235,16 @@ simulador_balistica/
 - [ ] OWASP checks
 - [ ] Tests E2E (Playwright/Cypress)
 
+### Post-FASE: 2D SVG Technical Drawings - COMPLETADA
+- [x] Drawing components: Assembly, Cross-Section, Chamber, BulletProfile
+- [x] Pure computation libraries: dimension-layout, themes, title-block
+- [x] Geometry engine: bullet-geometry.ts (SVG path + ProfilePoint[])
+- [x] Drawings page at /drawings with tab navigation
+- [x] PDF/PNG export via jsPDF + svg2pdf.js
+- [x] Deep link from simulation results to drawings
+- [x] Bullet preview in bullets/cartridges edit forms
+- [x] Responsive SVG with viewBox + preserveAspectRatio
+
 ## Problemas Conocidos
 
 ### Resueltos
@@ -243,15 +270,15 @@ simulador_balistica/
 ## Roadmap (Priorizacion de docs/grtools_analysis.md)
 
 ### Quick Wins (1-2 dias cada uno)
-- [ ] Toggle de unidades en UI (PSI/MPa, FPS/m/s)
-- [ ] Tooltips de ayuda en campos del formulario de simulacion
-- [ ] Calculo de retroceso/impulso
-- [ ] Tabla comparativa de polvoras
-- [ ] Modo Simple/Avanzado en formulario de simulacion
+- [x] Toggle de unidades en UI (PSI/MPa, FPS/m/s)
+- [x] Tooltips de ayuda en campos del formulario de simulacion
+- [x] Calculo de retroceso/impulso
+- [x] Tabla comparativa de polvoras
+- [x] Modo Simple/Avanzado en formulario de simulacion
 
 ### Medio Plazo (1-2 semanas cada uno)
 - [ ] Flujo de calibracion con datos de cronografo
-- [ ] Busqueda parametrica de polvoras
+- [x] Busqueda parametrica de polvoras
 - [ ] Analisis de agrupaciones (shot groups)
 - [ ] Inspector de validacion cruzada de inputs
 
@@ -289,7 +316,7 @@ alembic downgrade -1              # Revertir una migracion
 
 ## Dependencias Clave
 - **Backend**: FastAPI 0.115.6, SQLAlchemy 2.0.36, asyncpg, Alembic 1.14.1, NumPy 2.2.1, SciPy 1.15.0, slowapi 0.1.9
-- **Frontend**: Next.js 14.2.15, React 18.3.1, TanStack Query 5.59.0, Recharts 2.13.0, Tailwind 3.4.13
+- **Frontend**: Next.js 14.2.15, React 18.3.1, TanStack Query 5.59.0, Recharts 2.13.0, Tailwind 3.4.13, jsPDF 2.x, svg2pdf.js
 - **Testing**: pytest, pytest-asyncio, aiosqlite, httpx
 
 ## Convenciones
@@ -301,3 +328,7 @@ alembic downgrade -1              # Revertir una migracion
 - Interfaz en espanol
 - Schemas Pydantic con `model_config = {"from_attributes": True}`
 - Validacion de limites fisicos en todos los schemas Create/Update
+- Drawing computation libraries are pure (zero React imports), consumed by SVG components
+- SVG drawings use viewBox + preserveAspectRatio="xMidYMid meet" (no fixed width/height)
+- userSpaceOnUse for all SVG hatching patterns
+- forwardRef on drawing components for SVG export serialization
