@@ -24,9 +24,9 @@ Requirements for milestone v1.3: Data Expansion + Visual Viewers. Each maps to r
 
 ### 2D SVG Drawings
 
-- [ ] **VIS2-01**: User can view cartridge cross-section SVG with labeled dimensions from DB data
+- [x] **VIS2-01**: User can view cartridge cross-section SVG with labeled dimensions from DB data
 - [x] **VIS2-02**: User can view cartridge-in-chamber drawing showing headspace, freebore, and rifling engagement
-- [ ] **VIS2-03**: User can view full assembly drawing with barrel and OBT harmonic node positions overlaid
+- [x] **VIS2-03**: User can view full assembly drawing with barrel and OBT harmonic node positions overlaid
 - [x] **VIS2-04**: Drawings degrade gracefully in three tiers based on data completeness (full, basic, insufficient)
 - [x] **VIS2-05**: User can export 2D drawings as PNG
 
@@ -83,9 +83,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCHM-01 | Phase 11 | Complete |
 | SCHM-02 | Phase 11 | Complete |
 | SCHM-03 | Phase 11 | Complete |
-| VIS2-01 | Phase 12 | Pending |
+| VIS2-01 | Phase 12 | Complete |
 | VIS2-02 | Phase 12 | Complete |
-| VIS2-03 | Phase 12 | Pending |
+| VIS2-03 | Phase 12 | Complete |
 | VIS2-04 | Phase 12 | Complete |
 | VIS2-05 | Phase 12 | Complete |
 | VIS3-01 | Phase 13 | Pending |
