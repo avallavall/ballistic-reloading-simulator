@@ -95,5 +95,5 @@ None active. All v1.2 blockers resolved.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Committed post-phase-12 drawing improvements and doc updates
-Resume: Continue with Phase 13 or next milestone
+Stopped at: Fixed drawing dimension overlap and bore rect artifact (7be980b). Remaining: Case Length/Neck Length value text still overlaps on same tier in cross-section — needs dimension interval to also account for dimension line span, not just text center.
+Resume: Fine-tune dimension layout overlap for cross-section, then continue with Phase 13 or next milestone
