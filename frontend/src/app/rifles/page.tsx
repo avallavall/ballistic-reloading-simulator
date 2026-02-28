@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Ruler, Plus, Trash2, X, Pencil } from 'lucide-react';
+import { Ruler, Plus, Trash2, X, Pencil, ChevronDown } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import {
   Table,
@@ -42,6 +42,8 @@ const conditionLabel: Record<string, string> = {
   worn: 'Desgastado',
 };
 
+const CHAMBER_FIELDS: (keyof RifleCreate)[] = ['freebore_mm', 'throat_angle_deg', 'headspace_mm'];
+
 const emptyForm: RifleCreate = {
   name: '',
   barrel_length_mm: 0,
@@ -51,6 +53,9 @@ const emptyForm: RifleCreate = {
   weight_kg: 3.5,
   barrel_condition: 'new',
   round_count: 0,
+  freebore_mm: undefined,
+  throat_angle_deg: undefined,
+  headspace_mm: undefined,
 };
 
 export default function RiflesPage() {
@@ -63,6 +68,7 @@ export default function RiflesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<RifleCreate>(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showChamberSection, setShowChamberSection] = useState(false);
 
   const cartridgeOptions = (cartridges || []).map((c) => ({
     value: c.id,
@@ -75,7 +81,9 @@ export default function RiflesPage() {
       [field]:
         field === 'name' || field === 'cartridge_id' || field === 'barrel_condition'
           ? value
-          : Number(value),
+          : (CHAMBER_FIELDS as string[]).includes(field)
+            ? (value === '' ? null : Number(value))
+            : Number(value),
     }));
   };
 
@@ -91,7 +99,12 @@ export default function RiflesPage() {
       weight_kg: rifle.weight_kg ?? 3.5,
       barrel_condition: rifle.barrel_condition,
       round_count: rifle.round_count,
+      freebore_mm: rifle.freebore_mm ?? undefined,
+      throat_angle_deg: rifle.throat_angle_deg ?? undefined,
+      headspace_mm: rifle.headspace_mm ?? undefined,
     });
+    const hasChamberData = rifle.freebore_mm != null || rifle.throat_angle_deg != null || rifle.headspace_mm != null;
+    setShowChamberSection(hasChamberData);
     setShowForm(true);
   };
 
@@ -99,6 +112,7 @@ export default function RiflesPage() {
     setForm(emptyForm);
     setShowForm(false);
     setEditingId(null);
+    setShowChamberSection(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -248,6 +262,53 @@ export default function RiflesPage() {
                   onChange={(e) => handleChange('round_count', e.target.value)}
                 />
               </div>
+
+              {/* Collapsible chamber section */}
+              <div className="border-t border-slate-700 pt-4 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowChamberSection(!showChamberSection)}
+                  className="flex items-center gap-2 text-sm font-medium text-slate-300 hover:text-white"
+                >
+                  <ChevronDown size={16} className={`transition-transform ${showChamberSection ? 'rotate-180' : ''}`} />
+                  Datos de Recamara (opcional)
+                </button>
+                {showChamberSection && (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mt-3">
+                    <Input
+                      label="Headspace"
+                      id="headspace_mm"
+                      type="number"
+                      step="0.01"
+                      suffix="mm"
+                      value={form.headspace_mm ?? ''}
+                      onChange={(e) => handleChange('headspace_mm', e.target.value)}
+                      placeholder="0.05 - 0.15"
+                    />
+                    <Input
+                      label="Freebore"
+                      id="freebore_mm"
+                      type="number"
+                      step="0.01"
+                      suffix="mm"
+                      value={form.freebore_mm ?? ''}
+                      onChange={(e) => handleChange('freebore_mm', e.target.value)}
+                      placeholder="0.05 - 5.0"
+                    />
+                    <Input
+                      label="Angulo de Garganta"
+                      id="throat_angle_deg"
+                      type="number"
+                      step="0.1"
+                      suffix="deg"
+                      value={form.throat_angle_deg ?? ''}
+                      onChange={(e) => handleChange('throat_angle_deg', e.target.value)}
+                      placeholder="1.0 - 3.0"
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end gap-3 pt-2">
                 <Button
                   type="button"

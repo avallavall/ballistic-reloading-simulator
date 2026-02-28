@@ -21,8 +21,10 @@ interface FormattedValue {
 interface UnitContextValue {
   unitSystem: UnitSystem;
   toggleUnits: () => void;
+  setUnitSystem: (system: UnitSystem) => void;
   formatPressure: (psi: number, decimals?: number) => FormattedValue;
   formatVelocity: (fps: number, decimals?: number) => FormattedValue;
+  formatLength: (mm: number, decimals?: number) => FormattedValue;
 }
 
 const UnitContext = createContext<UnitContextValue | null>(null);
@@ -45,6 +47,11 @@ export function UnitProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(STORAGE_KEY, next);
       return next;
     });
+  }, []);
+
+  const setSystem = useCallback((system: UnitSystem) => {
+    setUnitSystem(system);
+    localStorage.setItem(STORAGE_KEY, system);
   }, []);
 
   const formatPressure = useCallback(
@@ -73,9 +80,22 @@ export function UnitProvider({ children }: { children: ReactNode }) {
     [unitSystem]
   );
 
+  const formatLength = useCallback(
+    (mm: number, decimals?: number): FormattedValue => {
+      if (unitSystem === 'imperial') {
+        const inches = mm / 25.4;
+        const d = decimals ?? 3;
+        return { value: inches, formatted: formatNum(inches, d), unit: 'in' };
+      }
+      const d = decimals ?? 2;
+      return { value: mm, formatted: formatNum(mm, d), unit: 'mm' };
+    },
+    [unitSystem]
+  );
+
   return (
     <UnitContext.Provider
-      value={{ unitSystem, toggleUnits, formatPressure, formatVelocity }}
+      value={{ unitSystem, toggleUnits, setUnitSystem: setSystem, formatPressure, formatVelocity, formatLength }}
     >
       {children}
     </UnitContext.Provider>
