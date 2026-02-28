@@ -36,7 +36,7 @@
 
 - [x] **Phase 11: Foundation and Data Expansion** - Schema extensions, geometry engine, bullet seed data, npm dependencies (completed 2026-02-27)
 - [x] **Phase 12: 2D SVG Technical Drawings** - Three-tab SVG viewer with cross-section, chamber, and assembly drawings (completed 2026-02-28)
-- [ ] **Phase 13: 3D Parametric Cartridge Viewer** - Interactive React Three Fiber model with cutaway and orbit controls
+- [x] **Phase 13: 3D Parametric Cartridge Viewer** - Interactive React Three Fiber model with cutaway and orbit controls (completed 2026-02-28)
 - [ ] **Phase 14: Browser Upload and Caliber-Scoped Search** - File upload UI with safety gates and caliber-filtered parametric search
 
 ## Phase Details
@@ -127,5 +127,5 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14
 | 10. Tech Debt Cleanup | v1.2 | 2/2 | Complete | 2026-02-24 |
 | 11. Foundation and Data Expansion | v1.3 | Complete    | 2026-02-27 | 2026-02-27 |
 | 12. 2D SVG Technical Drawings | 3/3 | Complete    | 2026-02-28 | - |
-| 13. 3D Parametric Cartridge Viewer | 2/3 | In Progress|  | - |
+| 13. 3D Parametric Cartridge Viewer | 3/3 | Complete   | 2026-02-28 | - |
 | 14. Browser Upload and Caliber-Scoped Search | v1.3 | 0/? | Not started | - |

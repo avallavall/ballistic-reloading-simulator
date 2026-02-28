@@ -35,8 +35,8 @@ Requirements for milestone v1.3: Data Expansion + Visual Viewers. Each maps to r
 - [x] **VIS3-01**: User can view interactive 3D parametric cartridge model generated from DB dimensions
 - [x] **VIS3-02**: User can rotate, zoom, and pan the 3D model
 - [x] **VIS3-03**: User can toggle cutaway half-section view showing internal structure
-- [ ] **VIS3-04**: 3D viewer loads via code splitting with no impact on other page load times
-- [ ] **VIS3-05**: WebGL context properly disposed on page navigation (no memory leak after 20+ navigations)
+- [x] **VIS3-04**: 3D viewer loads via code splitting with no impact on other page load times
+- [x] **VIS3-05**: WebGL context properly disposed on page navigation (no memory leak after 20+ navigations)
 
 ### Search
 
@@ -91,8 +91,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIS3-01 | Phase 13 | Complete |
 | VIS3-02 | Phase 13 | Complete |
 | VIS3-03 | Phase 13 | Complete |
-| VIS3-04 | Phase 13 | Pending |
-| VIS3-05 | Phase 13 | Pending |
+| VIS3-04 | Phase 13 | Complete |
+| VIS3-05 | Phase 13 | Complete |
 | SRCH-01 | Phase 14 | Pending |
 | SRCH-02 | Phase 14 | Pending |
 
