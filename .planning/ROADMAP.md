@@ -35,7 +35,7 @@
 **Milestone Goal:** Expand component databases to 500+ bullets with community contribution support, add 2D technical SVG drawings (3-tab: cross-section, chamber, full assembly with harmonics), and build an interactive 3D parametric cartridge viewer.
 
 - [x] **Phase 11: Foundation and Data Expansion** - Schema extensions, geometry engine, bullet seed data, npm dependencies (completed 2026-02-27)
-- [ ] **Phase 12: 2D SVG Technical Drawings** - Three-tab SVG viewer with cross-section, chamber, and assembly drawings
+- [x] **Phase 12: 2D SVG Technical Drawings** - Three-tab SVG viewer with cross-section, chamber, and assembly drawings (completed 2026-02-28)
 - [ ] **Phase 13: 3D Parametric Cartridge Viewer** - Interactive React Three Fiber model with cutaway and orbit controls
 - [ ] **Phase 14: Browser Upload and Caliber-Scoped Search** - File upload UI with safety gates and caliber-filtered parametric search
 
@@ -125,6 +125,6 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14
 | 9. Powder Alias UI + Import Cache Fix | v1.2 | 2/2 | Complete | 2026-02-24 |
 | 10. Tech Debt Cleanup | v1.2 | 2/2 | Complete | 2026-02-24 |
 | 11. Foundation and Data Expansion | v1.3 | Complete    | 2026-02-27 | 2026-02-27 |
-| 12. 2D SVG Technical Drawings | 2/3 | In Progress|  | - |
+| 12. 2D SVG Technical Drawings | 3/3 | Complete   | 2026-02-28 | - |
 | 13. 3D Parametric Cartridge Viewer | v1.3 | 0/? | Not started | - |
 | 14. Browser Upload and Caliber-Scoped Search | v1.3 | 0/? | Not started | - |
