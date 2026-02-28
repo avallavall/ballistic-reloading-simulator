@@ -7,10 +7,10 @@
 import { DimensionAnnotation } from './types';
 
 /** Spacing between stagger tiers (mm in drawing coordinates) */
-export const TIER_SPACING_MM = 9;
+export const TIER_SPACING_MM = 6;
 
 /** Distance from the outline to the first tier (mm) */
-export const BASE_OFFSET_MM = 12;
+export const BASE_OFFSET_MM = 8;
 
 /** Approximate character width as fraction of font size */
 const CHAR_WIDTH_FACTOR = 0.6;
@@ -38,7 +38,8 @@ interface Interval {
  * 1. Separate annotations by side (top, bottom, left, right)
  * 2. Sort each group by position (x for top/bottom, y for left/right)
  * 3. Greedy interval scheduling: assign each annotation to the lowest tier
- *    where its text interval doesn't overlap any existing annotation
+ *    where its full span (union of dimension line extent + text extent)
+ *    doesn't overlap any existing annotation
  * 4. Return annotations with offset_tier populated
  *
  * @param annotations - Array of dimension annotations (offset_tier may be unset)
@@ -105,12 +106,22 @@ export function layoutDimensions(
 
       if (isHorizontal) {
         const midX = (ann.x1 + ann.x2) / 2;
-        intervalStart = midX - textWidth / 2 - margin;
-        intervalEnd = midX + textWidth / 2 + margin;
+        const textStart = midX - textWidth / 2 - margin;
+        const textEnd = midX + textWidth / 2 + margin;
+        // Union of dimension line span and text span
+        const lineStart = Math.min(ann.x1, ann.x2);
+        const lineEnd = Math.max(ann.x1, ann.x2);
+        intervalStart = Math.min(textStart, lineStart);
+        intervalEnd = Math.max(textEnd, lineEnd);
       } else {
         const midY = (ann.y1 + ann.y2) / 2;
-        intervalStart = midY - textWidth / 2 - margin;
-        intervalEnd = midY + textWidth / 2 + margin;
+        const textStart = midY - textWidth / 2 - margin;
+        const textEnd = midY + textWidth / 2 + margin;
+        // Union of dimension line span and text span
+        const lineStart = Math.min(ann.y1, ann.y2);
+        const lineEnd = Math.max(ann.y1, ann.y2);
+        intervalStart = Math.min(textStart, lineStart);
+        intervalEnd = Math.max(textEnd, lineEnd);
       }
 
       // Find the lowest tier where this interval fits
