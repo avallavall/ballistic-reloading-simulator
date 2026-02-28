@@ -13,6 +13,7 @@ import {
   BarChart2,
   Search,
   ShieldCheck,
+  PenTool,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -32,6 +33,7 @@ const navItems: { href: string; label: string; icon: typeof Home; indent?: boole
   { href: '/powders/compare', label: 'Comparar Polvoras', icon: Flame, indent: true },
   { href: '/powders/search', label: 'Busqueda Parametrica', icon: Search, indent: true },
   { href: '/validation', label: 'Validacion', icon: ShieldCheck },
+  { href: '/drawings', label: 'Dibujos Tecnicos', icon: PenTool },
   { href: '/bullets', label: 'Proyectiles', icon: Target },
   { href: '/cartridges', label: 'Cartuchos', icon: Disc },
   { href: '/rifles', label: 'Rifles', icon: Ruler },

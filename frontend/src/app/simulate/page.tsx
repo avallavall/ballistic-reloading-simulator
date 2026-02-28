@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { AlertTriangle, CheckCircle, XCircle, Activity, Download } from 'lucide-react';
+import Link from 'next/link';
+import { AlertTriangle, CheckCircle, XCircle, Activity, Download, PenTool } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -547,19 +548,29 @@ export default function SimulatePage() {
 
           {result && !simulation.isPending && (
             <>
-              {/* Safety indicator + CSV export */}
+              {/* Safety indicator + action buttons */}
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <SafetyIndicator result={activeResult || result} saamiMaxPsi={saamiMaxPsi} />
                 </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => exportCsv(activeResult || result)}
-                >
-                  <Download size={14} />
-                  Exportar CSV
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/drawings?cartridge_id=${selectedRifle?.cartridge?.id || ''}&rifle_id=${lastParams?.rifle_id || ''}&bullet_id=${lastParams?.bullet_id || ''}&tab=assembly`}
+                  >
+                    <Button variant="secondary" size="sm">
+                      <PenTool size={14} />
+                      Ver Dibujo de Conjunto
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => exportCsv(activeResult || result)}
+                  >
+                    <Download size={14} />
+                    Exportar CSV
+                  </Button>
+                </div>
               </div>
 
               {/* Key values with delta badges */}
