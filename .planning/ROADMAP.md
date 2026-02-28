@@ -67,11 +67,12 @@ Plans:
   3. User can view a full assembly drawing with barrel and OBT harmonic node positions overlaid from simulation results
   4. Drawings degrade gracefully in three tiers (full detail, basic outline, "insufficient data" message with edit link) based on how many dimension fields are populated
   5. User can export any 2D drawing tab as a PNG file
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 12-01: TBD
-- [ ] 12-02: TBD
+- [ ] 12-01-PLAN.md — Backend Rifle chamber fields + frontend drawing computation library (types, themes, hatching, dimension layout, chamber geometry, assembly geometry, export utils, npm deps)
+- [ ] 12-02-PLAN.md — SVG drawing React components (CartridgeCrossSection, ChamberDrawing, AssemblyDrawing, shared sub-components)
+- [ ] 12-03-PLAN.md — /drawings page, tab navigation, export integration, sidebar link, hooks
 
 ### Phase 13: 3D Parametric Cartridge Viewer
 **Goal**: Users can interact with a 3D model of their cartridge generated from database dimensions
