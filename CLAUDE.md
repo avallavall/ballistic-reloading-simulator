@@ -136,7 +136,7 @@ simulador_balistica/
 - [x] `powder.py` - 10 campos (name, manufacturer, burn_rate_*, force_constant, etc.)
 - [x] `bullet.py` - 9 campos (weight_grains, diameter_mm, bc_g1/g7, etc.)
 - [x] `cartridge.py` - 8 campos (saami_max_pressure, case_capacity, bore_diameter, etc.)
-- [x] `rifle.py` - 7 campos + FK a cartridge + round_count
+- [x] `rifle.py` - 7 campos + FK a cartridge + round_count + groove_count + twist_direction
 - [x] `load.py` - FK a powder, bullet, rifle + coal_mm, seating_depth_mm
 - [x] `simulation.py` - Results con JSONB + campos structural/harmonics
 
@@ -163,7 +163,7 @@ simulador_balistica/
 #### Database - COMPLETADA
 - [x] **Tablas auto-creadas** via `create_all()` en startup (fallback dev)
 - [x] **Alembic configurado** - Migraciones async con migracion inicial de 6 tablas
-- [x] **Seed data** - 22 polvoras, balas, cartuchos, 5 rifles por defecto
+- [x] **Seed data** - 22 polvoras, balas, cartuchos, 5 rifles con datos SAAMI de recamara
 
 ### FASE 4: Frontend - COMPLETADA
 #### Configuracion - COMPLETADA

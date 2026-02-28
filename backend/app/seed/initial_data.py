@@ -127,46 +127,72 @@ async def _seed_bullets(db: AsyncSession) -> int:
 
 
 # Rifles remain inline (only 5 records, tied to cartridge_name references)
+# One per caliber with SAAMI-sourced chamber data
 RIFLES = [
     {
-        "name": "Remington 700 SPS (.308 Win)",
+        "name": "Remington 700 SPS Tactical (.308 Win)",
         "cartridge_name": ".308 Winchester",
-        "barrel_length_mm": 610.0,
-        "twist_rate_mm": 305.0,
+        "barrel_length_mm": 508.0,
+        "twist_rate_mm": 254.0,
         "chamber_volume_mm3": 0.0,
         "weight_kg": 3.7,
+        "freebore_mm": 2.29,
+        "throat_angle_deg": 1.37,
+        "headspace_mm": 0.10,
+        "groove_count": 6,
+        "twist_direction": "right",
     },
     {
-        "name": "Tikka T3x (.308 Win)",
-        "cartridge_name": ".308 Winchester",
-        "barrel_length_mm": 610.0,
-        "twist_rate_mm": 280.0,
-        "chamber_volume_mm3": 0.0,
-        "weight_kg": 3.2,
-    },
-    {
-        "name": "Ruger Precision (6.5 CM)",
+        "name": "Ruger Precision Rifle (6.5 CM)",
         "cartridge_name": "6.5 Creedmoor",
         "barrel_length_mm": 610.0,
         "twist_rate_mm": 203.0,
         "chamber_volume_mm3": 0.0,
         "weight_kg": 4.5,
+        "freebore_mm": 5.06,
+        "throat_angle_deg": 1.50,
+        "headspace_mm": 0.10,
+        "groove_count": 5,
+        "twist_direction": "right",
     },
     {
-        "name": "AR-15 (.223 Rem)",
+        "name": "Ruger American Predator (.223 Rem)",
         "cartridge_name": ".223 Remington",
-        "barrel_length_mm": 508.0,
-        "twist_rate_mm": 178.0,
+        "barrel_length_mm": 559.0,
+        "twist_rate_mm": 203.0,
         "chamber_volume_mm3": 0.0,
-        "weight_kg": 3.0,
+        "weight_kg": 2.9,
+        "freebore_mm": 0.64,
+        "throat_angle_deg": 3.17,
+        "headspace_mm": 0.10,
+        "groove_count": 6,
+        "twist_direction": "right",
     },
     {
-        "name": "Savage 110 (.338 Lapua)",
-        "cartridge_name": ".338 Lapua Magnum",
-        "barrel_length_mm": 686.0,
+        "name": "Remington 700 Sendero SF II (.300 WM)",
+        "cartridge_name": ".300 Winchester Magnum",
+        "barrel_length_mm": 660.0,
         "twist_rate_mm": 254.0,
         "chamber_volume_mm3": 0.0,
-        "weight_kg": 5.4,
+        "weight_kg": 3.9,
+        "freebore_mm": 0.0,
+        "throat_angle_deg": 1.44,
+        "headspace_mm": 0.10,
+        "groove_count": 6,
+        "twist_direction": "right",
+    },
+    {
+        "name": "Accuracy International AXMC (.338 LM)",
+        "cartridge_name": ".338 Lapua Magnum",
+        "barrel_length_mm": 686.0,
+        "twist_rate_mm": 238.0,
+        "chamber_volume_mm3": 0.0,
+        "weight_kg": 6.5,
+        "freebore_mm": 3.29,
+        "throat_angle_deg": 3.01,
+        "headspace_mm": 0.10,
+        "groove_count": 6,
+        "twist_direction": "right",
     },
 ]
 
@@ -218,6 +244,45 @@ async def seed_initial_data(db: AsyncSession):
     # ---- Bullets (count-based threshold) ----
     bullet_count = await _seed_bullets(db)
 
+    # ---- Rifles re-seed (replace old data if <= 5 rifles without chamber data) ----
+    rifle_result = await db.execute(select(func.count()).select_from(Rifle))
+    rifle_count = rifle_result.scalar() or 0
+    if 0 < rifle_count <= 5:
+        # Check if existing rifles have the new fields populated
+        sample = await db.execute(select(Rifle).limit(1))
+        sample_rifle = sample.scalar_one_or_none()
+        if sample_rifle and sample_rifle.groove_count is None:
+            await db.execute(delete(Rifle))
+            logger.info(
+                "Replacing old rifle seed (%d rifles) with updated data",
+                rifle_count,
+            )
+            # Will be re-seeded below alongside cartridges
+            # We need cartridges to exist, so fetch them
+            cart_result = await db.execute(select(Cartridge))
+            existing_carts = cart_result.scalars().all()
+            if existing_carts:
+                cartridge_map = {c.name: c for c in existing_carts}
+                for data in RIFLES:
+                    cart = cartridge_map.get(data["cartridge_name"])
+                    if not cart:
+                        continue
+                    rifle = Rifle(
+                        name=data["name"],
+                        barrel_length_mm=data["barrel_length_mm"],
+                        twist_rate_mm=data["twist_rate_mm"],
+                        cartridge_id=cart.id,
+                        chamber_volume_mm3=data["chamber_volume_mm3"],
+                        weight_kg=data.get("weight_kg", 3.5),
+                        freebore_mm=data.get("freebore_mm"),
+                        throat_angle_deg=data.get("throat_angle_deg"),
+                        headspace_mm=data.get("headspace_mm"),
+                        groove_count=data.get("groove_count"),
+                        twist_direction=data.get("twist_direction"),
+                    )
+                    db.add(rifle)
+                logger.info("Re-seeded %d rifles with updated data", len(RIFLES))
+
     # ---- Cartridges (seed only if empty) ----
     existing_cart = await db.execute(select(Cartridge).limit(1))
     if existing_cart.scalar():
@@ -263,6 +328,11 @@ async def seed_initial_data(db: AsyncSession):
                 cartridge_id=cart.id,
                 chamber_volume_mm3=data["chamber_volume_mm3"],
                 weight_kg=data.get("weight_kg", 3.5),
+                freebore_mm=data.get("freebore_mm"),
+                throat_angle_deg=data.get("throat_angle_deg"),
+                headspace_mm=data.get("headspace_mm"),
+                groove_count=data.get("groove_count"),
+                twist_direction=data.get("twist_direction"),
             )
             db.add(rifle)
 

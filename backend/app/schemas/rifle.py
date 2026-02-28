@@ -16,6 +16,9 @@ class RifleCreate(BaseModel):
     freebore_mm: float | None = Field(None, ge=0, le=20, description="Freebore length (mm), typical 0.05-5")
     throat_angle_deg: float | None = Field(None, gt=0, le=10, description="Throat/leade angle (deg), typical 1-3")
     headspace_mm: float | None = Field(None, ge=0, le=5, description="Headspace gap (mm), typical 0.05-0.15")
+    # Rifling fields (optional)
+    groove_count: int | None = Field(None, ge=2, le=12, description="Number of rifling grooves, typical 4-6")
+    twist_direction: str | None = Field(None, max_length=10, description="Twist direction: 'right' or 'left'")
 
 
 class RifleUpdate(BaseModel):
@@ -31,6 +34,9 @@ class RifleUpdate(BaseModel):
     freebore_mm: float | None = Field(None, ge=0, le=20)
     throat_angle_deg: float | None = Field(None, gt=0, le=10)
     headspace_mm: float | None = Field(None, ge=0, le=5)
+    # Rifling fields (optional)
+    groove_count: int | None = Field(None, ge=2, le=12)
+    twist_direction: str | None = Field(None, max_length=10)
 
 
 class RifleResponse(BaseModel):
@@ -47,5 +53,8 @@ class RifleResponse(BaseModel):
     freebore_mm: float | None = None
     throat_angle_deg: float | None = None
     headspace_mm: float | None = None
+    # Rifling fields
+    groove_count: int | None = None
+    twist_direction: str | None = None
 
     model_config = {"from_attributes": True}

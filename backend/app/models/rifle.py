@@ -22,4 +22,8 @@ class Rifle(UUIDMixin, Base):
     throat_angle_deg = Column(Float, nullable=True)   # Angle of leade/throat
     headspace_mm = Column(Float, nullable=True)       # How much case floats in chamber
 
+    # Rifling fields (nullable - optional)
+    groove_count = Column(Integer, nullable=True)     # Number of rifling grooves (4, 5, 6)
+    twist_direction = Column(String(10), nullable=True)  # "right" or "left"
+
     cartridge = relationship("Cartridge", lazy="selectin")

@@ -212,6 +212,9 @@ export interface Rifle {
   freebore_mm: number | null;
   throat_angle_deg: number | null;
   headspace_mm: number | null;
+  // Rifling fields
+  groove_count: number | null;
+  twist_direction: string | null;
   cartridge?: Cartridge;
 }
 
@@ -228,6 +231,9 @@ export interface RifleCreate {
   freebore_mm?: number | null;
   throat_angle_deg?: number | null;
   headspace_mm?: number | null;
+  // Rifling fields (optional)
+  groove_count?: number | null;
+  twist_direction?: string | null;
 }
 
 // ============================================================

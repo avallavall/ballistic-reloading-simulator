@@ -42,7 +42,12 @@ const conditionLabel: Record<string, string> = {
   worn: 'Desgastado',
 };
 
-const CHAMBER_FIELDS: (keyof RifleCreate)[] = ['freebore_mm', 'throat_angle_deg', 'headspace_mm'];
+const CHAMBER_FIELDS: (keyof RifleCreate)[] = ['freebore_mm', 'throat_angle_deg', 'headspace_mm', 'groove_count', 'twist_direction'];
+
+const twistDirectionOptions = [
+  { value: 'right', label: 'Derecha (Right)' },
+  { value: 'left', label: 'Izquierda (Left)' },
+];
 
 const emptyForm: RifleCreate = {
   name: '',
@@ -56,6 +61,8 @@ const emptyForm: RifleCreate = {
   freebore_mm: undefined,
   throat_angle_deg: undefined,
   headspace_mm: undefined,
+  groove_count: undefined,
+  twist_direction: undefined,
 };
 
 export default function RiflesPage() {
@@ -79,8 +86,8 @@ export default function RiflesPage() {
     setForm((prev) => ({
       ...prev,
       [field]:
-        field === 'name' || field === 'cartridge_id' || field === 'barrel_condition'
-          ? value
+        field === 'name' || field === 'cartridge_id' || field === 'barrel_condition' || field === 'twist_direction'
+          ? (value === '' ? null : value)
           : (CHAMBER_FIELDS as string[]).includes(field)
             ? (value === '' ? null : Number(value))
             : Number(value),
@@ -102,8 +109,10 @@ export default function RiflesPage() {
       freebore_mm: rifle.freebore_mm ?? undefined,
       throat_angle_deg: rifle.throat_angle_deg ?? undefined,
       headspace_mm: rifle.headspace_mm ?? undefined,
+      groove_count: rifle.groove_count ?? undefined,
+      twist_direction: rifle.twist_direction ?? undefined,
     });
-    const hasChamberData = rifle.freebore_mm != null || rifle.throat_angle_deg != null || rifle.headspace_mm != null;
+    const hasChamberData = rifle.freebore_mm != null || rifle.throat_angle_deg != null || rifle.headspace_mm != null || rifle.groove_count != null || rifle.twist_direction != null;
     setShowChamberSection(hasChamberData);
     setShowForm(true);
   };
@@ -305,6 +314,23 @@ export default function RiflesPage() {
                       onChange={(e) => handleChange('throat_angle_deg', e.target.value)}
                       placeholder="1.0 - 3.0"
                     />
+                    <Input
+                      label="Num. Estrias"
+                      id="groove_count"
+                      type="number"
+                      step="1"
+                      value={form.groove_count ?? ''}
+                      onChange={(e) => handleChange('groove_count', e.target.value)}
+                      placeholder="4, 5, 6"
+                    />
+                    <Select
+                      label="Dir. de Giro"
+                      id="twist_direction"
+                      value={form.twist_direction ?? ''}
+                      onChange={(e) => handleChange('twist_direction', e.target.value)}
+                      options={twistDirectionOptions}
+                      placeholder="Seleccionar"
+                    />
                   </div>
                 )}
               </div>
@@ -387,6 +413,8 @@ export default function RiflesPage() {
               <TableHead>Twist (mm)</TableHead>
               <TableHead>Cartucho</TableHead>
               <TableHead>Peso (kg)</TableHead>
+              <TableHead>Estrias</TableHead>
+              <TableHead>Giro</TableHead>
               <TableHead>Condicion</TableHead>
               <TableHead>Disparos</TableHead>
               <TableHead className="text-right">Acciones</TableHead>
@@ -409,6 +437,12 @@ export default function RiflesPage() {
                 </TableCell>
                 <TableCell className={`font-mono ${rifle.weight_kg == null ? 'text-gray-500' : ''}`}>
                   {rifle.weight_kg != null ? rifle.weight_kg : '\u2014'}
+                </TableCell>
+                <TableCell className={`font-mono ${rifle.groove_count == null ? 'text-gray-500' : ''}`}>
+                  {rifle.groove_count != null ? rifle.groove_count : '\u2014'}
+                </TableCell>
+                <TableCell className={`${rifle.twist_direction == null ? 'text-gray-500' : ''}`}>
+                  {rifle.twist_direction === 'right' ? 'Der.' : rifle.twist_direction === 'left' ? 'Izq.' : '\u2014'}
                 </TableCell>
                 <TableCell>
                   <Badge variant={conditionBadge[rifle.barrel_condition] || 'default'}>
