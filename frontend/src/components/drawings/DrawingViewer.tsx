@@ -154,7 +154,7 @@ export default function DrawingViewer({
       </div>
 
       {/* Primary drawing (visible) */}
-      <div className="overflow-x-auto rounded border border-slate-700 bg-slate-800/50">
+      <div className="overflow-x-auto rounded border border-slate-700 bg-slate-800/50 flex items-center justify-center" style={{ maxHeight: '70vh' }}>
         {activeTab === 'cross-section' && (
           <CartridgeCrossSection
             ref={primaryRef}

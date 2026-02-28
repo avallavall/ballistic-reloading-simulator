@@ -210,7 +210,7 @@ const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
         viewBox={`${-padLeft} ${-(chamberMaxR + padTop)} ${drawingWidth} ${drawingHeight}`}
         xmlns="http://www.w3.org/2000/svg"
         preserveAspectRatio="xMidYMid meet"
-        style={{ width: '100%', height: 'auto' }}
+        style={{ width: '100%', height: '100%', maxHeight: '70vh' }}
       >
         <defs>
           <HatchPatterns theme={theme} />
@@ -231,7 +231,7 @@ const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
             d={chamberPath}
             fill={theme.steelFill === 'none' ? 'url(#hatch-metal)' : theme.steelFill}
             stroke={theme.outline}
-            strokeWidth={0.7}
+            strokeWidth={theme.outlineStrokeWidth}
           />
 
           {/* Cartridge inside chamber (offset by headspace gap) */}
@@ -239,7 +239,7 @@ const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
             d={cartridgeResult.svgPath}
             fill={theme.caseFill === 'none' ? 'url(#hatch-brass)' : theme.caseFill}
             stroke={theme.outline}
-            strokeWidth={0.5}
+            strokeWidth={theme.outlineStrokeWidth}
           />
 
           {/* Clearance gap visualization -- thin colored regions */}
@@ -265,7 +265,7 @@ const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
                 fill={theme.dimColor}
                 opacity={0.1}
                 stroke={theme.hiddenEdge}
-                strokeWidth={0.2}
+                strokeWidth={theme.thinStrokeWidth}
                 strokeDasharray="1,0.5"
               />
             );
@@ -287,7 +287,7 @@ const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
                   x2={throatEnd}
                   y2={-boreR}
                   stroke={theme.hiddenEdge}
-                  strokeWidth={0.4}
+                  strokeWidth={theme.thinStrokeWidth}
                   strokeDasharray="2,1"
                 />
                 <line
@@ -296,16 +296,16 @@ const ChamberDrawing = forwardRef<SVGSVGElement, ChamberDrawingProps>(
                   x2={throatEnd}
                   y2={boreR}
                   stroke={theme.hiddenEdge}
-                  strokeWidth={0.4}
+                  strokeWidth={theme.thinStrokeWidth}
                   strokeDasharray="2,1"
                 />
 
                 {/* Rifling start indicator (crossed lines) */}
                 <g transform={`translate(${throatEnd + 1}, 0)`}>
-                  <line x1={0} y1={-boreR} x2={1} y2={-boreR + 0.5} stroke={theme.outline} strokeWidth={0.2} />
-                  <line x1={0.5} y1={-boreR} x2={1.5} y2={-boreR + 0.5} stroke={theme.outline} strokeWidth={0.2} />
-                  <line x1={0} y1={boreR} x2={1} y2={boreR - 0.5} stroke={theme.outline} strokeWidth={0.2} />
-                  <line x1={0.5} y1={boreR} x2={1.5} y2={boreR - 0.5} stroke={theme.outline} strokeWidth={0.2} />
+                  <line x1={0} y1={-boreR} x2={1} y2={-boreR + 0.5} stroke={theme.outline} strokeWidth={theme.thinStrokeWidth} />
+                  <line x1={0.5} y1={-boreR} x2={1.5} y2={-boreR + 0.5} stroke={theme.outline} strokeWidth={theme.thinStrokeWidth} />
+                  <line x1={0} y1={boreR} x2={1} y2={boreR - 0.5} stroke={theme.outline} strokeWidth={theme.thinStrokeWidth} />
+                  <line x1={0.5} y1={boreR} x2={1.5} y2={boreR - 0.5} stroke={theme.outline} strokeWidth={theme.thinStrokeWidth} />
                 </g>
 
                 {/* Throat angle text */}

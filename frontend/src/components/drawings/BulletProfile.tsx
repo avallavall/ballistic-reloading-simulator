@@ -129,7 +129,7 @@ const BulletProfile = forwardRef<SVGSVGElement, BulletProfileProps>(
         viewBox={`${-padLeft} ${-(bodyR + padTop)} ${drawingWidth} ${drawingHeight}`}
         xmlns="http://www.w3.org/2000/svg"
         preserveAspectRatio="xMidYMid meet"
-        style={{ width: '100%', height: 'auto' }}
+        style={{ width: '100%', height: '100%', maxHeight: '70vh' }}
       >
         <defs>
           <HatchPatterns theme={theme} />
@@ -150,7 +150,7 @@ const BulletProfile = forwardRef<SVGSVGElement, BulletProfileProps>(
             d={result.svgPath}
             fill={theme.copperFill === 'none' ? 'url(#hatch-copper)' : theme.copperFill}
             stroke={theme.outline}
-            strokeWidth={0.5}
+            strokeWidth={theme.outlineStrokeWidth}
           />
 
           {/* Centerline */}

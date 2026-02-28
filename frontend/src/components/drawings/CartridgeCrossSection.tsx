@@ -265,7 +265,7 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
         viewBox={`${-padLeft} ${-(maxR + padTop)} ${drawingWidth} ${drawingHeight}`}
         xmlns="http://www.w3.org/2000/svg"
         preserveAspectRatio="xMidYMid meet"
-        style={{ width: '100%', height: 'auto' }}
+        style={{ width: '100%', height: '100%', maxHeight: '70vh' }}
       >
         <defs>
           <HatchPatterns theme={theme} />
@@ -287,7 +287,7 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
             d={result.svgPath}
             fill={theme.caseFill === 'none' ? 'url(#hatch-brass)' : theme.caseFill}
             stroke={theme.outline}
-            strokeWidth={0.7}
+            strokeWidth={theme.outlineStrokeWidth}
           />
 
           {/* Inner case wall (powder chamber) */}
@@ -295,7 +295,7 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
             d={innerWallPath}
             fill={theme.powderFill === 'none' ? 'url(#hatch-powder)' : theme.powderFill}
             stroke={theme.hiddenEdge}
-            strokeWidth={0.3}
+            strokeWidth={theme.thinStrokeWidth}
             strokeDasharray="1.5,0.5"
           />
 
@@ -306,7 +306,7 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
             x2={cartridge.rim_thickness_mm ?? 1.3}
             y2={baseR - CASE_WALL_THICKNESS}
             stroke={theme.hiddenEdge}
-            strokeWidth={0.25}
+            strokeWidth={theme.thinStrokeWidth}
             strokeDasharray="2,1"
           />
 
@@ -325,7 +325,7 @@ const CartridgeCrossSection = forwardRef<SVGSVGElement, CartridgeCrossSectionPro
                 d={bulletResult.svgPath}
                 fill={theme.copperFill === 'none' ? 'url(#hatch-copper)' : theme.copperFill}
                 stroke={theme.outline}
-                strokeWidth={0.5}
+                strokeWidth={theme.outlineStrokeWidth}
                 opacity={0.85}
                 transform={`translate(${-(bullet?.length_mm ?? oal - caseLength) * 0.5}, 0)`}
               />

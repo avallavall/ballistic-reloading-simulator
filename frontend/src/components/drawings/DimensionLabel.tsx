@@ -81,23 +81,23 @@ export default function DimensionLabel({
         {/* Extension lines */}
         <line
           x1={x1} y1={ext1StartY} x2={x1} y2={extEndY}
-          stroke={theme.dimColor} strokeWidth={0.25} strokeDasharray="2,1"
+          stroke={theme.dimColor} strokeWidth={theme.thinStrokeWidth} strokeDasharray="2,1"
         />
         <line
           x1={x2} y1={ext2StartY} x2={x2} y2={extEndY}
-          stroke={theme.dimColor} strokeWidth={0.25} strokeDasharray="2,1"
+          stroke={theme.dimColor} strokeWidth={theme.thinStrokeWidth} strokeDasharray="2,1"
         />
 
         {/* Dimension line (two segments, broken at text) */}
         <line
           x1={x1} y1={dimY} x2={textX - textW / 2 - maskPad} y2={dimY}
-          stroke={theme.dimColor} strokeWidth={0.4}
+          stroke={theme.dimColor} strokeWidth={theme.dimStrokeWidth}
           markerStart="url(#dim-arrow)"
           strokeDasharray={dimDash}
         />
         <line
           x1={textX + textW / 2 + maskPad} y1={dimY} x2={x2} y2={dimY}
-          stroke={theme.dimColor} strokeWidth={0.4}
+          stroke={theme.dimColor} strokeWidth={theme.dimStrokeWidth}
           markerEnd="url(#dim-arrow)"
           strokeDasharray={dimDash}
         />
@@ -152,23 +152,23 @@ export default function DimensionLabel({
       {/* Extension lines */}
       <line
         x1={ext1StartX} y1={y1} x2={extEndX} y2={y1}
-        stroke={theme.dimColor} strokeWidth={0.25} strokeDasharray="2,1"
+        stroke={theme.dimColor} strokeWidth={theme.thinStrokeWidth} strokeDasharray="2,1"
       />
       <line
         x1={ext2StartX} y1={y2} x2={extEndX} y2={y2}
-        stroke={theme.dimColor} strokeWidth={0.25} strokeDasharray="2,1"
+        stroke={theme.dimColor} strokeWidth={theme.thinStrokeWidth} strokeDasharray="2,1"
       />
 
       {/* Dimension line (two segments, broken at text) */}
       <line
         x1={dimX} y1={y1} x2={dimX} y2={textY - textW / 2 - maskPad}
-        stroke={theme.dimColor} strokeWidth={0.4}
+        stroke={theme.dimColor} strokeWidth={theme.dimStrokeWidth}
         markerStart="url(#dim-arrow)"
         strokeDasharray={dimDash}
       />
       <line
         x1={dimX} y1={textY + textW / 2 + maskPad} x2={dimX} y2={y2}
-        stroke={theme.dimColor} strokeWidth={0.4}
+        stroke={theme.dimColor} strokeWidth={theme.dimStrokeWidth}
         markerEnd="url(#dim-arrow)"
         strokeDasharray={dimDash}
       />

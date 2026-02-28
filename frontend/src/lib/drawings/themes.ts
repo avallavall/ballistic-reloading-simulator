@@ -28,6 +28,9 @@ export const blueprintTheme: DrawingTheme = {
   fontFamily: '"Courier New", Courier, monospace',
   dimFontSize: 2.8,
   titleFontSize: 3.0,
+  outlineStrokeWidth: 0.35,
+  thinStrokeWidth: 0.15,
+  dimStrokeWidth: 0.2,
 };
 
 /**
@@ -52,6 +55,9 @@ export const modernTheme: DrawingTheme = {
   fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
   dimFontSize: 2.8,
   titleFontSize: 3.0,
+  outlineStrokeWidth: 0.35,
+  thinStrokeWidth: 0.15,
+  dimStrokeWidth: 0.2,
 };
 
 /**

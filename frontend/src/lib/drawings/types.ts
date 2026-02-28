@@ -25,6 +25,9 @@ export interface DrawingTheme {
   fontFamily: string;
   dimFontSize: number;    // SVG user units (mm)
   titleFontSize: number;  // SVG user units (mm)
+  outlineStrokeWidth: number;  // Main profile outlines (mm)
+  thinStrokeWidth: number;     // Secondary lines: inner walls, hidden edges (mm)
+  dimStrokeWidth: number;      // Dimension/extension lines (mm)
 }
 
 // ============================================================

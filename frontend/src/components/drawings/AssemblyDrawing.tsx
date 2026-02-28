@@ -162,7 +162,7 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
         viewBox={`${-padLeft} ${-(layout.total_height_mm / 2 + padTop)} ${drawingWidth} ${drawingHeight}`}
         xmlns="http://www.w3.org/2000/svg"
         preserveAspectRatio="xMidYMid meet"
-        style={{ width: '100%', height: 'auto' }}
+        style={{ width: '100%', height: '100%', maxHeight: '70vh' }}
       >
         <defs>
           <HatchPatterns theme={theme} />
@@ -187,7 +187,7 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
             height={layout.barrel_outer_r - layout.barrel_bore_r}
             fill={theme.steelFill === 'none' ? 'url(#hatch-metal)' : theme.steelFill}
             stroke={theme.outline}
-            strokeWidth={0.5}
+            strokeWidth={theme.outlineStrokeWidth}
           />
           {/* Bottom barrel wall */}
           <rect
@@ -197,7 +197,7 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
             height={layout.barrel_outer_r - layout.barrel_bore_r}
             fill={theme.steelFill === 'none' ? 'url(#hatch-metal)' : theme.steelFill}
             stroke={theme.outline}
-            strokeWidth={0.5}
+            strokeWidth={theme.outlineStrokeWidth}
           />
 
           {/* Bore (empty space between barrel walls) */}
@@ -222,14 +222,14 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
                   x1={x} y1={-boreR}
                   x2={x + 1.5} y2={-boreR + 0.5}
                   stroke={theme.outline}
-                  strokeWidth={0.2}
+                  strokeWidth={theme.thinStrokeWidth}
                 />,
                 <line
                   key={`rif-b-${i}`}
                   x1={x} y1={boreR}
                   x2={x + 1.5} y2={boreR - 0.5}
                   stroke={theme.outline}
-                  strokeWidth={0.2}
+                  strokeWidth={theme.thinStrokeWidth}
                 />
               );
             }
@@ -245,7 +245,7 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
               height={layout.barrel_outer_r * 2}
               fill={STRESS_COLORS[stressZone.severity]}
               stroke={STRESS_OUTLINE[stressZone.severity]}
-              strokeWidth={0.3}
+              strokeWidth={theme.thinStrokeWidth}
               strokeDasharray="2,1"
             />
           )}
@@ -256,7 +256,7 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
               d={cartridgeResult.svgPath}
               fill={theme.caseFill === 'none' ? 'url(#hatch-brass)' : theme.caseFill}
               stroke={theme.outline}
-              strokeWidth={0.5}
+              strokeWidth={theme.outlineStrokeWidth}
             />
           </g>
 
@@ -288,7 +288,7 @@ const AssemblyDrawing = forwardRef<SVGSVGElement, AssemblyDrawingProps>(
                     d={d}
                     fill={theme.copperFill === 'none' ? 'url(#hatch-copper)' : theme.copperFill}
                     stroke={theme.outline}
-                    strokeWidth={0.4}
+                    strokeWidth={theme.outlineStrokeWidth}
                   />
                 );
               })()}
