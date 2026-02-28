@@ -7,6 +7,7 @@
  */
 
 import React from 'react';
+import { Box } from 'lucide-react';
 import { DrawingTab } from '@/lib/drawings/types';
 
 interface DrawingTabsProps {
@@ -20,6 +21,7 @@ const TABS: { key: DrawingTab; label: string; requiresRifle: boolean }[] = [
   { key: 'cross-section', label: 'Seccion Transversal', requiresRifle: false },
   { key: 'chamber', label: 'Recamara', requiresRifle: true },
   { key: 'assembly', label: 'Conjunto', requiresRifle: false },
+  { key: '3d', label: 'Vista 3D', requiresRifle: false },
 ];
 
 export default function DrawingTabs({
@@ -52,6 +54,7 @@ export default function DrawingTabs({
               title={disabled ? 'Selecciona un rifle para ver este dibujo' : undefined}
             >
               <span className="flex items-center gap-2">
+                {tab.key === '3d' && <Box size={14} />}
                 {tab.label}
                 {tab.key === 'assembly' && hasSimulation && (
                   <span className="h-2 w-2 rounded-full bg-green-500" title="Datos de simulacion disponibles" />

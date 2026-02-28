@@ -135,4 +135,4 @@ export type ExportFormat = 'png' | 'svg' | 'pdf';
 // Drawing Tabs
 // ============================================================
 
-export type DrawingTab = 'cross-section' | 'chamber' | 'assembly';
+export type DrawingTab = 'cross-section' | 'chamber' | 'assembly' | '3d';
