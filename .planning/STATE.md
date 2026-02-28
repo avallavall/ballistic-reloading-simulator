@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Data Expansion + Visual Viewers
 status: in-progress
-last_updated: "2026-02-28T19:51:00.000Z"
+last_updated: "2026-02-28T19:57:11.000Z"
 progress:
   total_phases: 2
   completed_phases: 2
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,16 +23,16 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 ## Current Position
 
 Phase: 13 of 14 (3D Parametric Cartridge Viewer)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-02-28 - Completed 13-01 (mesh-builder + materials + HDR)
+Last activity: 2026-02-28 - Completed 13-02 (R3F components for 3D cartridge viewer)
 
-Progress: v1.0 (base) + v1.1 (7 plans) + v1.2 (17 plans) = 24 plans shipped | v1.3: [##########--] 78% (7/9 plans)
+Progress: v1.0 (base) + v1.1 (7 plans) + v1.2 (17 plans) = 24 plans shipped | v1.3: [###########-] 89% (8/9 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 31
+- Total plans completed: 32
 - Average duration: 4.3min
 - Total execution time: 2.5 hours
 
@@ -52,7 +52,7 @@ Progress: v1.0 (base) + v1.1 (7 plans) + v1.2 (17 plans) = 24 plans shipped | v1
 | 10 - Tech Debt Cleanup | 2/2 | 4min | 2min |
 | 11 - Foundation and Data Expansion | 3/3 | 25min | 8.3min |
 | 12 - 2D SVG Technical Drawings | 3/3 | 17min | 5.7min |
-| 13 - 3D Parametric Cartridge Viewer | 1/3 | 2min | 2min |
+| 13 - 3D Parametric Cartridge Viewer | 2/3 | 4min | 2min |
 
 ## Accumulated Context
 
@@ -83,6 +83,8 @@ All decisions logged in PROJECT.md Key Decisions table. Recent:
 - [Phase quick-04]: Chamber fields in collapsible section (auto-expand on edit), DimensionLabel uses useUnits() for single-unit display, Settings page with radio-card selector
 - [Phase 13-01]: MaterialParams as plain objects (not Three.js instances) -- creation deferred to R3F Canvas context
 - [Phase 13-01]: 64 segments full / 32 segments half LatheGeometry, Poly Haven studio HDR stored locally
+- [Phase 13-02]: CartridgeScene as inner component (R3F hooks require Canvas context)
+- [Phase 13-02]: Toggle buttons outside Canvas as HTML, powder fill only in cutaway mode
 
 ### Pending Todos
 
@@ -104,6 +106,6 @@ None active. All v1.2 blockers resolved.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 13-01-PLAN.md
-Resume file: .planning/phases/13-3d-parametric-cartridge-viewer/13-01-SUMMARY.md
-Resume: /gsd:execute-phase 13 (plan 02 next)
+Stopped at: Completed 13-02-PLAN.md
+Resume file: .planning/phases/13-3d-parametric-cartridge-viewer/13-02-SUMMARY.md
+Resume: /gsd:execute-phase 13 (plan 03 next)
